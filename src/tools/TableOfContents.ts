@@ -1,6 +1,6 @@
 import * as path from "path";
-import { Section, DocumentationConfig, ErrorResponse } from "../types.js";
-import { MarkdownParser } from "../MarkdownParser.js";
+import { Section, DocumentationConfig, ErrorResponse } from "../types";
+import { MarkdownParser } from "../MarkdownParser";
 
 export class TableOfContents {
   private config: DocumentationConfig;

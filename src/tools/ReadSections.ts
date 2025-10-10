@@ -1,6 +1,6 @@
 import * as path from "path";
-import { SectionContent, DocumentationConfig, ErrorResponse } from "../types.js";
-import { MarkdownParser } from "../MarkdownParser.js";
+import { SectionContent, DocumentationConfig, ErrorResponse } from "../types";
+import { MarkdownParser } from "../MarkdownParser";
 
 export class ReadSections {
   private config: DocumentationConfig;

@@ -1,7 +1,7 @@
 import { glob } from "glob";
 import * as path from "path";
-import { FileInfo, DocumentationConfig, ErrorResponse } from "../types.js";
-import { MarkdownParser } from "../MarkdownParser.js";
+import { FileInfo, DocumentationConfig, ErrorResponse } from "../types";
+import { MarkdownParser } from "../MarkdownParser";
 
 export class ListDocumentationFiles {
   private config: DocumentationConfig;
