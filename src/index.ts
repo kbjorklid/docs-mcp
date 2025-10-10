@@ -8,15 +8,42 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 // Import tool classes
-import { DEFAULT_CONFIG } from "./types.js";
+import { DEFAULT_CONFIG, DocumentationConfig } from "./types.js";
 import { ListDocumentationFiles } from "./tools/ListDocumentationFiles.js";
 import { TableOfContents } from "./tools/TableOfContents.js";
 import { ReadSections } from "./tools/ReadSections.js";
 
-// Initialize tool instances
-const listDocumentationFiles = new ListDocumentationFiles(DEFAULT_CONFIG);
-const tableOfContents = new TableOfContents(DEFAULT_CONFIG);
-const readSections = new ReadSections(DEFAULT_CONFIG);
+// Parse command line arguments
+function parseCommandLineArgs(): { docsPath?: string } {
+  const args = process.argv.slice(2);
+  
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--docs-path' || args[i] === '-d') {
+      if (i + 1 < args.length) {
+        return { docsPath: args[i + 1] };
+      }
+    }
+  }
+  
+  return {};
+}
+
+// Create configuration with precedence: CLI args > environment variables > defaults
+function createConfig(): DocumentationConfig {
+  const cliArgs = parseCommandLineArgs();
+  
+  return {
+    ...DEFAULT_CONFIG,
+    documentation_path: cliArgs.docsPath || process.env.DOCS_PATH || "./docs"
+  };
+}
+
+const config = createConfig();
+
+// Initialize tool instances with config
+const listDocumentationFiles = new ListDocumentationFiles(config);
+const tableOfContents = new TableOfContents(config);
+const readSections = new ReadSections(config);
 
 // Create MCP server
 const server = new Server(

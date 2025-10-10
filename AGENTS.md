@@ -16,9 +16,27 @@ The server implements three core tools for documentation management:
 
 ## Configuration
 
-The server uses environment variables and default configuration:
+The server supports multiple ways to configure the documentation path with the following precedence:
 
-- `DOCS_PATH` - Root directory containing markdown files (default: "./docs")
+1. **Command line arguments** (highest precedence)
+2. **Environment variables**
+3. **Default values** (lowest precedence)
+
+### Documentation Path Configuration
+
+- **Command line**: `--docs-path` or `-d` followed by the path
+  ```bash
+  npm start -- --docs-path /path/to/docs
+  npm start -- -d /path/to/docs
+  ```
+- **Environment variable**: `DOCS_PATH`
+  ```bash
+  DOCS_PATH=/path/to/docs npm start
+  ```
+- **Default**: `"./docs"` folder in project root
+
+### Other Configuration
+
 - Supports YAML front matter parsing for metadata
 - Configurable file size limits (default: 10MB) and exclusion patterns
 - Glob-based file discovery with include/exclude patterns
