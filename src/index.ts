@@ -35,50 +35,9 @@ const server = new Server(
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
-      {
-        name: "list_documentation_files",
-        description: "Lists all available documentation files with their metadata",
-        inputSchema: {
-          type: "object",
-          properties: {},
-          required: [],
-        },
-      },
-      {
-        name: "table_of_contents",
-        description: "Provides a structured table of contents for a markdown file",
-        inputSchema: {
-          type: "object",
-          properties: {
-            filename: {
-              type: "string",
-              description: "Path to the markdown file relative to the documentation folder",
-            },
-          },
-          required: ["filename"],
-        },
-      },
-      {
-        name: "read_sections",
-        description: "Reads specific sections from a markdown file",
-        inputSchema: {
-          type: "object",
-          properties: {
-            filename: {
-              type: "string",
-              description: "Path to the markdown file relative to the documentation folder",
-            },
-            section_ids: {
-              type: "array",
-              items: {
-                type: "string",
-              },
-              description: "Array of section identifiers to read",
-            },
-          },
-          required: ["filename", "section_ids"],
-        },
-      },
+      ListDocumentationFiles.getToolDefinition(),
+      TableOfContents.getToolDefinition(),
+      ReadSections.getToolDefinition(),
     ],
   };
 });

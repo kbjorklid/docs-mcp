@@ -11,6 +11,21 @@ export class ListDocumentationFiles {
   }
 
   /**
+   * Get the tool definition for MCP
+   */
+  static getToolDefinition() {
+    return {
+      name: "list_documentation_files",
+      description: "Lists all available documentation files with their metadata",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
+    };
+  }
+
+  /**
    * Execute the list_documentation_files tool
    */
   async execute() {

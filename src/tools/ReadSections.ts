@@ -10,6 +10,33 @@ export class ReadSections {
   }
 
   /**
+   * Get the tool definition for MCP
+   */
+  static getToolDefinition() {
+    return {
+      name: "read_sections",
+      description: "Reads specific sections from a markdown file",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filename: {
+            type: "string",
+            description: "Path to the markdown file relative to the documentation folder",
+          },
+          section_ids: {
+            type: "array",
+            items: {
+              type: "string",
+            },
+            description: "Array of section identifiers to read",
+          },
+        },
+        required: ["filename", "section_ids"],
+      },
+    };
+  }
+
+  /**
    * Execute the read_sections tool
    */
   execute(filename: string, sectionIds: string[]) {

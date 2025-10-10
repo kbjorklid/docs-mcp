@@ -10,6 +10,26 @@ export class TableOfContents {
   }
 
   /**
+   * Get the tool definition for MCP
+   */
+  static getToolDefinition() {
+    return {
+      name: "table_of_contents",
+      description: "Provides a structured table of contents for a markdown file",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filename: {
+            type: "string",
+            description: "Path to the markdown file relative to the documentation folder",
+          },
+        },
+        required: ["filename"],
+      },
+    };
+  }
+
+  /**
    * Execute the table_of_contents tool
    */
   execute(filename: string) {
