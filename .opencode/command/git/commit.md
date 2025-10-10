@@ -35,7 +35,7 @@ Note: in the Context section above, you can see a number of outputs of different
 
 Use 'Conventional Commits' standard.
 
-Keep the commit message succinct.
+Unless the commit header captures the change fully, you should add a succinct commit body.
 
 If you know the 'why' of the commit (e.g. user has previously asked to fix a bug, or user has provided information in the 'user inputs' section),
 include that in the commit message.
