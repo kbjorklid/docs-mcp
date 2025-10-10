@@ -4,7 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a TypeScript-based Model Context Protocol (MCP) server that provides a simple "Hello World" tool implementation. The server follows MCP standards and communicates via stdio transport.
+This is a TypeScript-based Model Context Protocol (MCP) server that provides documentation reading and navigation tools for markdown-based documentation repositories. The server follows MCP standards and communicates via stdio transport.
+
+## Features
+
+The server implements three core tools for documentation management:
+
+1. **list_documentation_files** - Lists all available documentation files with metadata
+2. **table_of_contents** - Provides structured table of contents for markdown files
+3. **read_sections** - Reads specific sections from markdown files
+
+## Configuration
+
+The server uses environment variables and default configuration:
+
+- `DOCS_PATH` - Root directory containing markdown files (default: "./docs")
+- Supports YAML front matter parsing for metadata
+- Configurable file size limits and exclusion patterns
+- Glob-based file discovery with include/exclude patterns
 
 ## Development Commands
 
@@ -27,9 +44,19 @@ List tools:
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | npm start
 ```
 
-Call hello_world tool:
+List documentation files:
 ```bash
-echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"hello_world","arguments":{"name":"Your Name"}}}' | npm start
+echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_documentation_files","arguments":{}}}' | npm start
+```
+
+Get table of contents:
+```bash
+echo '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"table_of_contents","arguments":{"filename":"your-file.md"}}}' | npm start
+```
+
+Read specific sections:
+```bash
+echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"read_sections","arguments":{"filename":"your-file.md","section_ids":["section-id"]}}' | npm start
 ```
 
 ## Architecture
@@ -77,10 +104,25 @@ Example tool structure:
 ## Dependencies
 
 - **@modelcontextprotocol/sdk** - Core MCP server functionality
+- **js-yaml** - YAML front matter parsing
+- **glob** - File pattern matching
 - **tsx** - TypeScript execution for development
 - **typescript** - TypeScript compiler with strict mode enabled
 
 ## Binary Distribution
 
 The package includes a binary entry point:
-- `hello-world-mcp` command points to `dist/index.js`
+- `docs-mcp` command points to `dist/index.js`
+
+## Error Handling
+
+The server implements comprehensive error handling with structured error responses:
+
+- **FILE_NOT_FOUND** - Requested file doesn't exist
+- **INVALID_SECTION_ID** - Section identifier is malformed
+- **SECTION_NOT_FOUND** - Requested section doesn't exist
+- **FILE_TOO_LARGE** - File exceeds size limits
+- **PARSE_ERROR** - Error parsing markdown or metadata
+- **FILE_SYSTEM_ERROR** - Error accessing documentation files
+
+All errors follow the JSON format specified in SPECIFICATION.md.
