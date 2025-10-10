@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI agents working with code in this repository.
 
 ## Project Overview
 
@@ -20,8 +20,9 @@ The server uses environment variables and default configuration:
 
 - `DOCS_PATH` - Root directory containing markdown files (default: "./docs")
 - Supports YAML front matter parsing for metadata
-- Configurable file size limits and exclusion patterns
+- Configurable file size limits (default: 10MB) and exclusion patterns
 - Glob-based file discovery with include/exclude patterns
+- Auto-indexing with configurable refresh intervals
 
 ## Development Commands
 
@@ -35,6 +36,8 @@ The server uses environment variables and default configuration:
 - `.\run.ps1 -Development` - Run in development mode (no build)
 - `.\run.ps1 -Clean` - Clean build directory before running
 - `.\run.ps1 -Help` - Show help information
+
+Note: The script refers to "Hello World MCP Server" in comments but this is actually the Documentation MCP Server.
 
 ### Testing the Server
 Test the MCP server by sending JSON-RPC messages via stdin:
@@ -63,6 +66,12 @@ echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"read_secti
 
 ### Core Structure
 - **src/index.ts** - Main MCP server implementation with tool registration and request handling
+- **src/types.ts** - TypeScript interfaces and default configuration
+- **src/MarkdownParser.ts** - Core markdown parsing and front matter extraction
+- **src/tools/** - Individual tool implementations:
+  - **ListDocumentationFiles.ts** - File discovery and metadata extraction
+  - **TableOfContents.ts** - Section hierarchy parsing
+  - **ReadSections.ts** - Selective content reading
 - **MCP SDK** - Uses `@modelcontextprotocol/sdk` for server infrastructure and stdio transport
 - **TypeScript Configuration** - Targets ES2020 with CommonJS modules
 
@@ -77,6 +86,7 @@ The server follows the standard MCP pattern:
 Tools are implemented as:
 1. Tool definition in the `ListToolsRequestSchema` handler (name, description, inputSchema)
 2. Execution logic in the `CallToolRequestSchema` handler (case statement)
+3. Individual tool classes in `src/tools/` with `execute()` methods
 
 ## Adding New Tools
 
@@ -124,5 +134,22 @@ The server implements comprehensive error handling with structured error respons
 - **FILE_TOO_LARGE** - File exceeds size limits
 - **PARSE_ERROR** - Error parsing markdown or metadata
 - **FILE_SYSTEM_ERROR** - Error accessing documentation files
+- **UNKNOWN_TOOL** - Tool name not recognized
+- **INTERNAL_ERROR** - General internal server error
 
 All errors follow the JSON format specified in SPECIFICATION.md.
+
+## Development Notes
+
+### File Structure
+- Tool classes use dependency injection with `DocumentationConfig`
+- Markdown parsing supports ATX-style headers (`#`, `##`, etc.) but not Setext-style headers
+- Section IDs are generated using path-based conventions (lowercase, hyphens, forward slashes)
+- File size is displayed with 'kb' or 'b' suffixes for readability
+
+### Testing
+No test framework is currently configured. When adding tests, check `package.json` for the test script configuration.
+
+### Environment Variables
+- `DOCS_PATH` - Override default documentation directory
+- Configuration can be extended through the `DocumentationConfig` interface in `types.ts`
