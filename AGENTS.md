@@ -113,11 +113,19 @@ Example tool structure:
 
 ## Dependencies
 
+### Production Dependencies
 - **@modelcontextprotocol/sdk** - Core MCP server functionality
 - **js-yaml** - YAML front matter parsing
 - **glob** - File pattern matching
 - **tsx** - TypeScript execution for development
 - **typescript** - TypeScript compiler with strict mode enabled
+
+### Development Dependencies
+- **jest** - Testing framework
+- **@types/jest** - TypeScript types for Jest
+- **ts-jest** - Jest preset for TypeScript
+- **@types/js-yaml** - TypeScript types for js-yaml
+- **@types/node** - TypeScript types for Node.js
 
 ## Binary Distribution
 
@@ -139,6 +147,24 @@ The server implements comprehensive error handling with structured error respons
 
 All errors follow the JSON format specified in SPECIFICATION.md.
 
+## Recent Changes
+
+### Testing Implementation (Added 2025-10-10)
+- Comprehensive test suite added for all three tools with 29 tests
+- Jest framework configured with TypeScript support
+- Test coverage achieved: ~96% for tools folder
+- Test files created:
+  - `src/__tests__/ListDocumentationFiles.test.ts` - 12 tests
+  - `src/__tests__/TableOfContents.test.ts` - 8 tests  
+  - `src/__tests__/ReadSections.test.ts` - 9 tests
+- Test fixtures added for consistent testing scenarios
+- Proper mocking implemented for all external dependencies
+
+### Import Path Corrections
+- Fixed incorrect `.js` extensions in TypeScript imports
+- Updated source files to use proper TypeScript import conventions
+- Configured Jest to handle TypeScript module resolution correctly
+
 ## Development Notes
 
 ### File Structure
@@ -147,9 +173,75 @@ All errors follow the JSON format specified in SPECIFICATION.md.
 - Section IDs are generated using path-based conventions (lowercase, hyphens, forward slashes)
 - File size is displayed with 'kb' or 'b' suffixes for readability
 
+### TypeScript Import Conventions
+- **Source Files**: Use relative imports without file extensions for TypeScript modules (e.g., `import { Config } from '../types'`)
+- **Compiled Output**: TypeScript compiles to CommonJS modules in `dist/` directory
+- **Module Resolution**: The project uses Node.js module resolution with TypeScript's `moduleResolution: "node"`
+- **CommonJS Target**: Output uses CommonJS modules (`"module": "commonjs"` in tsconfig.json)
+
+### Common Pitfalls
+- **Import Extensions**: Do not use `.js` extensions when importing TypeScript modules within the source code
+- **Test Imports**: In test files, import TypeScript modules directly without extensions
+- **Jest Configuration**: Jest requires special configuration to handle TypeScript module resolution correctly
+- **Mocking**: When mocking modules, mock the actual TypeScript module, not the compiled JavaScript version
+
 ### Testing
-No test framework is currently configured. When adding tests, check `package.json` for the test script configuration.
+The project uses Jest for testing with TypeScript support. Test configuration is in `jest.config.js`.
+
+#### Test Commands
+- `npm test` - Run all tests
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:coverage` - Run tests with coverage report
+
+#### Test Structure
+- Tests are located in `src/__tests__/`
+- Test fixtures are in `src/__tests__/fixtures/`
+- Each tool has its own test file: `ListDocumentationFiles.test.ts`, `TableOfContents.test.ts`, `ReadSections.test.ts`
+
+#### Important Notes for Testing
+- **Import Paths**: Use `.ts` extensions when importing TypeScript modules in tests (not `.js`)
+- **Mocking**: Mock dependencies like `MarkdownParser` and `glob` using Jest's mock functionality
+- **Module Resolution**: Jest is configured to handle TypeScript module resolution correctly
+- **Coverage**: Current test coverage is ~96% for the tools folder
+
+#### Example Test Structure
+```typescript
+import { ToolName } from '../tools/ToolName';
+import { DocumentationConfig } from '../types';
+import { MarkdownParser } from '../MarkdownParser';
+
+// Mock dependencies
+jest.mock('../MarkdownParser');
+const mockMarkdownParser = MarkdownParser as jest.Mocked<typeof MarkdownParser>;
+```
 
 ### Environment Variables
 - `DOCS_PATH` - Override default documentation directory
 - Configuration can be extended through the `DocumentationConfig` interface in `types.ts`
+
+## Testing Best Practices
+
+### When Adding New Tests
+1. **Mock External Dependencies**: Always mock `MarkdownParser`, `glob`, and file system operations
+2. **Test Error Cases**: Include tests for all error conditions (file not found, invalid parameters, etc.)
+3. **Parameter Validation**: Test all input validation scenarios
+4. **Edge Cases**: Test empty arrays, null values, and malformed inputs
+5. **Coverage**: Aim for high test coverage (>90%) for tool implementations
+
+### Test File Naming
+- Use `.test.ts` extension for test files
+- Match test file names to source files (e.g., `ToolName.test.ts` for `ToolName.ts`)
+- Place tests in `src/__tests__/` directory
+
+### Mock Patterns
+```typescript
+// Mock MarkdownParser static methods
+jest.mock('../MarkdownParser');
+const mockMarkdownParser = MarkdownParser as jest.Mocked<typeof MarkdownParser>;
+
+// Setup mock return values
+mockMarkdownParser.validateFile.mockReturnValue({
+  valid: true,
+  stats: { size: 1024 } as fs.Stats
+});
+```
