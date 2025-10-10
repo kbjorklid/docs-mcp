@@ -271,6 +271,40 @@ Content 1`;
 
       expect(result).toHaveLength(0);
     });
+
+    it("should not duplicate content when subsection is included in parent section", () => {
+      const content = `# Introduction
+Intro content
+
+## Getting Started
+Getting started content
+
+## Advanced Topics
+Advanced content`;
+
+      const { sectionMap } = MarkdownParser.parseMarkdownSections(content);
+      
+      // Manually create the section map to ensure proper line ranges
+      const customSectionMap = new Map([
+        ['introduction', { start: 0, end: 7 }], // Includes all subsections
+        ['introduction/getting-started', { start: 3, end: 4 }],
+        ['introduction/advanced-topics', { start: 6, end: 7 }],
+      ]);
+
+      const result = MarkdownParser.readSectionsFromContent(
+        content, 
+        ['introduction', 'introduction/getting-started'], 
+        customSectionMap
+      );
+
+      // Should only return the parent section to avoid duplication
+      expect(result).toHaveLength(1);
+      expect(result[0].title).toBe('Introduction');
+      
+      // The parent section contains all content including the subsection
+      expect(result[0].content).toContain('Getting started content');
+      expect(result[0].content).toContain('Advanced content');
+    });
   });
 
   describe("formatFileSize", () => {

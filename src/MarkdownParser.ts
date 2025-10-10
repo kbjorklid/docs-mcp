@@ -120,7 +120,10 @@ export class MarkdownParser {
     const lines = content.split('\n');
     const results: SectionContent[] = [];
 
-    for (const sectionId of sectionIds) {
+    // Filter out subsections that are already included in requested parent sections
+    const filteredSectionIds = this.filterSubsections(sectionIds, sectionMap);
+
+    for (const sectionId of filteredSectionIds) {
       const range = sectionMap.get(sectionId);
       if (!range) {
         continue;
@@ -140,6 +143,51 @@ export class MarkdownParser {
     }
 
     return results;
+  }
+
+  /**
+   * Filter out subsections that are already included in requested parent sections
+   */
+  private static filterSubsections(
+    sectionIds: string[],
+    sectionMap: Map<string, { start: number; end: number }>
+  ): string[] {
+    const filteredIds: string[] = [];
+    
+    // Sort sections by hierarchy level (parents before children)
+    const sortedIds = [...sectionIds].sort((a, b) => {
+      const aLevel = a.split('/').length;
+      const bLevel = b.split('/').length;
+      return aLevel - bLevel;
+    });
+
+    for (const sectionId of sortedIds) {
+      const range = sectionMap.get(sectionId);
+      if (!range) {
+        // Section doesn't exist, keep it in the list to let the main method handle the error
+        filteredIds.push(sectionId);
+        continue;
+      }
+
+      // Check if this section is already included in any previously accepted section
+      let isAlreadyIncluded = false;
+      for (const acceptedId of filteredIds) {
+        const acceptedRange = sectionMap.get(acceptedId);
+        if (acceptedRange && 
+            range.start >= acceptedRange.start && 
+            range.end <= acceptedRange.end &&
+            sectionId.startsWith(acceptedId + '/')) {
+          isAlreadyIncluded = true;
+          break;
+        }
+      }
+
+      if (!isAlreadyIncluded) {
+        filteredIds.push(sectionId);
+      }
+    }
+
+    return filteredIds;
   }
 
   /**
