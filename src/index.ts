@@ -14,9 +14,17 @@ import { TableOfContents } from './tools/TableOfContents';
 import { ReadSections } from './tools/ReadSections';
 
 // Parse command line arguments
-function parseCommandLineArgs(): { docsPath?: string; maxTocDepth?: number } {
+function parseCommandLineArgs(): {
+  docsPath?: string;
+  maxTocDepth?: number;
+  discountSingleTopHeader?: boolean;
+} {
   const args = process.argv.slice(2);
-  const result: { docsPath?: string; maxTocDepth?: number } = {};
+  const result: {
+    docsPath?: string;
+    maxTocDepth?: number;
+    discountSingleTopHeader?: boolean;
+  } = {};
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--docs-path' || args[i] === '-d') {
@@ -32,6 +40,8 @@ function parseCommandLineArgs(): { docsPath?: string; maxTocDepth?: number } {
         }
         i++; // Skip the next argument
       }
+    } else if (args[i] === '--discount-single-top-header') {
+      result.discountSingleTopHeader = true;
     }
   }
 
@@ -50,6 +60,11 @@ export function createConfig(): DocumentationConfig {
   // Add max_toc_depth if provided via command line
   if (cliArgs.maxTocDepth !== undefined) {
     config.max_toc_depth = cliArgs.maxTocDepth;
+  }
+
+  // Add discount_single_top_header if provided via command line
+  if (cliArgs.discountSingleTopHeader !== undefined) {
+    config.discount_single_top_header = cliArgs.discountSingleTopHeader;
   }
 
   return config;

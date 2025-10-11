@@ -333,4 +333,247 @@ describe('TableOfContents', () => {
       });
     });
   });
+
+  describe('discount_single_top_header functionality', () => {
+    it('should not affect max depth when discount_single_top_header is disabled (default)', () => {
+      // Create config with discount_single_top_header: false (default)
+      const configWithoutDiscount = {
+        ...mockConfig,
+        discount_single_top_header: false,
+      };
+      const tocWithoutDiscount = new TableOfContents(configWithoutDiscount);
+
+      // Execute with single-top-header.md and max_depth: 2
+      const result = tocWithoutDiscount.execute('single-top-header.md', 2);
+
+      // Verify effective max depth is 2 (no discount applied)
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections).toHaveLength(4); // Main title + 3 sections (levels 1 and 2)
+
+      sections.forEach((section: any) => {
+        expect(section.level).toBeLessThanOrEqual(2);
+      });
+
+      // Verify specific sections are included
+      const titles = sections.map((s: any) => s.title);
+      expect(titles).toContain('Main Title');
+      expect(titles).toContain('Section 1');
+      expect(titles).toContain('Section 2');
+      expect(titles).toContain('Section 3');
+
+      // Verify deeper sections are excluded
+      expect(titles).not.toContain('Subsection 1.1');
+      expect(titles).not.toContain('Subsection 2.1');
+    });
+
+    it('should increase effective max depth by 1 when discount_single_top_header is enabled and document has single top header', () => {
+      // Create config with discount_single_top_header: true
+      const configWithDiscount = {
+        ...mockConfig,
+        discount_single_top_header: true,
+      };
+      const tocWithDiscount = new TableOfContents(configWithDiscount);
+
+      // Execute with single-top-header.md and max_depth: 2
+      const result = tocWithDiscount.execute('single-top-header.md', 2);
+
+      // Verify effective max depth is 3 (2 + 1 discount)
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections).toHaveLength(6); // Main title + 3 sections + 2 subsections (levels 1, 2, and 3 due to discount)
+
+      sections.forEach((section: any) => {
+        expect(section.level).toBeLessThanOrEqual(3);
+      });
+
+      // Verify level 3 sections are included (only possible with discount)
+      const titles = sections.map((s: any) => s.title);
+      expect(titles).toContain('Main Title');
+      expect(titles).toContain('Section 1');
+      expect(titles).toContain('Section 2');
+      expect(titles).toContain('Section 3');
+      expect(titles).toContain('Subsection 1.1');
+      expect(titles).toContain('Subsection 2.1');
+
+      // Verify level 4 sections are excluded
+      expect(titles).not.toContain('Sub-subsection 1.1.1');
+      expect(titles).not.toContain('Sub-subsection 2.1.1');
+    });
+
+    it('should increase effective max depth by 1 when discount_single_top_header is enabled and document has no top headers', () => {
+      // Create config with discount_single_top_header: true
+      const configWithDiscount = {
+        ...mockConfig,
+        discount_single_top_header: true,
+      };
+      const tocWithDiscount = new TableOfContents(configWithDiscount);
+
+      // Execute with no-top-headers.md and max_depth: 2
+      const result = tocWithDiscount.execute('no-top-headers.md', 2);
+
+      // Verify effective max depth is 3 (2 + 1 discount)
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections).toHaveLength(4); // 2 sections + 2 subsections (levels 2 and 3, but effectively 1 and 2 with discount)
+
+      sections.forEach((section: any) => {
+        expect(section.level).toBeLessThanOrEqual(3);
+      });
+
+      // Verify specific sections are included
+      const titles = sections.map((s: any) => s.title);
+      expect(titles).toContain('Section 1');
+      expect(titles).toContain('Section 2');
+      expect(titles).toContain('Subsection 1.1');
+      expect(titles).toContain('Subsection 2.1');
+
+      // Verify level 4 sections are excluded
+      expect(titles).not.toContain('Sub-subsection 1.1.1');
+      expect(titles).not.toContain('Sub-subsection 2.1.1');
+    });
+
+    it('should not affect max depth when discount_single_top_header is enabled but document has multiple top headers', () => {
+      // Create config with discount_single_top_header: true
+      const configWithDiscount = {
+        ...mockConfig,
+        discount_single_top_header: true,
+      };
+      const tocWithDiscount = new TableOfContents(configWithDiscount);
+
+      // Execute with multi-top-headers.md and max_depth: 2
+      const result = tocWithDiscount.execute('multi-top-headers.md', 2);
+
+      // Verify effective max depth is 2 (no discount applied due to multiple top headers)
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections).toHaveLength(5); // 3 top sections + 2 subsections (levels 1 and 2 only)
+
+      sections.forEach((section: any) => {
+        expect(section.level).toBeLessThanOrEqual(2);
+      });
+
+      // Verify specific sections are included
+      const titles = sections.map((s: any) => s.title);
+      expect(titles).toContain('First Top Section');
+      expect(titles).toContain('Second Top Section');
+      expect(titles).toContain('Third Top Section');
+      expect(titles).toContain('Subsection 1.1');
+      expect(titles).toContain('Subsection 2.1');
+
+      // Verify level 3 sections are excluded
+      expect(titles).not.toContain('Sub-subsection 1.1.1');
+      expect(titles).not.toContain('Sub-subsection 2.1.1');
+    });
+
+    it('should not affect behavior when max_depth is undefined even with discount_single_top_header enabled', () => {
+      // Create config with discount_single_top_header: true
+      const configWithDiscount = {
+        ...mockConfig,
+        discount_single_top_header: true,
+      };
+      const tocWithDiscount = new TableOfContents(configWithDiscount);
+
+      // Execute with single-top-header.md without max_depth parameter
+      const result = tocWithDiscount.execute('single-top-header.md');
+
+      // Verify all sections are returned (no max depth limit)
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections).toHaveLength(8); // All sections in the file
+
+      // Verify we have sections from all levels
+      const levels = sections.map((s: any) => s.level);
+      expect(levels).toContain(1);
+      expect(levels).toContain(2);
+      expect(levels).toContain(3);
+      expect(levels).toContain(4);
+    });
+
+    it('should not affect behavior when max_depth is 0 (disabled) even with discount_single_top_header enabled', () => {
+      // Create config with discount_single_top_header: true
+      const configWithDiscount = {
+        ...mockConfig,
+        discount_single_top_header: true,
+      };
+      const tocWithDiscount = new TableOfContents(configWithDiscount);
+
+      // Execute with single-top-header.md with max_depth: 0 (disabled)
+      const result = tocWithDiscount.execute('single-top-header.md', 0);
+
+      // Verify all sections are returned (max depth disabled)
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections).toHaveLength(8); // All sections
+
+      // Verify we have sections from all levels
+      const levels = sections.map((s: any) => s.level);
+      expect(levels).toContain(1);
+      expect(levels).toContain(2);
+      expect(levels).toContain(3);
+      expect(levels).toContain(4);
+    });
+
+    it('should work correctly with config-level max_toc_depth and discount_single_top_header', () => {
+      // Create config with both max_toc_depth and discount_single_top_header
+      const configWithBoth = {
+        ...mockConfig,
+        max_toc_depth: 2,
+        discount_single_top_header: true,
+      };
+      const tocWithBoth = new TableOfContents(configWithBoth);
+
+      // Execute with single-top-header.md without max_depth parameter
+      const result = tocWithBoth.execute('single-top-header.md');
+
+      // Verify effective max depth is 3 (config 2 + 1 discount)
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections).toHaveLength(6); // Main title + 3 sections + 2 subsections (levels 1, 2, and 3)
+
+      sections.forEach((section: any) => {
+        expect(section.level).toBeLessThanOrEqual(3);
+      });
+
+      // Verify level 3 sections are included
+      const titles = sections.map((s: any) => s.title);
+      expect(titles).toContain('Subsection 1.1');
+      expect(titles).toContain('Subsection 2.1');
+
+      // Verify level 4 sections are excluded
+      expect(titles).not.toContain('Sub-subsection 1.1.1');
+      expect(titles).not.toContain('Sub-subsection 2.1.1');
+    });
+
+    it('should prioritize parameter max_depth over config when discount_single_top_header is enabled', () => {
+      // Create config with max_toc_depth and discount_single_top_header
+      const configWithBoth = {
+        ...mockConfig,
+        max_toc_depth: 1,
+        discount_single_top_header: true,
+      };
+      const tocWithBoth = new TableOfContents(configWithBoth);
+
+      // Execute with single-top-header.md with max_depth: 2 parameter
+      const result = tocWithBoth.execute('single-top-header.md', 2);
+
+      // Verify effective max depth is 3 (parameter 2 + 1 discount, not config 1 + 1)
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections).toHaveLength(6); // Main title + 3 sections + 2 subsections (levels 1, 2, and 3)
+
+      sections.forEach((section: any) => {
+        expect(section.level).toBeLessThanOrEqual(3);
+      });
+
+      // Verify level 3 sections are included
+      const titles = sections.map((s: any) => s.title);
+      expect(titles).toContain('Subsection 1.1');
+      expect(titles).toContain('Subsection 2.1');
+
+      // Verify level 4 sections are excluded
+      expect(titles).not.toContain('Sub-subsection 1.1.1');
+      expect(titles).not.toContain('Sub-subsection 2.1.1');
+    });
+  });
 });

@@ -100,6 +100,7 @@ Note: You may need to edit `run.ps1` to specify your documentation path.
 
 - `--docs-path <path>` or `-d <path>` - Specify documentation directory
 - `--max-toc-depth <number>` - Set maximum depth for table of contents (default: unlimited)
+- `--discount-single-top-header` - Increase max depth by 1 for documents with single/no top-level headers
 - `--help` or `-h` - Show help information
 
 ### Path Configuration Precedence
@@ -119,8 +120,11 @@ npm start -- --docs-path /home/user/project-docs
 # Limit table of contents to top 2 levels
 npm start -- --max-toc-depth 2
 
-# Combine both options
-npm start -- --docs-path /home/user/project-docs --max-toc-depth 3
+# Enable discount for single top-level headers
+npm start -- --discount-single-top-header
+
+# Combine multiple options
+npm start -- --docs-path /home/user/project-docs --max-toc-depth 2 --discount-single-top-header
 
 # Use environment variable for multiple commands
 export DOCS_PATH=/home/user/project-docs
@@ -155,6 +159,63 @@ npm start -- --max-toc-depth 3
 npm start -- --max-toc-depth 0
 ```
 
+### Single Top Header Discount
+
+The `--discount-single-top-header` option enhances the max depth functionality for documents with simple structure:
+
+**When enabled, the server will:**
+- Count the number of top-level (`#`) headers in the document
+- If the document has **0 or 1** top-level headers: increase the effective max depth by 1
+- If the document has **2 or more** top-level headers: use the max depth as specified
+
+**This is useful for:**
+- Documents that start directly with `##` sections (no main title)
+- Simple documents with only one main chapter/section
+- Technical notes and articles with flat structure
+
+**Examples:**
+```bash
+# Enable discount for single top-level headers
+npm start -- --discount-single-top-header
+
+# Combine with max depth for optimal results
+npm start -- --max-toc-depth 2 --discount-single-top-header
+
+# Full example with custom path
+npm start -- --docs-path ./docs --max-toc-depth 2 --discount-single-top-header
+```
+
+**Behavior Examples:**
+
+1. **Document with single top header:**
+   ```
+   # Main Title
+   ## Section 1
+   ### Subsection 1.1
+   ## Section 2
+   ```
+   - With `--max-toc-depth 2` + `--discount-single-top-header`: Shows levels 1, 2, and 3
+   - With `--max-toc-depth 2` alone: Shows only levels 1 and 2
+
+2. **Document with no top headers:**
+   ```
+   ## Section 1
+   ### Subsection 1.1
+   ## Section 2
+   ```
+   - With `--max-toc-depth 2` + `--discount-single-top-header`: Shows levels 2 and 3
+   - With `--max-toc-depth 2` alone: Shows only level 2
+
+3. **Document with multiple top headers:**
+   ```
+   # Chapter 1
+   ## Section 1.1
+   # Chapter 2
+   ## Section 2.1
+   ```
+   - With `--max-toc-depth 2` + `--discount-single-top-header`: Shows levels 1 and 2 (no change)
+   - With `--max-toc-depth 2` alone: Shows levels 1 and 2 (no change)
+
 ## Usage Examples
 
 ### Basic Workflow
@@ -173,27 +234,6 @@ echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"table_of_c
 echo '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"read_sections","arguments":{"filename":"user-guide.md","section_ids":["introduction","getting-started"]}}}' | npm start -- --docs-path /path/to/your/docs
 ```
 
-### Advanced Examples
-
-```bash
-# Limit table of contents depth for large documents
-echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"table_of_contents","arguments":{"filename":"comprehensive-guide.md","max_depth":2}}}' | npm start -- --docs-path /path/to/your/docs
-
-# Use environment variable for persistent configuration
-export DOCS_PATH=/home/user/my-docs
-echo '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"list_documentation_files","arguments":{}}}' | npm start
-```
-
-### PowerShell Integration
-
-```powershell
-# Start server in background
-Start-Job -ScriptBlock { npm start -- --docs-path "C:\Docs" } -Name "MCPServer"
-
-# Use the server
-$tools = '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | npm start
-$files = '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_documentation_files","arguments":{}}}' | npm start -- --docs-path "C:\Docs"
-```
 
 ## Available Tools
 
@@ -218,6 +258,8 @@ Provides a structured table of contents for a markdown file, showing section hie
 - `0` - Disabled (returns all sections)
 - Not specified - Returns all sections (unlimited)
 
+**Single Top Header Discount:** When the `--discount-single-top-header` feature is enabled and the document has only one or no top-level (`#`) headers, the effective max depth will be increased by 1.
+
 **Precedence:** Tool parameter `max_depth` overrides command line `--max-toc-depth` setting.
 
 ### read_sections
@@ -227,26 +269,6 @@ Reads specific sections from a markdown file by their IDs.
 - `filename` (required) - The documentation file to read from
 - `section_ids` (required) - Array of section identifiers to read
 
-## Testing the Server
-
-You can verify the server is working by sending JSON-RPC messages:
-
-```bash
-# List available tools
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | npm start
-
-# List documentation files (with your docs path)
-echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_documentation_files","arguments":{}}}' | npm start -- --docs-path /path/to/your/docs
-
-# Get table of contents with max depth 2
-echo '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"table_of_contents","arguments":{"filename":"example.md","max_depth":2}}}' | npm start -- --docs-path /path/to/your/docs
-
-# Get table of contents with unlimited depth
-echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"table_of_contents","arguments":{"filename":"example.md"}}}' | npm start -- --docs-path /path/to/your/docs
-
-# Read specific sections
-echo '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"read_sections","arguments":{"filename":"example.md","section_ids":["section-id","another-section"]}}}' | npm start -- --docs-path /path/to/your/docs
-```
 
 ## Configuration Precedence
 
@@ -264,7 +286,3 @@ The server provides structured error responses with these error codes:
 - `PARSE_ERROR` - Error parsing markdown or metadata
 - `UNKNOWN_TOOL` - Tool name not recognized
 - `INTERNAL_ERROR` - General server errors
-
-## License
-
-ISC

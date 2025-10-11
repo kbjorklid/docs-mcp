@@ -7,6 +7,7 @@ export interface DocumentationConfig {
   exclude_patterns: string[];
   include_patterns: string[];
   max_toc_depth?: number;
+  discount_single_top_header?: boolean;
 }
 
 // File metadata interface
@@ -56,4 +57,5 @@ export const DEFAULT_CONFIG: DocumentationConfig = {
   max_file_size: 10485760, // 10MB
   exclude_patterns: ['node_modules/**', '*.tmp.md'],
   include_patterns: ['**/*.md'],
+  discount_single_top_header: false,
 };
