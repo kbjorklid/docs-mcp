@@ -1,7 +1,7 @@
 ---
 title: REST Conventions
 description: Conventions for RESTful API design, including naming conventions, versioning conventions, and best practices.
-keywords: ["REST", "RESTful", "HTTP", "API", "Design"]
+keywords: ['REST', 'RESTful', 'HTTP', 'API', 'Design']
 ---
 
 # REST Conventions

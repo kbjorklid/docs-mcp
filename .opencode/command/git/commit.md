@@ -9,19 +9,19 @@ User input: $ARGUMENTS
 
 ### GIT Status
 
-*Git status* (output of `git status -s`):
+_Git status_ (output of `git status -s`):
 !`git status -s`
 
-*Recent git commits* (output of `git log --oneline -5`):
+_Recent git commits_ (output of `git log --oneline -5`):
 !`git log --oneline -5`
 
-*Unstaged changes* (output of `git diff`):
+_Unstaged changes_ (output of `git diff`):
 !`git diff`
 
-*Staged changes* (output of `git diff --staged`):
+_Staged changes_ (output of `git diff --staged`):
 !`git diff --staged`
 
-Do not re-execute the commands mentioned above; trust that the output is correct. 
+Do not re-execute the commands mentioned above; trust that the output is correct.
 
 ## Your task
 

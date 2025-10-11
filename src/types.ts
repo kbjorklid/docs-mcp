@@ -47,13 +47,12 @@ export interface ErrorResponse {
   };
 }
 
-
 // Default configuration
 export const DEFAULT_CONFIG: DocumentationConfig = {
-  documentation_path: process.env.DOCS_PATH || "./docs",
+  documentation_path: process.env.DOCS_PATH || './docs',
   auto_index: true,
   index_refresh_interval: 300,
   max_file_size: 10485760, // 10MB
-  exclude_patterns: ["node_modules/**", "*.tmp.md"],
-  include_patterns: ["**/*.md"]
+  exclude_patterns: ['node_modules/**', '*.tmp.md'],
+  include_patterns: ['**/*.md'],
 };

@@ -24,7 +24,10 @@ describe('ReadSections', () => {
   describe('execute', () => {
     it('should return content for valid sections', () => {
       // Execute with test-doc.md and known sections
-      const result = readSections.execute('test-doc.md', ['introduction', 'getting-started']);
+      const result = readSections.execute('test-doc.md', [
+        'introduction',
+        'getting-started',
+      ]);
 
       // Verify
       expect(result.content).toHaveLength(1);
@@ -33,7 +36,9 @@ describe('ReadSections', () => {
       expect(sections[0].title).toBe('introduction');
       expect(sections[1].title).toBe('getting-started');
       expect(sections[0].content).toContain('This is the introduction section');
-      expect(sections[1].content).toContain('This is the getting started section');
+      expect(sections[1].content).toContain(
+        'This is the getting started section'
+      );
     });
 
     it('should return error when filename is not provided', () => {
@@ -44,7 +49,9 @@ describe('ReadSections', () => {
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
-      expect(errorResponse.error.message).toBe('filename parameter is required');
+      expect(errorResponse.error.message).toBe(
+        'filename parameter is required'
+      );
     });
 
     it('should return error when section_ids is not provided', () => {
@@ -55,7 +62,9 @@ describe('ReadSections', () => {
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
-      expect(errorResponse.error.message).toBe('section_ids parameter must be a non-empty array');
+      expect(errorResponse.error.message).toBe(
+        'section_ids parameter must be a non-empty array'
+      );
     });
 
     it('should return error when section_ids is empty array', () => {
@@ -66,7 +75,9 @@ describe('ReadSections', () => {
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
-      expect(errorResponse.error.message).toBe('section_ids parameter must be a non-empty array');
+      expect(errorResponse.error.message).toBe(
+        'section_ids parameter must be a non-empty array'
+      );
     });
 
     it('should return error when section_ids is not an array', () => {
@@ -77,7 +88,9 @@ describe('ReadSections', () => {
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
-      expect(errorResponse.error.message).toBe('section_ids parameter must be a non-empty array');
+      expect(errorResponse.error.message).toBe(
+        'section_ids parameter must be a non-empty array'
+      );
     });
 
     it('should handle file not found error', () => {
@@ -88,7 +101,9 @@ describe('ReadSections', () => {
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('FILE_NOT_FOUND');
-      expect(errorResponse.error.message).toBe('The specified file was not found');
+      expect(errorResponse.error.message).toBe(
+        'The specified file was not found'
+      );
       expect(errorResponse.error.details.filename).toBe('nonexistent.md');
       expect(errorResponse.error.details.search_path).toBe(fixturesPath);
     });
@@ -101,25 +116,38 @@ describe('ReadSections', () => {
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('SECTION_NOT_FOUND');
-      expect(errorResponse.error.message).toBe('One or more requested sections were not found');
+      expect(errorResponse.error.message).toBe(
+        'One or more requested sections were not found'
+      );
       expect(errorResponse.error.details.filename).toBe('test-doc.md');
-      expect(errorResponse.error.details.missing_sections).toEqual(['nonexistent']);
+      expect(errorResponse.error.details.missing_sections).toEqual([
+        'nonexistent',
+      ]);
     });
 
     it('should handle multiple missing sections', () => {
       // Execute with multiple non-existent sections
-      const result = readSections.execute('test-doc.md', ['missing1', 'missing2']);
+      const result = readSections.execute('test-doc.md', [
+        'missing1',
+        'missing2',
+      ]);
 
       // Verify error response
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('SECTION_NOT_FOUND');
-      expect(errorResponse.error.details.missing_sections).toEqual(['missing1', 'missing2']);
+      expect(errorResponse.error.details.missing_sections).toEqual([
+        'missing1',
+        'missing2',
+      ]);
     });
 
     it('should handle partial section matches', () => {
       // Execute with one existing and one non-existent section
-      const result = readSections.execute('test-doc.md', ['introduction', 'missing']);
+      const result = readSections.execute('test-doc.md', [
+        'introduction',
+        'missing',
+      ]);
 
       // Verify error response
       expect(result.content).toHaveLength(1);
@@ -143,7 +171,9 @@ describe('ReadSections', () => {
 
     it('should handle nested sections', () => {
       // Execute with nested-sections.md
-      const result = readSections.execute('nested-sections.md', ['main-section/subsection-one']);
+      const result = readSections.execute('nested-sections.md', [
+        'main-section/subsection-one',
+      ]);
 
       // Verify nested section is returned
       const sections = JSON.parse(result.content[0].text);
@@ -154,13 +184,17 @@ describe('ReadSections', () => {
 
     it('should handle file without frontmatter', () => {
       // Execute with no-frontmatter.md
-      const result = readSections.execute('no-frontmatter.md', ['simple-document']);
+      const result = readSections.execute('no-frontmatter.md', [
+        'simple-document',
+      ]);
 
       // Verify section is returned correctly
       const sections = JSON.parse(result.content[0].text);
       expect(sections).toHaveLength(1);
       expect(sections[0].title).toBe('simple-document');
-      expect(sections[0].content).toContain('This document has no front matter');
+      expect(sections[0].content).toContain(
+        'This document has no front matter'
+      );
     });
   });
 });

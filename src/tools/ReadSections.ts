@@ -1,6 +1,6 @@
-import * as path from "path";
-import { SectionContent, DocumentationConfig, ErrorResponse } from "../types";
-import { MarkdownParser } from "../MarkdownParser";
+import * as path from 'path';
+import { SectionContent, DocumentationConfig, ErrorResponse } from '../types';
+import { MarkdownParser } from '../MarkdownParser';
 
 export class ReadSections {
   private config: DocumentationConfig;
@@ -14,24 +14,25 @@ export class ReadSections {
    */
   static getToolDefinition() {
     return {
-      name: "read_sections",
-      description: "Reads specific sections from a markdown file",
+      name: 'read_sections',
+      description: 'Reads specific sections from a markdown file',
       inputSchema: {
-        type: "object",
+        type: 'object',
         properties: {
           filename: {
-            type: "string",
-            description: "Path to the markdown file relative to the documentation folder",
+            type: 'string',
+            description:
+              'Path to the markdown file relative to the documentation folder',
           },
           section_ids: {
-            type: "array",
+            type: 'array',
             items: {
-              type: "string",
+              type: 'string',
             },
-            description: "Array of section identifiers to read",
+            description: 'Array of section identifiers to read',
           },
         },
-        required: ["filename", "section_ids"],
+        required: ['filename', 'section_ids'],
       },
     };
   }
@@ -44,14 +45,14 @@ export class ReadSections {
     if (!filename) {
       const errorResponse: ErrorResponse = {
         error: {
-          code: "INVALID_PARAMETER",
-          message: "filename parameter is required",
+          code: 'INVALID_PARAMETER',
+          message: 'filename parameter is required',
         },
       };
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(errorResponse, null, 2),
           },
         ],
@@ -62,14 +63,14 @@ export class ReadSections {
     if (!sectionIds || !Array.isArray(sectionIds) || sectionIds.length === 0) {
       const errorResponse: ErrorResponse = {
         error: {
-          code: "INVALID_PARAMETER",
-          message: "section_ids parameter must be a non-empty array",
+          code: 'INVALID_PARAMETER',
+          message: 'section_ids parameter must be a non-empty array',
         },
       };
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(errorResponse, null, 2),
           },
         ],
@@ -81,7 +82,7 @@ export class ReadSections {
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(sections, null, 2),
           },
         ],
@@ -89,12 +90,12 @@ export class ReadSections {
     } catch (error) {
       // Handle specific error types
       if (error instanceof Error) {
-        if (error.message.startsWith("FILE_NOT_FOUND")) {
-          const filename = error.message.split(": ")[1];
+        if (error.message.startsWith('FILE_NOT_FOUND')) {
+          const filename = error.message.split(': ')[1];
           const errorResponse: ErrorResponse = {
             error: {
-              code: "FILE_NOT_FOUND",
-              message: "The specified file was not found",
+              code: 'FILE_NOT_FOUND',
+              message: 'The specified file was not found',
               details: {
                 filename,
                 search_path: this.config.documentation_path,
@@ -104,17 +105,17 @@ export class ReadSections {
           return {
             content: [
               {
-                type: "text",
+                type: 'text',
                 text: JSON.stringify(errorResponse, null, 2),
               },
             ],
           };
-        } else if (error.message.startsWith("FILE_TOO_LARGE")) {
-          const filename = error.message.split(": ")[1];
+        } else if (error.message.startsWith('FILE_TOO_LARGE')) {
+          const filename = error.message.split(': ')[1];
           const errorResponse: ErrorResponse = {
             error: {
-              code: "FILE_TOO_LARGE",
-              message: "File exceeds size limits",
+              code: 'FILE_TOO_LARGE',
+              message: 'File exceeds size limits',
               details: {
                 filename,
                 max_size: this.config.max_file_size,
@@ -124,19 +125,19 @@ export class ReadSections {
           return {
             content: [
               {
-                type: "text",
+                type: 'text',
                 text: JSON.stringify(errorResponse, null, 2),
               },
             ],
           };
-        } else if (error.message.startsWith("SECTION_NOT_FOUND")) {
-          const parts = error.message.split(": ");
+        } else if (error.message.startsWith('SECTION_NOT_FOUND')) {
+          const parts = error.message.split(': ');
           const filename = parts[1];
           const missingSections = JSON.parse(parts[2]);
           const errorResponse: ErrorResponse = {
             error: {
-              code: "SECTION_NOT_FOUND",
-              message: "One or more requested sections were not found",
+              code: 'SECTION_NOT_FOUND',
+              message: 'One or more requested sections were not found',
               details: {
                 filename,
                 missing_sections: missingSections,
@@ -146,7 +147,7 @@ export class ReadSections {
           return {
             content: [
               {
-                type: "text",
+                type: 'text',
                 text: JSON.stringify(errorResponse, null, 2),
               },
             ],
@@ -157,8 +158,8 @@ export class ReadSections {
       // Generic error handling
       const errorResponse: ErrorResponse = {
         error: {
-          code: "PARSE_ERROR",
-          message: "Error parsing markdown file",
+          code: 'PARSE_ERROR',
+          message: 'Error parsing markdown file',
           details: {
             filename,
             error,
@@ -168,7 +169,7 @@ export class ReadSections {
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(errorResponse, null, 2),
           },
         ],
@@ -179,15 +180,21 @@ export class ReadSections {
   /**
    * Read specific sections from a markdown file
    */
-  private readSections(filename: string, sectionIds: string[]): SectionContent[] {
+  private readSections(
+    filename: string,
+    sectionIds: string[]
+  ): SectionContent[] {
     const fullPath = path.resolve(this.config.documentation_path, filename);
 
     // Check if file exists
-    const validation = MarkdownParser.validateFile(fullPath, this.config.max_file_size);
+    const validation = MarkdownParser.validateFile(
+      fullPath,
+      this.config.max_file_size
+    );
     if (!validation.valid) {
-      if (validation.error === "File not found") {
+      if (validation.error === 'File not found') {
         throw new Error(`FILE_NOT_FOUND: ${filename}`);
-      } else if (validation.error === "File too large") {
+      } else if (validation.error === 'File too large') {
         throw new Error(`FILE_TOO_LARGE: ${filename}`);
       } else {
         throw new Error(validation.error);
@@ -199,13 +206,19 @@ export class ReadSections {
     const { sectionMap } = MarkdownParser.parseMarkdownSections(content);
 
     // Check if all requested sections exist
-    const missingSections = sectionIds.filter(id => !sectionMap.has(id));
+    const missingSections = sectionIds.filter((id) => !sectionMap.has(id));
     if (missingSections.length > 0) {
-      throw new Error(`SECTION_NOT_FOUND: ${filename}: ${JSON.stringify(missingSections)}`);
+      throw new Error(
+        `SECTION_NOT_FOUND: ${filename}: ${JSON.stringify(missingSections)}`
+      );
     }
 
     // Read the requested sections
-    const sections = MarkdownParser.readSectionsFromContent(content, sectionIds, sectionMap);
+    const sections = MarkdownParser.readSectionsFromContent(
+      content,
+      sectionIds,
+      sectionMap
+    );
     return sections;
   }
 }

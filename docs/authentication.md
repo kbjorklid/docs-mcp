@@ -1,7 +1,7 @@
 ---
 title: Authentication Guide
 description: Comprehensive guide to API authentication methods and security best practices.
-keywords: ["Authentication", "Security", "API", "JWT", "OAuth"]
+keywords: ['Authentication', 'Security', 'API', 'JWT', 'OAuth']
 ---
 
 # Authentication Guide

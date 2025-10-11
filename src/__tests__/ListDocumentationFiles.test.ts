@@ -30,7 +30,7 @@ describe('ListDocumentationFiles', () => {
       expect(result.content).toHaveLength(1);
       const files = JSON.parse(result.content[0].text);
       expect(files).toHaveLength(4); // All fixture files
-      
+
       // Check test-doc.md has proper metadata
       const testDoc = files.find((f: any) => f.filename === 'test-doc.md');
       expect(testDoc).toEqual({
@@ -42,7 +42,9 @@ describe('ListDocumentationFiles', () => {
       });
 
       // Check no-frontmatter.md uses filename as title
-      const noFrontmatter = files.find((f: any) => f.filename === 'no-frontmatter.md');
+      const noFrontmatter = files.find(
+        (f: any) => f.filename === 'no-frontmatter.md'
+      );
       expect(noFrontmatter).toEqual({
         filename: 'no-frontmatter.md',
         title: 'no-frontmatter',
@@ -58,7 +60,9 @@ describe('ListDocumentationFiles', () => {
         ...mockConfig,
         documentation_path: '/non/existent/path',
       };
-      const invalidListDocumentationFiles = new ListDocumentationFiles(invalidConfig);
+      const invalidListDocumentationFiles = new ListDocumentationFiles(
+        invalidConfig
+      );
 
       // Execute
       const result = await invalidListDocumentationFiles.execute();
@@ -75,7 +79,9 @@ describe('ListDocumentationFiles', () => {
         ...mockConfig,
         include_patterns: ['**/*.md', '**/*.txt'],
       };
-      const multiPatternListDocumentationFiles = new ListDocumentationFiles(multiPatternConfig);
+      const multiPatternListDocumentationFiles = new ListDocumentationFiles(
+        multiPatternConfig
+      );
 
       // Execute
       const result = await multiPatternListDocumentationFiles.execute();
@@ -84,7 +90,7 @@ describe('ListDocumentationFiles', () => {
       expect(result.content).toHaveLength(1);
       const files = JSON.parse(result.content[0].text);
       expect(files.length).toBeGreaterThan(0);
-      
+
       // All files should be .md files from fixtures
       files.forEach((file: any) => {
         expect(file.filename).toMatch(/\.md$/);

@@ -30,14 +30,14 @@ describe('TableOfContents', () => {
       expect(result.content).toHaveLength(1);
       const sections = JSON.parse(result.content[0].text);
       expect(sections).toHaveLength(5); // Introduction, Getting Started, Installation, Configuration, Advanced Topics
-      
+
       expect(sections[0]).toEqual({
         id: 'introduction',
         title: 'Introduction',
         level: 1,
         character_count: expect.any(Number),
       });
-      
+
       expect(sections[1]).toEqual({
         id: 'getting-started',
         title: 'Getting Started',
@@ -54,7 +54,9 @@ describe('TableOfContents', () => {
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
-      expect(errorResponse.error.message).toBe('filename parameter is required');
+      expect(errorResponse.error.message).toBe(
+        'filename parameter is required'
+      );
     });
 
     it('should return error when filename is null', () => {
@@ -96,7 +98,7 @@ describe('TableOfContents', () => {
       // Verify nested structure
       const sections = JSON.parse(result.content[0].text);
       expect(sections.length).toBeGreaterThan(0);
-      
+
       // Check for nested section IDs
       const nestedSection = sections.find((s: any) => s.id.includes('/'));
       expect(nestedSection).toBeDefined();

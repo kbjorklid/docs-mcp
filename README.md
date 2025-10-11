@@ -22,6 +22,7 @@ npm install
 The easiest way to run the MCP server is using the PowerShell scripts:
 
 #### From Project Directory
+
 ```powershell
 # Production mode (builds and runs)
 .\run-mcp-server.ps1
@@ -37,6 +38,7 @@ The easiest way to run the MCP server is using the PowerShell scripts:
 ```
 
 #### From Any Directory
+
 ```powershell
 # Run from anywhere using the global launcher
 hello-world-mcp.ps1
@@ -48,6 +50,7 @@ hello-world-mcp.ps1 -Development
 ### Manual Usage
 
 #### Development
+
 Run the server in development mode with TypeScript:
 
 ```bash
@@ -55,6 +58,7 @@ npm run dev
 ```
 
 #### Production
+
 Build and run the server:
 
 ```bash
@@ -67,11 +71,13 @@ npm start
 You can test the server by sending JSON-RPC messages via stdin:
 
 1. List available tools:
+
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | npm start
 ```
 
 2. Call the hello_world tool:
+
 ```bash
 echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"hello_world","arguments":{"name":"Your Name"}}}' | npm start
 ```
@@ -83,9 +89,11 @@ echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"hello_worl
 A simple greeting tool that returns a friendly hello message.
 
 **Parameters:**
+
 - `name` (optional, string): The name to greet. Defaults to "World" if not provided.
 
 **Example Response:**
+
 ```json
 {
   "content": [

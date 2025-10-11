@@ -18,7 +18,7 @@ Each `.md` file may optionally include a YAML front matter section with metadata
 ---
 Title: REST Conventions
 Description: Conventions for RESTful API design, including naming conventions, versioning conventions, and best practices.
-Keywords: ["REST", "RESTful", "HTTP", "API", "Design"]
+Keywords: ['REST', 'RESTful', 'HTTP', 'API', 'Design']
 ---
 ```
 
@@ -39,6 +39,7 @@ None
 
 **Returns:**
 Array of file objects with:
+
 - `filename`: Relative path to the file (relative from the main documentation folder)
 - `title`: Document title from metadata or filename
 - `description`: Document description
@@ -50,10 +51,12 @@ Array of file objects with:
 Provides a structured table of contents for a markdown file.
 
 **Parameters:**
+
 - `filename`: Path to the markdown file
 
 **Returns:**
 Array of section objects with:
+
 - `id`: Section identifier (path-based)
 - `title`: Header text
 - `level`: Header level (1-6)
@@ -64,14 +67,15 @@ Array of section objects with:
 Reads specific sections from a markdown file.
 
 **Parameters:**
+
 - `filename`: Path to the markdown file
 - `section_ids`: Array of section identifiers to read
 
 **Returns:**
 Array of section objects with:
+
 - `title`: Header text
 - `content`: Section content
-
 
 ## Data Structures
 
@@ -80,6 +84,7 @@ Array of section objects with:
 A section consists of a markdown header and all content up to the next header of the same or higher level.
 
 **Example:**
+
 ```markdown
 # REST Conventions
 
@@ -91,17 +96,20 @@ Welcome to REST conventions...
 ```
 
 Here:
+
 - Section 1: `# REST Conventions` + its content (including the ## Introduction subsection)
 - Section 2: `## Introduction` + its content
 
 ### Section Identifier
 
 Section IDs are path-based identifiers derived from header text:
+
 - Convert to lowercase
 - Replace spaces and special characters with hyphens
 - Use forward slashes for hierarchical structure
 
 **Example Mapping:**
+
 - `# REST Conventions` → `rest-conventions`
 - `## Introduction` → `rest-conventions/introduction`
 - `### HTTP Methods` → `rest-conventions/introduction/http-methods`
@@ -109,6 +117,7 @@ Section IDs are path-based identifiers derived from header text:
 ### Section Hierarchy
 
 The system maintains the natural hierarchy of markdown headers:
+
 - H1 (`#`) → Level 1 (document root)
 - H2 (`##`) → Level 2
 - H3 (`###`) → Level 3

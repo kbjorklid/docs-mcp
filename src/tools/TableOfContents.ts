@@ -1,6 +1,6 @@
-import * as path from "path";
-import { Section, DocumentationConfig, ErrorResponse } from "../types";
-import { MarkdownParser } from "../MarkdownParser";
+import * as path from 'path';
+import { Section, DocumentationConfig, ErrorResponse } from '../types';
+import { MarkdownParser } from '../MarkdownParser';
 
 export class TableOfContents {
   private config: DocumentationConfig;
@@ -14,17 +14,19 @@ export class TableOfContents {
    */
   static getToolDefinition() {
     return {
-      name: "table_of_contents",
-      description: "Provides a structured table of contents for a markdown file",
+      name: 'table_of_contents',
+      description:
+        'Provides a structured table of contents for a markdown file',
       inputSchema: {
-        type: "object",
+        type: 'object',
         properties: {
           filename: {
-            type: "string",
-            description: "Path to the markdown file relative to the documentation folder",
+            type: 'string',
+            description:
+              'Path to the markdown file relative to the documentation folder',
           },
         },
-        required: ["filename"],
+        required: ['filename'],
       },
     };
   }
@@ -37,14 +39,14 @@ export class TableOfContents {
     if (!filename) {
       const errorResponse: ErrorResponse = {
         error: {
-          code: "INVALID_PARAMETER",
-          message: "filename parameter is required",
+          code: 'INVALID_PARAMETER',
+          message: 'filename parameter is required',
         },
       };
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(errorResponse, null, 2),
           },
         ],
@@ -56,7 +58,7 @@ export class TableOfContents {
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(sections, null, 2),
           },
         ],
@@ -64,8 +66,8 @@ export class TableOfContents {
     } catch (error) {
       const errorResponse: ErrorResponse = {
         error: {
-          code: "PARSE_ERROR",
-          message: "Error parsing markdown file",
+          code: 'PARSE_ERROR',
+          message: 'Error parsing markdown file',
           details: {
             filename,
             error,
@@ -75,7 +77,7 @@ export class TableOfContents {
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(errorResponse, null, 2),
           },
         ],
@@ -90,11 +92,14 @@ export class TableOfContents {
     const fullPath = path.resolve(this.config.documentation_path, filename);
 
     // Check if file exists
-    const validation = MarkdownParser.validateFile(fullPath, this.config.max_file_size);
+    const validation = MarkdownParser.validateFile(
+      fullPath,
+      this.config.max_file_size
+    );
     if (!validation.valid) {
-      if (validation.error === "File not found") {
+      if (validation.error === 'File not found') {
         throw new Error(`FILE_NOT_FOUND: ${filename}`);
-      } else if (validation.error === "File too large") {
+      } else if (validation.error === 'File too large') {
         throw new Error(`FILE_TOO_LARGE: ${filename}`);
       } else {
         throw new Error(validation.error);

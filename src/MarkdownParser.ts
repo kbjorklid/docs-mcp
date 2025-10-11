@@ -1,13 +1,16 @@
-import * as fs from "fs";
-import * as path from "path";
-import * as yaml from "js-yaml";
-import { FileMetadata, Section, SectionContent } from "./types.js";
+import * as fs from 'fs';
+import * as path from 'path';
+import * as yaml from 'js-yaml';
+import { FileMetadata, Section, SectionContent } from './types.js';
 
 export class MarkdownParser {
   /**
    * Parse YAML front matter from markdown content
    */
-  static parseFrontMatter(content: string): { metadata: FileMetadata; content: string } {
+  static parseFrontMatter(content: string): {
+    metadata: FileMetadata;
+    content: string;
+  } {
     const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
     const match = content.match(frontMatterRegex);
 
@@ -19,7 +22,7 @@ export class MarkdownParser {
       const metadata = yaml.load(match[1]) as FileMetadata;
       return { metadata, content: match[2] };
     } catch (error) {
-      console.error("Error parsing YAML front matter:", error);
+      console.error('Error parsing YAML front matter:', error);
       return { metadata: {}, content };
     }
   }
@@ -30,10 +33,10 @@ export class MarkdownParser {
   static generateSectionId(title: string): string {
     return title
       .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   }
 
   /**
@@ -41,14 +44,24 @@ export class MarkdownParser {
    */
   static parseMarkdownSections(content: string): {
     sections: Section[];
-    sectionMap: Map<string, { start: number; end: number }>
+    sectionMap: Map<string, { start: number; end: number }>;
   } {
     const lines = content.split('\n');
     const sections: Section[] = [];
     const sectionMap = new Map<string, { start: number; end: number }>();
 
-    let currentSection: { id: string; title: string; level: number; startLine: number } | null = null;
-    const sectionStack: { id: string; title: string; level: number; startLine: number }[] = [];
+    let currentSection: {
+      id: string;
+      title: string;
+      level: number;
+      startLine: number;
+    } | null = null;
+    const sectionStack: {
+      id: string;
+      title: string;
+      level: number;
+      startLine: number;
+    }[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -63,12 +76,15 @@ export class MarkdownParser {
         if (currentSection) {
           sectionMap.set(currentSection.id, {
             start: currentSection.startLine,
-            end: i - 1
+            end: i - 1,
           });
         }
 
         // Build hierarchical ID
-        while (sectionStack.length > 0 && sectionStack[sectionStack.length - 1].level >= level) {
+        while (
+          sectionStack.length > 0 &&
+          sectionStack[sectionStack.length - 1].level >= level
+        ) {
           sectionStack.pop();
         }
 
@@ -84,7 +100,7 @@ export class MarkdownParser {
           id,
           title,
           level,
-          character_count: 0 // Will be calculated later
+          character_count: 0, // Will be calculated later
         });
       }
     }
@@ -93,12 +109,12 @@ export class MarkdownParser {
     if (currentSection) {
       sectionMap.set(currentSection.id, {
         start: currentSection.startLine,
-        end: lines.length - 1
+        end: lines.length - 1,
       });
     }
 
     // Calculate character counts
-    sections.forEach(section => {
+    sections.forEach((section) => {
       const range = sectionMap.get(section.id);
       if (range) {
         const sectionLines = lines.slice(range.start, range.end + 1);
@@ -138,7 +154,7 @@ export class MarkdownParser {
 
       results.push({
         title,
-        content: sectionContent
+        content: sectionContent,
       });
     }
 
@@ -153,7 +169,7 @@ export class MarkdownParser {
     sectionMap: Map<string, { start: number; end: number }>
   ): string[] {
     const filteredIds: string[] = [];
-    
+
     // Sort sections by hierarchy level (parents before children)
     const sortedIds = [...sectionIds].sort((a, b) => {
       const aLevel = a.split('/').length;
@@ -173,10 +189,12 @@ export class MarkdownParser {
       let isAlreadyIncluded = false;
       for (const acceptedId of filteredIds) {
         const acceptedRange = sectionMap.get(acceptedId);
-        if (acceptedRange && 
-            range.start >= acceptedRange.start && 
-            range.end <= acceptedRange.end &&
-            sectionId.startsWith(acceptedId + '/')) {
+        if (
+          acceptedRange &&
+          range.start >= acceptedRange.start &&
+          range.end <= acceptedRange.end &&
+          sectionId.startsWith(acceptedId + '/')
+        ) {
           isAlreadyIncluded = true;
           break;
         }
@@ -203,7 +221,10 @@ export class MarkdownParser {
   /**
    * Read and parse a markdown file
    */
-  static readMarkdownFile(filePath: string): { content: string; metadata: FileMetadata } {
+  static readMarkdownFile(filePath: string): {
+    content: string;
+    metadata: FileMetadata;
+  } {
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     return this.parseFrontMatter(fileContent);
   }
@@ -211,15 +232,18 @@ export class MarkdownParser {
   /**
    * Check if file exists and is within size limits
    */
-  static validateFile(filePath: string, maxSize: number): { valid: boolean; error?: string; stats?: fs.Stats } {
+  static validateFile(
+    filePath: string,
+    maxSize: number
+  ): { valid: boolean; error?: string; stats?: fs.Stats } {
     try {
       if (!fs.existsSync(filePath)) {
-        return { valid: false, error: "File not found" };
+        return { valid: false, error: 'File not found' };
       }
 
       const stats = fs.statSync(filePath);
       if (stats.size > maxSize) {
-        return { valid: false, error: "File too large" };
+        return { valid: false, error: 'File too large' };
       }
 
       return { valid: true, stats };

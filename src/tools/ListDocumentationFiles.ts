@@ -1,7 +1,7 @@
-import { glob } from "glob";
-import * as path from "path";
-import { FileInfo, DocumentationConfig, ErrorResponse } from "../types";
-import { MarkdownParser } from "../MarkdownParser";
+import { glob } from 'glob';
+import * as path from 'path';
+import { FileInfo, DocumentationConfig, ErrorResponse } from '../types';
+import { MarkdownParser } from '../MarkdownParser';
 
 export class ListDocumentationFiles {
   private config: DocumentationConfig;
@@ -15,10 +15,11 @@ export class ListDocumentationFiles {
    */
   static getToolDefinition() {
     return {
-      name: "list_documentation_files",
-      description: "Lists all available documentation files with their metadata",
+      name: 'list_documentation_files',
+      description:
+        'Lists all available documentation files with their metadata',
       inputSchema: {
-        type: "object",
+        type: 'object',
         properties: {},
         required: [],
       },
@@ -34,7 +35,7 @@ export class ListDocumentationFiles {
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(files, null, 2),
           },
         ],
@@ -42,15 +43,15 @@ export class ListDocumentationFiles {
     } catch (error) {
       const errorResponse: ErrorResponse = {
         error: {
-          code: "FILE_SYSTEM_ERROR",
-          message: "Error accessing documentation files",
+          code: 'FILE_SYSTEM_ERROR',
+          message: 'Error accessing documentation files',
           details: error,
         },
       };
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(errorResponse, null, 2),
           },
         ],
@@ -90,7 +91,10 @@ export class ListDocumentationFiles {
     const fullPath = path.resolve(this.config.documentation_path, filePath);
 
     try {
-      const validation = MarkdownParser.validateFile(fullPath, this.config.max_file_size);
+      const validation = MarkdownParser.validateFile(
+        fullPath,
+        this.config.max_file_size
+      );
       if (!validation.valid || !validation.stats) {
         return null;
       }
