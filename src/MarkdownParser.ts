@@ -46,7 +46,9 @@ export class MarkdownParser {
     sections: Section[];
     sectionMap: Map<string, { start: number; end: number }>;
   } {
-    const lines = content.split('\n');
+    // Normalize line endings to handle both Windows (\r\n) and Unix (\n) line endings
+    const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = normalizedContent.split('\n');
     const sections: Section[] = [];
     const sectionMap = new Map<string, { start: number; end: number }>();
 
