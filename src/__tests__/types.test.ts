@@ -10,6 +10,8 @@ describe('Types', () => {
         max_file_size: 10485760,
         exclude_patterns: ['node_modules/**', '*.tmp.md'],
         include_patterns: ['**/*.md'],
+        max_toc_depth: undefined,
+        discount_single_top_header: false,
       });
     });
 

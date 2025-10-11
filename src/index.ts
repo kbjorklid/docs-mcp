@@ -12,6 +12,7 @@ import { DEFAULT_CONFIG, DocumentationConfig } from './types';
 import { ListDocumentationFiles } from './tools/ListDocumentationFiles';
 import { TableOfContents } from './tools/TableOfContents';
 import { ReadSections } from './tools/ReadSections';
+import { Search } from './tools/Search';
 
 // Parse command line arguments
 function parseCommandLineArgs(): {
@@ -76,6 +77,7 @@ const config = createConfig();
 const listDocumentationFiles = new ListDocumentationFiles(config);
 const tableOfContents = new TableOfContents(config);
 const readSections = new ReadSections(config);
+const search = new Search(config);
 
 // Create MCP server
 const server = new Server(
@@ -97,6 +99,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       ListDocumentationFiles.getToolDefinition(),
       TableOfContents.getToolDefinition(),
       ReadSections.getToolDefinition(),
+      Search.getToolDefinition(),
     ],
   };
 });
@@ -118,6 +121,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const filename = request.params.arguments?.filename as string;
         const sectionIds = request.params.arguments?.section_ids as string[];
         return readSections.execute(filename, sectionIds);
+      }
+
+      case 'search': {
+        const query = request.params.arguments?.query as string;
+        const filename = request.params.arguments?.filename as string | undefined;
+        return await search.execute(query, filename);
       }
 
       default:
