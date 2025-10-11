@@ -8,10 +8,10 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 // Import tool classes
-import { DEFAULT_CONFIG, DocumentationConfig } from './types.js';
-import { ListDocumentationFiles } from './tools/ListDocumentationFiles.js';
-import { TableOfContents } from './tools/TableOfContents.js';
-import { ReadSections } from './tools/ReadSections.js';
+import { DEFAULT_CONFIG, DocumentationConfig } from './types';
+import { ListDocumentationFiles } from './tools/ListDocumentationFiles';
+import { TableOfContents } from './tools/TableOfContents';
+import { ReadSections } from './tools/ReadSections';
 
 // Parse command line arguments
 function parseCommandLineArgs(): { docsPath?: string } {
@@ -133,8 +133,6 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
-
-
 
 // Only start the server when this file is run directly
 if (require.main === module) {

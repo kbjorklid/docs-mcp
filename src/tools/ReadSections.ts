@@ -15,7 +15,8 @@ export class ReadSections {
   static getToolDefinition() {
     return {
       name: 'read_sections',
-      description: 'Reads specific sections from a markdown file. Use the table_of_contents tool to see available sections.',
+      description:
+        'Reads specific sections from a markdown file. Use the table_of_contents tool to see available sections.',
       inputSchema: {
         type: 'object',
         properties: {

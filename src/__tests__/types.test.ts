@@ -1,4 +1,4 @@
-import { DEFAULT_CONFIG, DocumentationConfig } from '../types.js';
+import { DEFAULT_CONFIG, DocumentationConfig } from '../types';
 
 describe('Types', () => {
   describe('DEFAULT_CONFIG', () => {
@@ -19,7 +19,7 @@ describe('Types', () => {
 
       // Re-import the module to test environment variable
       jest.resetModules();
-      const { DEFAULT_CONFIG: configWithEnv } = require('../types.js');
+      const { DEFAULT_CONFIG: configWithEnv } = require('../types');
 
       expect(configWithEnv.documentation_path).toBe('/custom/docs');
 
@@ -32,7 +32,7 @@ describe('Types', () => {
       delete process.env.DOCS_PATH;
 
       jest.resetModules();
-      const { DEFAULT_CONFIG: configWithoutEnv } = require('../types.js');
+      const { DEFAULT_CONFIG: configWithoutEnv } = require('../types');
 
       expect(configWithoutEnv.documentation_path).toBe('./docs');
 
