@@ -134,7 +134,10 @@ async function main() {
   await server.connect(transport);
 }
 
-main().catch((error) => {
-  console.error('Server error:', error);
-  process.exit(1);
-});
+// Only start the server when this file is run directly
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('Server error:', error);
+    process.exit(1);
+  });
+}
