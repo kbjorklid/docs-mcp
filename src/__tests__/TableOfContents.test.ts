@@ -69,14 +69,17 @@ describe('TableOfContents', () => {
       expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
     });
 
-    it('should handle file not found error', () => {
+    it('should handle file not found error with helpful message', () => {
       // Execute with non-existent file
       const result = tableOfContents.execute('nonexistent.md');
 
       // Verify error response
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
-      expect(errorResponse.error.code).toBe('PARSE_ERROR');
+      expect(errorResponse.error.code).toBe('FILE_NOT_FOUND');
+      expect(errorResponse.error.message).toBe(
+        "File 'nonexistent.md' not found. Use the list_documentation_files tool to see available files."
+      );
       expect(errorResponse.error.details.filename).toBe('nonexistent.md');
     });
 
@@ -87,6 +90,20 @@ describe('TableOfContents', () => {
       // Verify empty sections array
       const sections = JSON.parse(result.content[0].text);
       expect(sections).toHaveLength(0);
+    });
+
+    it('should provide guidance about list_documentation_files tool in error message', () => {
+      // Execute with non-existent file
+      const result = tableOfContents.execute('missing-file.md');
+
+      // Verify error response contains guidance
+      expect(result.content).toHaveLength(1);
+      const errorResponse = JSON.parse(result.content[0].text);
+      expect(errorResponse.error.code).toBe('FILE_NOT_FOUND');
+      expect(errorResponse.error.message).toContain(
+        'list_documentation_files tool'
+      );
+      expect(errorResponse.error.message).toContain('see available files');
     });
   });
 

@@ -64,6 +64,30 @@ export class TableOfContents {
         ],
       };
     } catch (error) {
+      // Check if it's a FILE_NOT_FOUND error
+      if (
+        error instanceof Error &&
+        error.message.startsWith('FILE_NOT_FOUND:')
+      ) {
+        const errorResponse: ErrorResponse = {
+          error: {
+            code: 'FILE_NOT_FOUND',
+            message: error.message.replace('FILE_NOT_FOUND: ', ''),
+            details: {
+              filename,
+            },
+          },
+        };
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(errorResponse, null, 2),
+            },
+          ],
+        };
+      }
+
       const errorResponse: ErrorResponse = {
         error: {
           code: 'PARSE_ERROR',
@@ -98,7 +122,9 @@ export class TableOfContents {
     );
     if (!validation.valid) {
       if (validation.error === 'File not found') {
-        throw new Error(`FILE_NOT_FOUND: ${filename}`);
+        throw new Error(
+          `FILE_NOT_FOUND: File '${filename}' not found. Use the list_documentation_files tool to see available files.`
+        );
       } else if (validation.error === 'File too large') {
         throw new Error(`FILE_TOO_LARGE: ${filename}`);
       } else {
