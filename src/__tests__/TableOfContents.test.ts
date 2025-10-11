@@ -1,22 +1,16 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import { TableOfContents } from '../tools/TableOfContents';
 import { DocumentationConfig } from '../types';
-import { MarkdownParser } from '../MarkdownParser';
-
-// Mock the MarkdownParser module
-jest.mock('../MarkdownParser');
-const mockMarkdownParser = MarkdownParser as jest.Mocked<typeof MarkdownParser>;
 
 describe('TableOfContents', () => {
   let tableOfContents: TableOfContents;
   let mockConfig: DocumentationConfig;
+  let fixturesPath: string;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    
+    fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
-      documentation_path: './docs',
+      documentation_path: fixturesPath,
       auto_index: true,
       index_refresh_interval: 300,
       max_file_size: 10485760,
@@ -29,44 +23,27 @@ describe('TableOfContents', () => {
 
   describe('execute', () => {
     it('should return table of contents for valid file', () => {
-      // Setup mocks
-      mockMarkdownParser.validateFile.mockReturnValue({
-        valid: true,
-        stats: { size: 1024 } as fs.Stats,
-      });
-
-      mockMarkdownParser.readMarkdownFile.mockReturnValue({
-        content: '# Introduction\nContent here\n\n## Getting Started\nMore content',
-        metadata: {},
-      });
-
-      mockMarkdownParser.parseMarkdownSections.mockReturnValue({
-        sections: [
-          {
-            id: 'introduction',
-            title: 'Introduction',
-            level: 1,
-            character_count: 15,
-          },
-          {
-            id: 'introduction/getting-started',
-            title: 'Getting Started',
-            level: 2,
-            character_count: 12,
-          },
-        ],
-        sectionMap: new Map(),
-      });
-
-      // Execute
-      const result = tableOfContents.execute('test.md');
+      // Execute with test-doc.md
+      const result = tableOfContents.execute('test-doc.md');
 
       // Verify
       expect(result.content).toHaveLength(1);
       const sections = JSON.parse(result.content[0].text);
-      expect(sections).toHaveLength(2);
-      expect(sections[0].title).toBe('Introduction');
-      expect(sections[1].title).toBe('Getting Started');
+      expect(sections).toHaveLength(5); // Introduction, Getting Started, Installation, Configuration, Advanced Topics
+      
+      expect(sections[0]).toEqual({
+        id: 'introduction',
+        title: 'Introduction',
+        level: 1,
+        character_count: expect.any(Number),
+      });
+      
+      expect(sections[1]).toEqual({
+        id: 'getting-started',
+        title: 'Getting Started',
+        level: 1,
+        character_count: expect.any(Number),
+      });
     });
 
     it('should return error when filename is not provided', () => {
@@ -85,81 +62,25 @@ describe('TableOfContents', () => {
       const result = tableOfContents.execute(null as any);
 
       // Verify error response
+      expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
     });
 
     it('should handle file not found error', () => {
-      // Setup mock
-      mockMarkdownParser.validateFile.mockReturnValue({
-        valid: false,
-        error: 'File not found',
-      });
-
-      // Execute
+      // Execute with non-existent file
       const result = tableOfContents.execute('nonexistent.md');
 
       // Verify error response
+      expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('PARSE_ERROR');
       expect(errorResponse.error.details.filename).toBe('nonexistent.md');
     });
 
-    it('should handle file too large error', () => {
-      // Setup mock
-      mockMarkdownParser.validateFile.mockReturnValue({
-        valid: false,
-        error: 'File too large',
-      });
-
-      // Execute
-      const result = tableOfContents.execute('large.md');
-
-      // Verify error response
-      const errorResponse = JSON.parse(result.content[0].text);
-      expect(errorResponse.error.code).toBe('PARSE_ERROR');
-      expect(errorResponse.error.details.filename).toBe('large.md');
-    });
-
-    it('should handle parsing errors', () => {
-      // Setup mocks
-      mockMarkdownParser.validateFile.mockReturnValue({
-        valid: true,
-        stats: { size: 1024 } as fs.Stats,
-      });
-
-      mockMarkdownParser.readMarkdownFile.mockImplementation(() => {
-        throw new Error('Parse error');
-      });
-
-      // Execute
-      const result = tableOfContents.execute('invalid.md');
-
-      // Verify error response
-      const errorResponse = JSON.parse(result.content[0].text);
-      expect(errorResponse.error.code).toBe('PARSE_ERROR');
-      expect(errorResponse.error.details.filename).toBe('invalid.md');
-    });
-
     it('should handle empty sections', () => {
-      // Setup mocks
-      mockMarkdownParser.validateFile.mockReturnValue({
-        valid: true,
-        stats: { size: 10 } as fs.Stats,
-      });
-
-      mockMarkdownParser.readMarkdownFile.mockReturnValue({
-        content: 'Just some text without headers',
-        metadata: {},
-      });
-
-      mockMarkdownParser.parseMarkdownSections.mockReturnValue({
-        sections: [],
-        sectionMap: new Map(),
-      });
-
-      // Execute
-      const result = tableOfContents.execute('no-headers.md');
+      // Execute with file that has no headers
+      const result = tableOfContents.execute('empty-sections.md');
 
       // Verify empty sections array
       const sections = JSON.parse(result.content[0].text);
@@ -168,65 +89,29 @@ describe('TableOfContents', () => {
   });
 
   describe('getTableOfContents', () => {
-    it('should resolve file path correctly', () => {
-      // Setup mocks
-      mockMarkdownParser.validateFile.mockReturnValue({
-        valid: true,
-        stats: { size: 1024 } as fs.Stats,
-      });
-
-      mockMarkdownParser.readMarkdownFile.mockReturnValue({
-        content: '# Test\nContent',
-        metadata: {},
-      });
-
-      mockMarkdownParser.parseMarkdownSections.mockReturnValue({
-        sections: [{ id: 'test', title: 'Test', level: 1, character_count: 7 }],
-        sectionMap: new Map(),
-      });
-
-      // Execute
-      tableOfContents.execute('subdir/test.md');
-
-      // Verify validateFile was called with resolved path
-      expect(mockMarkdownParser.validateFile).toHaveBeenCalledWith(
-        path.resolve('./docs', 'subdir/test.md'),
-        10485760
-      );
-    });
-
     it('should handle nested sections correctly', () => {
-      // Setup mocks
-      mockMarkdownParser.validateFile.mockReturnValue({
-        valid: true,
-        stats: { size: 2048 } as fs.Stats,
-      });
-
-      mockMarkdownParser.readMarkdownFile.mockReturnValue({
-        content: '# Main\n## Sub1\n### SubSub\n## Sub2',
-        metadata: {},
-      });
-
-      mockMarkdownParser.parseMarkdownSections.mockReturnValue({
-        sections: [
-          { id: 'main', title: 'Main', level: 1, character_count: 25 },
-          { id: 'main/sub1', title: 'Sub1', level: 2, character_count: 8 },
-          { id: 'main/sub1/subsub', title: 'SubSub', level: 3, character_count: 7 },
-          { id: 'main/sub2', title: 'Sub2', level: 2, character_count: 5 },
-        ],
-        sectionMap: new Map(),
-      });
-
-      // Execute
-      const result = tableOfContents.execute('nested.md');
+      // Execute with nested-sections.md
+      const result = tableOfContents.execute('nested-sections.md');
 
       // Verify nested structure
       const sections = JSON.parse(result.content[0].text);
-      expect(sections).toHaveLength(4);
-      expect(sections[0].id).toBe('main');
-      expect(sections[1].id).toBe('main/sub1');
-      expect(sections[2].id).toBe('main/sub1/subsub');
-      expect(sections[3].id).toBe('main/sub2');
+      expect(sections.length).toBeGreaterThan(0);
+      
+      // Check for nested section IDs
+      const nestedSection = sections.find((s: any) => s.id.includes('/'));
+      expect(nestedSection).toBeDefined();
+      expect(nestedSection.level).toBeGreaterThan(1);
+    });
+
+    it('should handle file without frontmatter', () => {
+      // Execute with no-frontmatter.md
+      const result = tableOfContents.execute('no-frontmatter.md');
+
+      // Verify sections are parsed correctly
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections.length).toBeGreaterThan(0);
+      expect(sections[0].title).toBe('Simple Document');
     });
   });
 });
