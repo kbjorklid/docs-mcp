@@ -1,13 +1,6 @@
-# Hello World MCP Server
+# Documentation MCP Server
 
-A simple TypeScript/Node.js Model Context Protocol (MCP) server that demonstrates a basic "Hello, World" tool implementation.
-
-## Features
-
-- Implements the MCP stdio protocol
-- Provides a simple `hello_world` tool
-- Built with TypeScript for type safety
-- Easy to extend with additional tools
+A Model Context Protocol (MCP) server that provides tools for reading and navigating markdown-based documentation repositories.
 
 ## Installation
 
@@ -15,143 +8,141 @@ A simple TypeScript/Node.js Model Context Protocol (MCP) server that demonstrate
 npm install
 ```
 
-## Usage
+## Configuration
 
-### Quick Start with PowerShell
+The server needs to know where your documentation files are located. You can configure the documentation path in several ways:
 
-The easiest way to run the MCP server is using the PowerShell scripts:
+### Command Line Arguments (Recommended)
 
-#### From Project Directory
+Use the `--docs-path` or `-d` flag to specify your documentation directory:
 
-```powershell
-# Production mode (builds and runs)
-.\run-mcp-server.ps1
+```bash
+# Using long form
+npm start -- --docs-path /path/to/your/docs
 
-# Development mode (runs directly without building)
-.\run-mcp-server.ps1 -Development
+# Using shorthand
+npm start -- -d /path/to/your/docs
 
-# Clean build first
-.\run-mcp-server.ps1 -Clean
+# Windows path example
+npm start -- --docs-path "C:\Users\YourName\Documents\docs"
 
-# Show help
-.\run-mcp-server.ps1 -Help
+# Relative path example
+npm start -- --docs-path ./my-documentation
 ```
 
-#### From Any Directory
+### Environment Variables
 
-```powershell
-# Run from anywhere using the global launcher
-hello-world-mcp.ps1
+Set the `DOCS_PATH` environment variable:
 
-# Development mode from anywhere
-hello-world-mcp.ps1 -Development
+```bash
+# Linux/macOS
+DOCS_PATH=/path/to/your/docs npm start
+
+# Windows (Command Prompt)
+set DOCS_PATH=C:\path\to\your\docs && npm start
+
+# Windows (PowerShell)
+$env:DOCS_PATH="C:\path\to\your\docs"; npm start
 ```
 
-### Manual Usage
+### Default Path
 
-#### Development
+If no path is specified, the server will look for documentation in a `docs` folder in the same directory as the project.
 
-Run the server in development mode with TypeScript:
+## Running the Server
+
+### Development Mode
+
+For development with automatic TypeScript compilation:
 
 ```bash
 npm run dev
 ```
 
-#### Production
+### Production Mode
 
-Build and run the server:
+For production use:
 
 ```bash
 npm run build
 npm start
 ```
 
-### Testing the Server
+### Quick Start Script
 
-You can test the server by sending JSON-RPC messages via stdin:
+A simple PowerShell script is available:
 
-1. List available tools:
-
-```bash
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | npm start
+```powershell
+# Run with default docs path
+.\run.ps1
 ```
 
-2. Call the hello_world tool:
+Note: You may need to edit `run.ps1` to specify your documentation path.
+
+## Command Line Reference
+
+### Options
+
+- `--docs-path <path>` or `-d <path>` - Specify documentation directory
+- `--help` or `-h` - Show help information
+
+### Path Configuration Precedence
+
+The server uses documentation paths in this order of priority:
+
+1. Command line `--docs-path` argument (highest)
+2. `DOCS_PATH` environment variable
+3. Default `./docs` folder (lowest)
+
+### Examples
 
 ```bash
-echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"hello_world","arguments":{"name":"Your Name"}}}' | npm start
+# Use custom documentation path
+npm start -- --docs-path /home/user/project-docs
+
+# Use environment variable for multiple commands
+export DOCS_PATH=/home/user/project-docs
+npm start
+
+# Run with relative path
+npm start -- -d ../documentation
+
+# Development mode with custom path
+npm run dev -- --docs-path /path/to/docs
 ```
 
-## Tool Description
+## Available Tools
 
-### hello_world
+The server provides three tools for working with documentation:
 
-A simple greeting tool that returns a friendly hello message.
+### list_documentation_files
+Lists all available documentation files with metadata including file size, modification time, and front matter information.
+
+**Usage:** No parameters required
+
+### table_of_contents
+Provides a structured table of contents for a markdown file, showing section hierarchy with IDs.
 
 **Parameters:**
+- `filename` (required) - The documentation file to analyze
 
-- `name` (optional, string): The name to greet. Defaults to "World" if not provided.
+### read_sections
+Reads specific sections from a markdown file by their IDs.
 
-**Example Response:**
+**Parameters:**
+- `filename` (required) - The documentation file to read from
+- `section_ids` (required) - Array of section identifiers to read
 
-```json
-{
-  "content": [
-    {
-      "type": "text",
-      "text": "Hello, Claude! 👋"
-    }
-  ]
-}
-```
+## Testing the Server
 
-## Project Structure
+You can verify the server is working by sending JSON-RPC messages:
 
-```
-├── src/
-│   └── index.ts          # Main MCP server implementation
-├── dist/                 # Compiled JavaScript output
-├── package.json          # Project configuration and scripts
-├── tsconfig.json         # TypeScript configuration
-└── README.md            # This file
-```
+```bash
+# List available tools
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | npm start
 
-## Extending the Server
-
-To add new tools:
-
-1. Add the tool definition to the `ListToolsRequestSchema` handler
-2. Add a case for your tool in the `CallToolRequestSchema` handler
-3. Implement the tool logic
-
-Example:
-
-```typescript
-// Add to tools list
-{
-  name: "my_tool",
-  description: "Description of my tool",
-  inputSchema: {
-    type: "object",
-    properties: {
-      // Define your parameters here
-    },
-    required: ["param1"],
-  },
-}
-
-// Add to tool execution handler
-case "my_tool": {
-  // Implement your tool logic here
-  return {
-    content: [
-      {
-        type: "text",
-        text: "Tool result",
-      },
-    ],
-  };
-}
+# List documentation files (with your docs path)
+echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_documentation_files","arguments":{}}}' | npm start -- --docs-path /path/to/your/docs
 ```
 
 ## License
