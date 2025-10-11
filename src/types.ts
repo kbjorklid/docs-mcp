@@ -6,6 +6,7 @@ export interface DocumentationConfig {
   max_file_size: number;
   exclude_patterns: string[];
   include_patterns: string[];
+  max_toc_depth?: number;
 }
 
 // File metadata interface

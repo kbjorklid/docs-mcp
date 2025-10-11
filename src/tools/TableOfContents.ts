@@ -26,6 +26,12 @@ export class TableOfContents {
             description:
               'The documentation file path as provided by the list_documentation_files tool.',
           },
+          max_depth: {
+            type: 'number',
+            description:
+              'Optional maximum depth for table of contents entries. If provided, only headers up to this level will be included (e.g., 2 for # and ## headers only). Use 0 to disable depth limiting and return all sections.',
+            minimum: 0,
+          },
         },
         required: ['filename'],
       },
@@ -35,7 +41,7 @@ export class TableOfContents {
   /**
    * Execute the table_of_contents tool
    */
-  execute(filename: string) {
+  execute(filename: string, maxDepth?: number) {
     // Validate filename parameter
     if (!filename) {
       const errorResponse: ErrorResponse = {
@@ -56,7 +62,7 @@ export class TableOfContents {
     }
 
     try {
-      const sections = this.getTableOfContents(filename);
+      const sections = this.getTableOfContents(filename, maxDepth);
       return {
         content: [
           {
@@ -114,7 +120,7 @@ export class TableOfContents {
   /**
    * Get table of contents for a markdown file
    */
-  private getTableOfContents(filename: string): Section[] {
+  private getTableOfContents(filename: string, maxDepth?: number): Section[] {
     const fullPath = path.resolve(this.config.documentation_path, filename);
 
     // Check if file exists
@@ -137,6 +143,15 @@ export class TableOfContents {
     // Read and parse the file
     const { content } = MarkdownParser.readMarkdownFile(fullPath);
     const { sections } = MarkdownParser.parseMarkdownSections(content);
+
+    // Determine the effective max depth (parameter > config > unlimited)
+    // Note: We need to explicitly check for undefined because 0 is a valid value
+    const effectiveMaxDepth = maxDepth !== undefined ? maxDepth : this.config.max_toc_depth;
+
+    // Filter sections by max depth if specified (0 means disabled - return all sections)
+    if (effectiveMaxDepth !== undefined && effectiveMaxDepth > 0) {
+      return sections.filter(section => section.level <= effectiveMaxDepth);
+    }
 
     return sections;
   }

@@ -2,6 +2,25 @@
 
 This file provides guidance to AI agents working with code in this repository.
 
+## README.md Scope
+
+**README.md should only contain user-facing documentation** - information that users of the MCP server need to install, configure, and use the server.
+
+**DO NOT add to README.md:**
+- Internal architecture details
+- Development commands and testing procedures
+- Implementation details
+
+**INCLUDE in README.md:**
+- Installation instructions
+- Configuration options (command line, environment variables)
+- Usage examples for end users
+- Available tools and their parameters
+- Error codes users might encounter
+- System requirements
+
+All developer-focused information should be documented in this file (CLAUDE.md) instead.
+
 ## Project Overview
 
 This is a TypeScript-based Model Context Protocol (MCP) server that provides documentation reading and navigation tools for markdown-based documentation repositories. The server follows MCP standards and communicates via stdio transport.
@@ -49,6 +68,19 @@ The server supports multiple ways to configure the documentation path with the f
 - `npm run build` - Compile TypeScript to JavaScript in the `dist/` directory
 - `npm run dev` - Run the server in development mode using tsx (no build step)
 - `npm start` - Run the compiled server from `dist/index.js`
+
+### Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+```
 
 ### PowerShell Scripts
 

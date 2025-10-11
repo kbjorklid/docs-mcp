@@ -14,28 +14,45 @@ import { TableOfContents } from './tools/TableOfContents';
 import { ReadSections } from './tools/ReadSections';
 
 // Parse command line arguments
-function parseCommandLineArgs(): { docsPath?: string } {
+function parseCommandLineArgs(): { docsPath?: string; maxTocDepth?: number } {
   const args = process.argv.slice(2);
+  const result: { docsPath?: string; maxTocDepth?: number } = {};
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--docs-path' || args[i] === '-d') {
       if (i + 1 < args.length) {
-        return { docsPath: args[i + 1] };
+        result.docsPath = args[i + 1];
+        i++; // Skip the next argument
+      }
+    } else if (args[i] === '--max-toc-depth') {
+      if (i + 1 < args.length) {
+        const depth = parseInt(args[i + 1], 10);
+        if (!isNaN(depth) && depth > 0) {
+          result.maxTocDepth = depth;
+        }
+        i++; // Skip the next argument
       }
     }
   }
 
-  return {};
+  return result;
 }
 
 // Create configuration with precedence: CLI args > environment variables > defaults
-function createConfig(): DocumentationConfig {
+export function createConfig(): DocumentationConfig {
   const cliArgs = parseCommandLineArgs();
 
-  return {
+  const config: DocumentationConfig = {
     ...DEFAULT_CONFIG,
     documentation_path: cliArgs.docsPath || process.env.DOCS_PATH || './docs',
   };
+
+  // Add max_toc_depth if provided via command line
+  if (cliArgs.maxTocDepth !== undefined) {
+    config.max_toc_depth = cliArgs.maxTocDepth;
+  }
+
+  return config;
 }
 
 const config = createConfig();
@@ -78,7 +95,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'table_of_contents': {
         const filename = request.params.arguments?.filename as string;
-        return tableOfContents.execute(filename);
+        const maxDepth = request.params.arguments?.max_depth as number | undefined;
+        return tableOfContents.execute(filename, maxDepth);
       }
 
       case 'read_sections': {
