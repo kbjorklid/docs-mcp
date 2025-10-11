@@ -16,14 +16,15 @@ export class TableOfContents {
     return {
       name: 'table_of_contents',
       description:
-        'Provides a structured table of contents for a markdown file',
+        'Provides a structured table of contents for a documentation file. Use the list_documentation_files tool to see available files. ' +
+        'After using this tool, use the read_sections tool to read specific sections.',
       inputSchema: {
         type: 'object',
         properties: {
           filename: {
             type: 'string',
             description:
-              'Path to the markdown file relative to the documentation folder',
+              'The documentation file path as provided by the list_documentation_files tool.',
           },
         },
         required: ['filename'],
@@ -40,7 +41,8 @@ export class TableOfContents {
       const errorResponse: ErrorResponse = {
         error: {
           code: 'INVALID_PARAMETER',
-          message: 'filename parameter is required',
+          message:
+            'filename parameter is required. Use the list_documentation_files tool to see available files.',
         },
       };
       return {

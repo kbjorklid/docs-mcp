@@ -55,7 +55,7 @@ describe('TableOfContents', () => {
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
       expect(errorResponse.error.message).toBe(
-        'filename parameter is required'
+        'filename parameter is required. Use the list_documentation_files tool to see available files.'
       );
     });
 

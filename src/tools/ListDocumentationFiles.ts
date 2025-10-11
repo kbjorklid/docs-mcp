@@ -17,7 +17,7 @@ export class ListDocumentationFiles {
     return {
       name: 'list_documentation_files',
       description:
-        'Lists all available documentation files with their metadata',
+        'Lists all available documentation files with their metadata. Use table_of_contents tool to see metadata for a specific file, and then the read_sections tool to read specific parts.',
       inputSchema: {
         type: 'object',
         properties: {},
