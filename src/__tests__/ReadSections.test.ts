@@ -108,7 +108,7 @@ describe('ReadSections', () => {
       expect(errorResponse.error.details.search_path).toBe(fixturesPath);
     });
 
-    it('should handle section not found error', () => {
+    it('should handle section not found error with helpful message', () => {
       // Execute with non-existent section
       const result = readSections.execute('test-doc.md', ['nonexistent']);
 
@@ -117,7 +117,7 @@ describe('ReadSections', () => {
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('SECTION_NOT_FOUND');
       expect(errorResponse.error.message).toBe(
-        'One or more requested sections were not found'
+        "Sections [nonexistent] not found in 'test-doc.md'. Use the table_of_contents tool to see available sections."
       );
       expect(errorResponse.error.details.filename).toBe('test-doc.md');
       expect(errorResponse.error.details.missing_sections).toEqual([
@@ -136,6 +136,9 @@ describe('ReadSections', () => {
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('SECTION_NOT_FOUND');
+      expect(errorResponse.error.message).toBe(
+        "Sections [missing1, missing2] not found in 'test-doc.md'. Use the table_of_contents tool to see available sections."
+      );
       expect(errorResponse.error.details.missing_sections).toEqual([
         'missing1',
         'missing2',
@@ -153,7 +156,22 @@ describe('ReadSections', () => {
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('SECTION_NOT_FOUND');
+      expect(errorResponse.error.message).toBe(
+        "Sections [missing] not found in 'test-doc.md'. Use the table_of_contents tool to see available sections."
+      );
       expect(errorResponse.error.details.missing_sections).toEqual(['missing']);
+    });
+
+    it('should provide guidance about table_of_contents tool in error message', () => {
+      // Execute with non-existent section
+      const result = readSections.execute('test-doc.md', ['unknown-section']);
+
+      // Verify error response contains guidance
+      expect(result.content).toHaveLength(1);
+      const errorResponse = JSON.parse(result.content[0].text);
+      expect(errorResponse.error.code).toBe('SECTION_NOT_FOUND');
+      expect(errorResponse.error.message).toContain('table_of_contents tool');
+      expect(errorResponse.error.message).toContain('see available sections');
     });
   });
 

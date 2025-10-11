@@ -137,7 +137,7 @@ export class ReadSections {
           const errorResponse: ErrorResponse = {
             error: {
               code: 'SECTION_NOT_FOUND',
-              message: 'One or more requested sections were not found',
+              message: `Sections [${missingSections.join(', ')}] not found in '${filename}'. Use the table_of_contents tool to see available sections.`,
               details: {
                 filename,
                 missing_sections: missingSections,
