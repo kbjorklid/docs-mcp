@@ -1,6 +1,5 @@
 ---
 description: Commit uncommitted changes to git
-subtask: true
 ---
 
 ## Context
