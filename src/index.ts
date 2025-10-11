@@ -134,6 +134,8 @@ async function main() {
   await server.connect(transport);
 }
 
+
+
 // Only start the server when this file is run directly
 if (require.main === module) {
   main().catch((error) => {
