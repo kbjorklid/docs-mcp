@@ -21,8 +21,6 @@ describe('Search', () => {
     fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
       documentation_path: fixturesPath,
-      auto_index: true,
-      index_refresh_interval: 300,
       max_file_size: 10485760,
       exclude_patterns: ['node_modules/**'],
       include_patterns: ['**/*.md'],

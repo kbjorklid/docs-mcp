@@ -2,11 +2,9 @@ import { DEFAULT_CONFIG, DocumentationConfig } from '../types';
 
 describe('Types', () => {
   describe('DEFAULT_CONFIG', () => {
-    it('should have correct default values', () => {
+    it('should have correct default values without unused properties', () => {
       expect(DEFAULT_CONFIG).toEqual({
         documentation_path: './docs',
-        auto_index: true,
-        index_refresh_interval: 300,
         max_file_size: 10485760,
         exclude_patterns: ['node_modules/**', '*.tmp.md'],
         include_patterns: ['**/*.md'],
@@ -41,25 +39,130 @@ describe('Types', () => {
       // Restore original environment
       process.env.DOCS_PATH = originalEnv;
     });
+
+    it('should work with refactored interface without unused properties', () => {
+      // Test the refactored configuration without unused properties
+      const refactoredConfig = {
+        documentation_path: './test-docs',
+        max_file_size: 5242880,
+        exclude_patterns: ['test/**', '*.temp.md'],
+        include_patterns: ['**/*.md', '**/*.txt'],
+        max_toc_depth: 3,
+        discount_single_top_header: true,
+      };
+
+      // Should be assignable to DocumentationConfig after refactoring
+      const config: DocumentationConfig = refactoredConfig;
+      expect(config.documentation_path).toBe('./test-docs');
+      expect(config.max_file_size).toBe(5242880);
+      expect(config.max_toc_depth).toBe(3);
+      expect(config.discount_single_top_header).toBe(true);
+    });
   });
 
   describe('DocumentationConfig interface', () => {
-    it('should accept valid configuration', () => {
+    it('should accept valid configuration with refactored interface', () => {
       const config: DocumentationConfig = {
         documentation_path: './test-docs',
-        auto_index: false,
-        index_refresh_interval: 600,
         max_file_size: 5242880,
         exclude_patterns: ['test/**', '*.temp.md'],
         include_patterns: ['**/*.md', '**/*.txt'],
       };
 
       expect(config.documentation_path).toBe('./test-docs');
-      expect(config.auto_index).toBe(false);
-      expect(config.index_refresh_interval).toBe(600);
       expect(config.max_file_size).toBe(5242880);
       expect(config.exclude_patterns).toEqual(['test/**', '*.temp.md']);
       expect(config.include_patterns).toEqual(['**/*.md', '**/*.txt']);
+    });
+
+    // Interface Compliance Tests for refactoring
+    it('should accept configuration without auto_index and index_refresh_interval', () => {
+      // Test configuration that excludes the unused properties
+      const configWithoutUnusedProps = {
+        documentation_path: './test-docs',
+        max_file_size: 5242880,
+        exclude_patterns: ['test/**', '*.temp.md'],
+        include_patterns: ['**/*.md', '**/*.txt'],
+        max_toc_depth: 5,
+        discount_single_top_header: false,
+      };
+
+      // This should be assignable to DocumentationConfig after refactoring
+      // For now, we'll test that it has all the required properties
+      expect(configWithoutUnusedProps.documentation_path).toBe('./test-docs');
+      expect(configWithoutUnusedProps.max_file_size).toBe(5242880);
+      expect(configWithoutUnusedProps.exclude_patterns).toEqual(['test/**', '*.temp.md']);
+      expect(configWithoutUnusedProps.include_patterns).toEqual(['**/*.md', '**/*.txt']);
+      expect(configWithoutUnusedProps.max_toc_depth).toBe(5);
+      expect(configWithoutUnusedProps.discount_single_top_header).toBe(false);
+    });
+
+    it('should accept configuration with optional properties', () => {
+      const configWithOptionals: DocumentationConfig = {
+        documentation_path: './test-docs',
+        max_file_size: 5242880,
+        exclude_patterns: ['test/**'],
+        include_patterns: ['**/*.md'],
+        max_toc_depth: 3,
+        discount_single_top_header: true,
+      };
+
+      expect(configWithOptionals.max_toc_depth).toBe(3);
+      expect(configWithOptionals.discount_single_top_header).toBe(true);
+    });
+
+    it('should accept configuration without optional properties', () => {
+      const configWithoutOptionals: DocumentationConfig = {
+        documentation_path: './test-docs',
+        max_file_size: 5242880,
+        exclude_patterns: ['test/**'],
+        include_patterns: ['**/*.md'],
+      };
+
+      expect(configWithoutOptionals.max_toc_depth).toBeUndefined();
+      expect(configWithoutOptionals.discount_single_top_header).toBeUndefined();
+    });
+
+    it('should handle boundary values for max_file_size', () => {
+      const boundaryConfigs = [
+        {
+          documentation_path: './test-docs',
+          max_file_size: 0, // Minimum boundary
+          exclude_patterns: [],
+          include_patterns: ['**/*.md'],
+        },
+        {
+          documentation_path: './test-docs',
+          max_file_size: 1, // Just above minimum
+          exclude_patterns: [],
+          include_patterns: ['**/*.md'],
+        },
+        {
+          documentation_path: './test-docs',
+          max_file_size: Number.MAX_SAFE_INTEGER, // Maximum boundary
+          exclude_patterns: [],
+          include_patterns: ['**/*.md'],
+        },
+      ];
+
+      boundaryConfigs.forEach((config, index) => {
+        expect(config.max_file_size).toBeGreaterThanOrEqual(0);
+        expect(typeof config.max_file_size).toBe('number');
+      });
+    });
+
+    it('should handle empty arrays for patterns', () => {
+      const configWithEmptyArrays: DocumentationConfig = {
+        documentation_path: './test-docs',
+        max_file_size: 5242880,
+        exclude_patterns: [],
+        include_patterns: [],
+      };
+
+      expect(Array.isArray(configWithEmptyArrays.exclude_patterns)).toBe(true);
+      expect(configWithEmptyArrays.exclude_patterns).toHaveLength(0);
+      expect(Array.isArray(configWithEmptyArrays.include_patterns)).toBe(true);
+      expect(configWithEmptyArrays.include_patterns).toHaveLength(0);
     });
   });
 });

@@ -193,8 +193,6 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       expect(config.documentation_path).toBe('./docs');
-      expect(config.auto_index).toBe(true);
-      expect(config.index_refresh_interval).toBe(300);
       expect(config.max_file_size).toBe(10485760);
       expect(config.exclude_patterns).toEqual(['node_modules/**', '*.tmp.md']);
       expect(config.include_patterns).toEqual(['**/*.md']);
@@ -236,7 +234,7 @@ describe('ArgumentParser', () => {
       expect(config.documentation_path).toBe('/env/path'); // From environment
       expect(config.max_toc_depth).toBe(4); // From CLI
       expect(config.discount_single_top_header).toBe(true); // From CLI
-      expect(config.auto_index).toBe(true); // From default
+      expect(config.max_file_size).toBe(10485760); // From default
     });
 
     it('should handle empty string environment variables', () => {
@@ -266,11 +264,10 @@ describe('ArgumentParser', () => {
 
       const config = createConfig();
       expect(config.documentation_path).toBe('/custom/path');
-      expect(config.auto_index).toBe(true);
-      expect(config.index_refresh_interval).toBe(300);
       expect(config.max_file_size).toBe(10485760);
       expect(config.exclude_patterns).toEqual(['node_modules/**', '*.tmp.md']);
       expect(config.include_patterns).toEqual(['**/*.md']);
+      expect(config.max_toc_depth).toBeUndefined();
       expect(config.discount_single_top_header).toBe(false);
     });
 
@@ -304,7 +301,7 @@ describe('ArgumentParser', () => {
       // CLI-only options should be set
       expect(config.max_toc_depth).toBe(2);
       // Default values should remain
-      expect(config.auto_index).toBe(true);
+      expect(config.max_file_size).toBe(10485760);
       expect(config.discount_single_top_header).toBe(false);
     });
 
@@ -321,6 +318,163 @@ describe('ArgumentParser', () => {
 
       const config = createConfig();
       expect(config.documentation_path).toBe(longPath);
+    });
+  });
+
+  // Configuration Manager Tests for refactoring
+  describe('Configuration Compatibility for Refactoring', () => {
+    beforeEach(() => {
+      // Reset process.env and process.argv before each test
+      process.env = { ...originalEnv };
+      process.argv = ['node', 'script.js'];
+      delete process.env.DOCS_PATH;
+    });
+
+    afterAll(() => {
+      // Restore original process.env
+      process.env = originalEnv;
+    });
+
+    it('should work with configuration that excludes unused properties', () => {
+      process.argv = ['node', 'script.js', '--docs-path', '/test/path'];
+
+      const config = createConfig();
+
+      // Should work with the refactored configuration
+      expect(config.documentation_path).toBe('/test/path');
+      expect(config.max_file_size).toBe(10485760);
+      expect(config.exclude_patterns).toEqual(['node_modules/**', '*.tmp.md']);
+      expect(config.include_patterns).toEqual(['**/*.md']);
+      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.discount_single_top_header).toBe(false);
+    });
+
+    it('should maintain CLI argument precedence with refactored interface', () => {
+      process.env.DOCS_PATH = '/env/path';
+      process.argv = [
+        'node', 'script.js',
+        '--docs-path', '/cli/path',
+        '--max-toc-depth', '3',
+        '--discount-single-top-header'
+      ];
+
+      const config = createConfig();
+
+      // CLI args should still take precedence over environment
+      expect(config.documentation_path).toBe('/cli/path');
+      expect(config.max_toc_depth).toBe(3);
+      expect(config.discount_single_top_header).toBe(true);
+    });
+
+    it('should handle environment variable configuration without unused properties', () => {
+      process.env.DOCS_PATH = '/env/documentation';
+
+      const config = createConfig();
+
+      // Should work with environment variables even when unused properties are removed
+      expect(config.documentation_path).toBe('/env/documentation');
+      expect(config.max_file_size).toBe(10485760);
+    });
+
+    it('should handle complex configuration scenarios after refactoring', () => {
+      process.env.DOCS_PATH = '/env/docs';
+      process.argv = [
+        'node', 'script.js',
+        '--docs-path', '/cli/docs', // Override env
+        '--max-toc-depth', '5',
+        '--discount-single-top-header'
+      ];
+
+      const config = createConfig();
+
+      // All configuration should work correctly
+      expect(config.documentation_path).toBe('/cli/docs');
+      expect(config.max_toc_depth).toBe(5);
+      expect(config.discount_single_top_header).toBe(true);
+      expect(config.max_file_size).toBe(10485760);
+      expect(config.exclude_patterns).toEqual(['node_modules/**', '*.tmp.md']);
+      expect(config.include_patterns).toEqual(['**/*.md']);
+    });
+
+    it('should handle boundary values in configuration after refactoring', () => {
+      process.argv = [
+        'node', 'script.js',
+        '--max-toc-depth', '0', // Should be ignored (invalid)
+        '--discount-single-top-header' // Should be set
+      ];
+
+      const config = createConfig();
+
+      // Boundary value handling should still work
+      expect(config.max_toc_depth).toBeUndefined(); // 0 should be ignored
+      expect(config.discount_single_top_header).toBe(true);
+    });
+
+    it('should preserve default behavior when only using refactored properties', () => {
+      // No CLI args, just test default behavior
+      const config = createConfig();
+
+      // Should still work with all default values
+      expect(config.documentation_path).toBe('./docs');
+      expect(config.max_file_size).toBe(10485760);
+      expect(config.exclude_patterns).toEqual(['node_modules/**', '*.tmp.md']);
+      expect(config.include_patterns).toEqual(['**/*.md']);
+      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.discount_single_top_header).toBe(false);
+    });
+
+    it('should handle invalid CLI arguments gracefully after refactoring', () => {
+      process.argv = [
+        'node', 'script.js',
+        '--max-toc-depth', 'invalid', // Invalid number
+        '--docs-path', '', // Empty path
+      ];
+
+      const config = createConfig();
+
+      // Should handle invalid arguments gracefully
+      expect(config.max_toc_depth).toBeUndefined(); // Invalid should be ignored
+      expect(config.documentation_path).toBe('./docs'); // Empty string should be ignored and default used
+    });
+
+    it('should maintain configuration precedence order after refactoring', () => {
+      // Test the precedence: CLI args > environment > defaults
+      process.env.DOCS_PATH = '/from/environment';
+      process.argv = ['node', 'script.js', '--docs-path', '/from/cli'];
+
+      const config = createConfig();
+
+      // Verify precedence is maintained
+      expect(config.documentation_path).toBe('/from/cli'); // CLI wins
+      expect(config.max_file_size).toBe(10485760); // Default value
+    });
+
+    it('should handle edge cases in configuration after refactoring', () => {
+      // Test with very large max-toc-depth
+      process.argv = ['node', 'script.js', '--max-toc-depth', '999999'];
+
+      const config = createConfig();
+
+      // Should handle large values
+      expect(config.max_toc_depth).toBe(999999);
+    });
+
+    it('should maintain tool compatibility with refactored configuration', () => {
+      process.argv = [
+        'node', 'script.js',
+        '--docs-path', '/tool/test/path',
+        '--max-toc-depth', '2'
+      ];
+
+      const config = createConfig();
+
+      // Configuration should be compatible with all tools
+      expect(typeof config.documentation_path).toBe('string');
+      expect(typeof config.max_file_size).toBe('number');
+      expect(Array.isArray(config.exclude_patterns)).toBe(true);
+      expect(Array.isArray(config.include_patterns)).toBe(true);
+      expect(config.max_toc_depth).toBe(2);
+      expect(typeof config.discount_single_top_header).toBe('boolean');
     });
   });
 });

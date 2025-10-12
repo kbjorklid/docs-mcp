@@ -58,3 +58,5 @@ Structure your response as a comprehensive refactoring plan with:
 - If the refactoring scope is too large, break it into manageable phases
 
 Your goal is to provide a clear, actionable roadmap that another agent or developer can follow to systematically improve the codebase quality and maintainability.
+
+Think hard.

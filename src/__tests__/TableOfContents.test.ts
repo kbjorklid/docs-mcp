@@ -11,8 +11,6 @@ describe('TableOfContents', () => {
     fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
       documentation_path: fixturesPath,
-      auto_index: true,
-      index_refresh_interval: 300,
       max_file_size: 10485760,
       exclude_patterns: ['node_modules/**'],
       include_patterns: ['**/*.md'],
@@ -574,6 +572,157 @@ describe('TableOfContents', () => {
       // Verify level 4 sections are excluded
       expect(titles).not.toContain('Sub-subsection 1.1.1');
       expect(titles).not.toContain('Sub-subsection 2.1.1');
+    });
+  });
+
+  // Tool Compatibility Tests for refactoring
+  describe('Configuration Compatibility', () => {
+    it('should work with configuration without auto_index and index_refresh_interval', () => {
+      // Create config without the unused properties (simulating post-refactoring config)
+      const refactoredConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: ['node_modules/**'],
+        include_patterns: ['**/*.md'],
+        max_toc_depth: 5,
+        discount_single_top_header: false,
+      };
+
+      // Should still work with the tool even without the unused properties
+      const refactoredTool = new TableOfContents(refactoredConfig as any);
+      const result = refactoredTool.execute('test-doc.md');
+
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(Array.isArray(sections)).toBe(true);
+      expect(sections.length).toBeGreaterThan(0);
+    });
+
+    it('should handle configuration with minimal required properties', () => {
+      const minimalConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: [],
+        include_patterns: ['**/*.md'],
+      };
+
+      const minimalTool = new TableOfContents(minimalConfig as any);
+      const result = minimalTool.execute('test-doc.md');
+
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(Array.isArray(sections)).toBe(true);
+    });
+
+    it('should maintain functionality with current configuration format', () => {
+      // Ensure backward compatibility
+      const currentConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: ['node_modules/**'],
+        include_patterns: ['**/*.md'],
+      };
+
+      const currentTool = new TableOfContents(currentConfig);
+      const result = currentTool.execute('test-doc.md');
+
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections.length).toBe(5); // All sections from test-doc.md
+    });
+
+    it('should respect discount_single_top_header configuration in refactored config', () => {
+      const refactoredConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: ['node_modules/**'],
+        include_patterns: ['**/*.md'],
+        discount_single_top_header: true,
+      };
+
+      const refactoredTool = new TableOfContents(refactoredConfig as any);
+      const result = refactoredTool.execute('single-top-header.md', 2);
+
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections.length).toBeGreaterThan(4); // Should include level 3 due to discount
+    });
+
+    it('should respect max_toc_depth configuration in refactored config', () => {
+      const refactoredConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: ['node_modules/**'],
+        include_patterns: ['**/*.md'],
+        max_toc_depth: 2,
+      };
+
+      const refactoredTool = new TableOfContents(refactoredConfig as any);
+      const result = refactoredTool.execute('multi-level-headers.md');
+
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections.length).toBe(4); // Should be limited to max_toc_depth
+      sections.forEach((section: any) => {
+        expect(section.level).toBeLessThanOrEqual(2);
+      });
+    });
+
+    it('should handle boundary values for max_file_size', () => {
+      const boundaryConfigs = [
+        {
+          documentation_path: fixturesPath,
+          max_file_size: 0, // Minimum
+          exclude_patterns: [],
+          include_patterns: ['**/*.md'],
+        },
+        {
+          documentation_path: fixturesPath,
+          max_file_size: 1, // Just above minimum
+          exclude_patterns: [],
+          include_patterns: ['**/*.md'],
+        },
+        {
+          documentation_path: fixturesPath,
+          max_file_size: Number.MAX_SAFE_INTEGER, // Maximum
+          exclude_patterns: [],
+          include_patterns: ['**/*.md'],
+        },
+      ];
+
+      boundaryConfigs.forEach((config) => {
+        const tool = new TableOfContents(config as any);
+
+        // Should handle files within size limit or return appropriate error
+        const result = tool.execute('test-doc.md');
+        expect(result.content).toHaveLength(1);
+
+        // Parse response to check if it's valid JSON
+        expect(() => JSON.parse(result.content[0].text)).not.toThrow();
+      });
+    });
+
+    it('should handle error cases with refactored configuration', () => {
+      const refactoredConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: ['node_modules/**'],
+        include_patterns: ['**/*.md'],
+      };
+
+      const refactoredTool = new TableOfContents(refactoredConfig as any);
+
+      // Test file not found
+      const result = refactoredTool.execute('nonexistent.md');
+      expect(result.content).toHaveLength(1);
+      const errorResponse = JSON.parse(result.content[0].text);
+      expect(errorResponse.error.code).toBe('FILE_NOT_FOUND');
+
+      // Test invalid filename parameter
+      const invalidResult = refactoredTool.execute('');
+      expect(invalidResult.content).toHaveLength(1);
+      const invalidErrorResponse = JSON.parse(invalidResult.content[0].text);
+      expect(invalidErrorResponse.error.code).toBe('INVALID_PARAMETER');
     });
   });
 });

@@ -30,3 +30,5 @@ Your review should:
 - Consider the project's specific context (MCP server, TypeScript, Node.js)
 
 Always structure your feedback with clear sections: 'What Works Well', 'Areas for Improvement', and 'Specific Recommendations'. For each recommendation, provide before/after code examples when possible.
+
+Think hard.

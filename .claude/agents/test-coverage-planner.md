@@ -56,3 +56,5 @@ Create a detailed testing plan that includes:
 Your output should be a structured, actionable plan that another agent or developer can directly implement. Be specific about what needs to be tested, how it should be tested, and why each test is important. Focus on creating tests that will catch real bugs and ensure robust, maintainable code.
 
 Always ask for clarification if the scope is unclear or if you need more information about the codebase structure or existing test framework.
+
+Think hard.

@@ -11,8 +11,6 @@ describe('ReadSections', () => {
     fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
       documentation_path: fixturesPath,
-      auto_index: true,
-      index_refresh_interval: 300,
       max_file_size: 10485760,
       exclude_patterns: ['node_modules/**'],
       include_patterns: ['**/*.md'],
@@ -213,6 +211,197 @@ describe('ReadSections', () => {
       expect(sections[0].content).toContain(
         'This document has no front matter'
       );
+    });
+  });
+
+  // Tool Compatibility Tests for refactoring
+  describe('Configuration Compatibility', () => {
+    it('should work with configuration without auto_index and index_refresh_interval', () => {
+      // Create config without the unused properties (simulating post-refactoring config)
+      const refactoredConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: ['node_modules/**'],
+        include_patterns: ['**/*.md'],
+        max_toc_depth: 5,
+        discount_single_top_header: false,
+      };
+
+      // Should still work with the tool even without the unused properties
+      const refactoredTool = new ReadSections(refactoredConfig as any);
+      const result = refactoredTool.execute('test-doc.md', ['introduction']);
+
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(Array.isArray(sections)).toBe(true);
+      expect(sections.length).toBe(1);
+      expect(sections[0].title).toBe('introduction');
+    });
+
+    it('should handle configuration with minimal required properties', () => {
+      const minimalConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: [],
+        include_patterns: ['**/*.md'],
+      };
+
+      const minimalTool = new ReadSections(minimalConfig as any);
+      const result = minimalTool.execute('test-doc.md', ['introduction']);
+
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(Array.isArray(sections)).toBe(true);
+      expect(sections[0].title).toBe('introduction');
+    });
+
+    it('should maintain functionality with current configuration format', () => {
+      // Ensure backward compatibility
+      const currentConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: ['node_modules/**'],
+        include_patterns: ['**/*.md'],
+      };
+
+      const currentTool = new ReadSections(currentConfig);
+      const result = currentTool.execute('test-doc.md', ['introduction', 'getting-started']);
+
+      expect(result.content).toHaveLength(1);
+      const sections = JSON.parse(result.content[0].text);
+      expect(sections.length).toBe(2);
+      expect(sections[0].title).toBe('introduction');
+      expect(sections[1].title).toBe('getting-started');
+    });
+
+    it('should handle boundary values for max_file_size', () => {
+      const boundaryConfigs = [
+        {
+          documentation_path: fixturesPath,
+          max_file_size: 0, // Minimum
+          exclude_patterns: [],
+          include_patterns: ['**/*.md'],
+        },
+        {
+          documentation_path: fixturesPath,
+          max_file_size: 1, // Just above minimum
+          exclude_patterns: [],
+          include_patterns: ['**/*.md'],
+        },
+        {
+          documentation_path: fixturesPath,
+          max_file_size: Number.MAX_SAFE_INTEGER, // Maximum
+          exclude_patterns: [],
+          include_patterns: ['**/*.md'],
+        },
+      ];
+
+      boundaryConfigs.forEach((config) => {
+        const tool = new ReadSections(config as any);
+
+        // Should handle files within size limit or return appropriate error
+        const result = tool.execute('test-doc.md', ['introduction']);
+        expect(result.content).toHaveLength(1);
+
+        // Parse response to check if it's valid JSON
+        expect(() => JSON.parse(result.content[0].text)).not.toThrow();
+      });
+    });
+
+    it('should handle error cases with refactored configuration', () => {
+      const refactoredConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: ['node_modules/**'],
+        include_patterns: ['**/*.md'],
+      };
+
+      const refactoredTool = new ReadSections(refactoredConfig as any);
+
+      // Test file not found
+      const result = refactoredTool.execute('nonexistent.md', ['section1']);
+      expect(result.content).toHaveLength(1);
+      const errorResponse = JSON.parse(result.content[0].text);
+      expect(errorResponse.error.code).toBe('FILE_NOT_FOUND');
+
+      // Test invalid filename parameter
+      const invalidResult = refactoredTool.execute('', ['section1']);
+      expect(invalidResult.content).toHaveLength(1);
+      const invalidErrorResponse = JSON.parse(invalidResult.content[0].text);
+      expect(invalidErrorResponse.error.code).toBe('INVALID_PARAMETER');
+
+      // Test invalid section_ids parameter
+      const invalidSectionResult = refactoredTool.execute('test-doc.md', []);
+      expect(invalidSectionResult.content).toHaveLength(1);
+      const invalidSectionErrorResponse = JSON.parse(invalidSectionResult.content[0].text);
+      expect(invalidSectionErrorResponse.error.code).toBe('INVALID_PARAMETER');
+    });
+
+    it('should handle section not found errors with refactored configuration', () => {
+      const refactoredConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: ['node_modules/**'],
+        include_patterns: ['**/*.md'],
+      };
+
+      const refactoredTool = new ReadSections(refactoredConfig as any);
+
+      // Test single missing section
+      const singleMissingResult = refactoredTool.execute('test-doc.md', ['nonexistent']);
+      expect(singleMissingResult.content).toHaveLength(1);
+      const singleMissingError = JSON.parse(singleMissingResult.content[0].text);
+      expect(singleMissingError.error.code).toBe('SECTION_NOT_FOUND');
+      expect(singleMissingError.error.details.missing_sections).toEqual(['nonexistent']);
+
+      // Test multiple missing sections
+      const multipleMissingResult = refactoredTool.execute('test-doc.md', ['missing1', 'missing2']);
+      expect(multipleMissingResult.content).toHaveLength(1);
+      const multipleMissingError = JSON.parse(multipleMissingResult.content[0].text);
+      expect(multipleMissingError.error.code).toBe('SECTION_NOT_FOUND');
+      expect(multipleMissingError.error.details.missing_sections).toEqual(['missing1', 'missing2']);
+    });
+
+    it('should handle complex section requests with refactored configuration', () => {
+      const refactoredConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: ['node_modules/**'],
+        include_patterns: ['**/*.md'],
+      };
+
+      const refactoredTool = new ReadSections(refactoredConfig as any);
+
+      // Test nested sections
+      const nestedResult = refactoredTool.execute('nested-sections.md', ['main-section/subsection-one']);
+      expect(nestedResult.content).toHaveLength(1);
+      const nestedSections = JSON.parse(nestedResult.content[0].text);
+      expect(nestedSections[0].title).toBe('main-section/subsection-one');
+
+      // Test file without frontmatter
+      const noFrontmatterResult = refactoredTool.execute('no-frontmatter.md', ['simple-document']);
+      expect(noFrontmatterResult.content).toHaveLength(1);
+      const noFrontmatterSections = JSON.parse(noFrontmatterResult.content[0].text);
+      expect(noFrontmatterSections[0].title).toBe('simple-document');
+    });
+
+    it('should maintain error detail structure with refactored configuration', () => {
+      const refactoredConfig = {
+        documentation_path: fixturesPath,
+        max_file_size: 10485760,
+        exclude_patterns: ['node_modules/**'],
+        include_patterns: ['**/*.md'],
+      };
+
+      const refactoredTool = new ReadSections(refactoredConfig as any);
+
+      const result = refactoredTool.execute('nonexistent.md', ['section1']);
+      const errorResponse = JSON.parse(result.content[0].text);
+
+      // Verify error detail structure is maintained
+      expect(errorResponse.error.details).toBeDefined();
+      expect(errorResponse.error.details.filename).toBe('nonexistent.md');
+      expect(errorResponse.error.details.search_path).toBe(fixturesPath);
     });
   });
 });
