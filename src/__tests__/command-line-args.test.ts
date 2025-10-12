@@ -16,7 +16,7 @@ describe('Command Line Arguments', () => {
   describe('parseCommandLineArgs', () => {
     it('should return empty object when no arguments are provided', async () => {
       // Import the function after mocking process.argv
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('./docs');
@@ -27,7 +27,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with docs-path argument
       process.argv = ['node', 'index.js', '--docs-path', '/custom/path'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('/custom/path');
@@ -38,7 +38,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with short docs-path argument
       process.argv = ['node', 'index.js', '-d', '/another/path'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('/another/path');
@@ -49,7 +49,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with max-toc-depth argument
       process.argv = ['node', 'index.js', '--max-toc-depth', '3'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('./docs');
@@ -60,7 +60,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with both arguments
       process.argv = ['node', 'index.js', '--docs-path', '/custom/docs', '--max-toc-depth', '2'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('/custom/docs');
@@ -71,7 +71,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with arguments in different order
       process.argv = ['node', 'index.js', '--max-toc-depth', '4', '--docs-path', '/ordered/path'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('/ordered/path');
@@ -82,7 +82,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with invalid max-toc-depth
       process.argv = ['node', 'index.js', '--max-toc-depth', 'invalid'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('./docs');
@@ -93,7 +93,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with non-positive max-toc-depth
       process.argv = ['node', 'index.js', '--max-toc-depth', '0'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('./docs');
@@ -104,7 +104,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with negative max-toc-depth
       process.argv = ['node', 'index.js', '--max-toc-depth', '-5'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('./docs');
@@ -115,7 +115,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with docs-path but no following value
       process.argv = ['node', 'index.js', '--docs-path'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('./docs');
@@ -126,7 +126,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with max-toc-depth but no following value
       process.argv = ['node', 'index.js', '--max-toc-depth'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('./docs');
@@ -137,7 +137,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with mixed arguments
       process.argv = ['node', 'index.js', '--docs-path', '/valid/path', '--max-toc-depth', 'invalid', '--max-toc-depth', '3'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('/valid/path');
@@ -148,7 +148,7 @@ describe('Command Line Arguments', () => {
       // Set up process.argv with decimal max-toc-depth
       process.argv = ['node', 'index.js', '--max-toc-depth', '2.7'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('./docs');
@@ -173,7 +173,7 @@ describe('Command Line Arguments', () => {
       // Set environment variable
       process.env.DOCS_PATH = '/env/docs/path';
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('/env/docs/path');
@@ -185,7 +185,7 @@ describe('Command Line Arguments', () => {
       process.env.DOCS_PATH = '/env/docs/path';
       process.argv = ['node', 'index.js', '--docs-path', '/cli/docs/path'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('/cli/docs/path'); // CLI should take precedence
@@ -197,7 +197,7 @@ describe('Command Line Arguments', () => {
       process.env.DOCS_PATH = '/env/docs/path';
       process.argv = ['node', 'index.js', '--max-toc-depth', '2'];
 
-      const { createConfig } = await import('../index');
+      const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
       expect(config.documentation_path).toBe('/env/docs/path');
