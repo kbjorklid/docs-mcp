@@ -17,6 +17,7 @@ export class TableOfContents {
       name: 'table_of_contents',
       description:
         'Provides a structured table of contents for a documentation file. Use the list_documentation_files tool to see available files. ' +
+        'ALWAYS use this tool first before resorting to the \'search\' tool. ' +
         'After using this tool, use the read_sections tool to read specific sections.',
       inputSchema: {
         type: 'object',

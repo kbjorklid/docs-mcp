@@ -61,9 +61,10 @@ export class Search {
     return {
       name: 'search',
       description:
+        'Use this tool ONLY AS A FALLBACK if you cannot find the information you need by using \'table_of_contents\' tool -. ' +
         'Search for text matches using regular expressions in documentation files. ' +
-        'Returns headers and section IDs where the search pattern is found in either the header text or section content. ' + 
-        'Spports full regular expression syntax with multiline matching (the "s" flag is enabled automatically for dotAll behavior).',
+        'Use list_documentation_files to see available files before using this tool. ' +
+        'Multiline-matching, case is ignored.',
       inputSchema: {
         type: 'object',
         properties: {
