@@ -1,8 +1,18 @@
 // Configuration interface
-export interface DocumentationConfig {
-  documentation_path: string;
-  max_toc_depth?: number;
-  discount_single_top_header?: boolean;
+export interface Configuration {
+  documentationPath: string;
+  maxTocDepth?: number;
+  discountSingleTopHeader?: boolean;
+}
+
+// Alias for backward compatibility
+export interface DocumentationConfig extends Configuration {}
+
+// Interface for parsed command line arguments
+export interface ParsedCommandLineArgs {
+  docsPath?: string;
+  maxTocDepth?: number;
+  discountSingleTopHeader?: boolean;
 }
 
 // File metadata interface
@@ -45,7 +55,7 @@ export interface ErrorResponse {
 }
 
 // Default configuration
-export const DEFAULT_CONFIG: DocumentationConfig = {
-  documentation_path: process.env.DOCS_PATH || './docs',
-  discount_single_top_header: false,
+export const DEFAULT_CONFIG: Configuration = {
+  documentationPath: process.env.DOCS_PATH || './docs',
+  discountSingleTopHeader: false,
 };

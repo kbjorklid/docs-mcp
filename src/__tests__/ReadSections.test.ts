@@ -10,9 +10,9 @@ describe('ReadSections', () => {
   beforeEach(() => {
     fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
-      documentation_path: fixturesPath,
-      max_toc_depth: 5,
-      discount_single_top_header: false,
+      documentationPath: fixturesPath,
+      maxTocDepth: 5,
+      discountSingleTopHeader: false,
     };
 
     readSections = new ReadSections(mockConfig);
@@ -207,9 +207,9 @@ describe('ReadSections', () => {
     it('should work with new configuration without pattern fields', () => {
       // Create config without pattern fields (post-refactoring config)
       const refactoredConfig = {
-        documentation_path: fixturesPath,
-        max_toc_depth: 5,
-        discount_single_top_header: false,
+        documentationPath: fixturesPath,
+        maxTocDepth: 5,
+        discountSingleTopHeader: false,
       };
 
       const refactoredTool = new ReadSections(refactoredConfig);

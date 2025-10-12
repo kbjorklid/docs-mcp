@@ -19,8 +19,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('./docs');
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('./docs');
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should parse docs-path argument correctly', async () => {
@@ -30,8 +30,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('/custom/path');
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('/custom/path');
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should parse short docs-path argument (-d) correctly', async () => {
@@ -41,8 +41,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('/another/path');
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('/another/path');
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should parse max-toc-depth argument correctly', async () => {
@@ -52,8 +52,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('./docs');
-      expect(config.max_toc_depth).toBe(3);
+      expect(config.documentationPath).toBe('./docs');
+      expect(config.maxTocDepth).toBe(3);
     });
 
     it('should parse both docs-path and max-toc-depth arguments correctly', async () => {
@@ -63,8 +63,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('/custom/docs');
-      expect(config.max_toc_depth).toBe(2);
+      expect(config.documentationPath).toBe('/custom/docs');
+      expect(config.maxTocDepth).toBe(2);
     });
 
     it('should handle arguments in different order', async () => {
@@ -74,8 +74,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('/ordered/path');
-      expect(config.max_toc_depth).toBe(4);
+      expect(config.documentationPath).toBe('/ordered/path');
+      expect(config.maxTocDepth).toBe(4);
     });
 
     it('should ignore invalid max-toc-depth values', async () => {
@@ -85,8 +85,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('./docs');
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('./docs');
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should ignore non-positive max-toc-depth values', async () => {
@@ -96,8 +96,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('./docs');
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('./docs');
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should ignore negative max-toc-depth values', async () => {
@@ -107,8 +107,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('./docs');
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('./docs');
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should handle docs-path argument without following value gracefully', async () => {
@@ -118,8 +118,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('./docs');
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('./docs');
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should handle max-toc-depth argument without following value gracefully', async () => {
@@ -129,8 +129,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('./docs');
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('./docs');
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should handle mixed valid and invalid arguments', async () => {
@@ -140,8 +140,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('/valid/path');
-      expect(config.max_toc_depth).toBe(3); // Should use the valid one
+      expect(config.documentationPath).toBe('/valid/path');
+      expect(config.maxTocDepth).toBe(3); // Should use the valid one
     });
 
     it('should handle decimal max-toc-depth values by converting to integer', async () => {
@@ -151,8 +151,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('./docs');
-      expect(config.max_toc_depth).toBe(2); // parseInt should convert to 2
+      expect(config.documentationPath).toBe('./docs');
+      expect(config.maxTocDepth).toBe(2); // parseInt should convert to 2
     });
   });
 
@@ -176,8 +176,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('/env/docs/path');
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('/env/docs/path');
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should prioritize CLI docs-path over environment variable', async () => {
@@ -188,8 +188,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('/cli/docs/path'); // CLI should take precedence
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('/cli/docs/path'); // CLI should take precedence
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should use CLI max-toc-depth when environment variable is also set for docs path', async () => {
@@ -200,8 +200,8 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('/env/docs/path');
-      expect(config.max_toc_depth).toBe(2);
+      expect(config.documentationPath).toBe('/env/docs/path');
+      expect(config.maxTocDepth).toBe(2);
     });
   });
 });

@@ -20,9 +20,9 @@ describe('Search', () => {
   beforeEach(() => {
     fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
-      documentation_path: fixturesPath,
-      max_toc_depth: 5,
-      discount_single_top_header: false,
+      documentationPath: fixturesPath,
+      maxTocDepth: 5,
+      discountSingleTopHeader: false,
     };
 
     search = new Search(mockConfig);

@@ -24,58 +24,58 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // Should use default values when no CLI args provided
-      expect(config.documentation_path).toBe('./docs');
-      expect(config.max_toc_depth).toBeUndefined();
-      expect(config.discount_single_top_header).toBe(false); // Default from DEFAULT_CONFIG
+      expect(config.documentationPath).toBe('./docs');
+      expect(config.maxTocDepth).toBeUndefined();
+      expect(config.discountSingleTopHeader).toBe(false); // Default from DEFAULT_CONFIG
     });
 
     it('should parse long form --docs-path argument', () => {
       process.argv = ['node', 'script.js', '--docs-path', '/custom/path'];
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('/custom/path');
+      expect(config.documentationPath).toBe('/custom/path');
     });
 
     it('should parse short form -d argument', () => {
       process.argv = ['node', 'script.js', '-d', '/short/path'];
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('/short/path');
+      expect(config.documentationPath).toBe('/short/path');
     });
 
     it('should parse --max-toc-depth with valid positive integer', () => {
       process.argv = ['node', 'script.js', '--max-toc-depth', '5'];
 
       const config = createConfig();
-      expect(config.max_toc_depth).toBe(5);
+      expect(config.maxTocDepth).toBe(5);
     });
 
     it('should parse --max-toc-depth with zero (should be ignored)', () => {
       process.argv = ['node', 'script.js', '--max-toc-depth', '0'];
 
       const config = createConfig();
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should parse --max-toc-depth with negative number (should be ignored)', () => {
       process.argv = ['node', 'script.js', '--max-toc-depth', '-3'];
 
       const config = createConfig();
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should parse --max-toc-depth with non-numeric value (should be ignored)', () => {
       process.argv = ['node', 'script.js', '--max-toc-depth', 'invalid'];
 
       const config = createConfig();
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should parse --discount-single-top-header flag', () => {
       process.argv = ['node', 'script.js', '--discount-single-top-header'];
 
       const config = createConfig();
-      expect(config.discount_single_top_header).toBe(true);
+      expect(config.discountSingleTopHeader).toBe(true);
     });
 
     it('should handle missing argument values gracefully', () => {
@@ -85,8 +85,8 @@ describe('ArgumentParser', () => {
       // The parser will take '--max-toc-depth' as the value for '--docs-path'
       // But when it encounters '--max-toc-depth' as a value, it doesn't recognize it as a flag
       // So '3' won't be processed as a max-toc-depth value either
-      expect(config.documentation_path).toBe('--max-toc-depth');
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('--max-toc-depth');
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should handle arguments in different orders', () => {
@@ -98,9 +98,9 @@ describe('ArgumentParser', () => {
       ];
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('/ordered/path');
-      expect(config.max_toc_depth).toBe(2);
-      expect(config.discount_single_top_header).toBe(true);
+      expect(config.documentationPath).toBe('/ordered/path');
+      expect(config.maxTocDepth).toBe(2);
+      expect(config.discountSingleTopHeader).toBe(true);
     });
 
     it('should handle multiple occurrences of the same argument (last one wins)', () => {
@@ -111,7 +111,7 @@ describe('ArgumentParser', () => {
       ];
 
       const config = createConfig();
-      expect(config.max_toc_depth).toBe(4);
+      expect(config.maxTocDepth).toBe(4);
     });
 
     it('should handle mixed short and long form arguments', () => {
@@ -123,9 +123,9 @@ describe('ArgumentParser', () => {
       ];
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('/mixed/path');
-      expect(config.max_toc_depth).toBe(3);
-      expect(config.discount_single_top_header).toBe(true);
+      expect(config.documentationPath).toBe('/mixed/path');
+      expect(config.maxTocDepth).toBe(3);
+      expect(config.discountSingleTopHeader).toBe(true);
     });
 
     it('should ignore unknown arguments', () => {
@@ -137,9 +137,9 @@ describe('ArgumentParser', () => {
       ];
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('/known/path');
-      expect(config.max_toc_depth).toBeUndefined();
-      expect(config.discount_single_top_header).toBe(false); // Default from DEFAULT_CONFIG
+      expect(config.documentationPath).toBe('/known/path');
+      expect(config.maxTocDepth).toBeUndefined();
+      expect(config.discountSingleTopHeader).toBe(false); // Default from DEFAULT_CONFIG
     });
 
     it('should handle arguments with extra whitespace', () => {
@@ -154,25 +154,25 @@ describe('ArgumentParser', () => {
       const config = createConfig();
       // Note: process.argv includes whitespace exactly as provided
       // The parser treats '  --docs-path  ' as an unknown argument, not as '--docs-path'
-      expect(config.documentation_path).toBe('./docs'); // Falls back to default
-      expect(config.max_toc_depth).toBeUndefined();
+      expect(config.documentationPath).toBe('./docs'); // Falls back to default
+      expect(config.maxTocDepth).toBeUndefined();
     });
 
     it('should handle boundary values for max-toc-depth', () => {
       // Test with 1 (minimum valid value)
       process.argv = ['node', 'script.js', '--max-toc-depth', '1'];
       let config = createConfig();
-      expect(config.max_toc_depth).toBe(1);
+      expect(config.maxTocDepth).toBe(1);
 
       // Test with large valid number
       process.argv = ['node', 'script.js', '--max-toc-depth', '999'];
       config = createConfig();
-      expect(config.max_toc_depth).toBe(999);
+      expect(config.maxTocDepth).toBe(999);
 
       // Test with decimal number (should be parsed as integer)
       process.argv = ['node', 'script.js', '--max-toc-depth', '3.14'];
       config = createConfig();
-      expect(config.max_toc_depth).toBe(3);
+      expect(config.maxTocDepth).toBe(3);
     });
   });
 
@@ -192,9 +192,9 @@ describe('ArgumentParser', () => {
     it('should use default values when no CLI args or environment variables are set', () => {
       const config = createConfig();
 
-      expect(config.documentation_path).toBe('./docs');
-      expect(config.max_toc_depth).toBeUndefined();
-      expect(config.discount_single_top_header).toBe(false);
+      expect(config.documentationPath).toBe('./docs');
+      expect(config.maxTocDepth).toBeUndefined();
+      expect(config.discountSingleTopHeader).toBe(false);
     });
 
     it('should give CLI args precedence over environment variables', () => {
@@ -202,21 +202,21 @@ describe('ArgumentParser', () => {
       process.argv = ['node', 'script.js', '--docs-path', '/cli/path'];
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('/cli/path');
+      expect(config.documentationPath).toBe('/cli/path');
     });
 
     it('should use environment variable when no CLI arg provided', () => {
       process.env.DOCS_PATH = '/env/path';
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('/env/path');
+      expect(config.documentationPath).toBe('/env/path');
     });
 
     it('should use default when neither CLI arg nor environment variable provided', () => {
       delete process.env.DOCS_PATH;
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('./docs');
+      expect(config.documentationPath).toBe('./docs');
     });
 
     it('should handle all three sources working together', () => {
@@ -228,9 +228,9 @@ describe('ArgumentParser', () => {
       ];
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('/env/path'); // From environment
-      expect(config.max_toc_depth).toBe(4); // From CLI
-      expect(config.discount_single_top_header).toBe(true); // From CLI
+      expect(config.documentationPath).toBe('/env/path'); // From environment
+      expect(config.maxTocDepth).toBe(4); // From CLI
+      expect(config.discountSingleTopHeader).toBe(true); // From CLI
     });
 
     it('should handle empty string environment variables', () => {
@@ -238,45 +238,45 @@ describe('ArgumentParser', () => {
 
       const config = createConfig();
       // Empty string is falsy, so it falls back to default
-      expect(config.documentation_path).toBe('./docs');
+      expect(config.documentationPath).toBe('./docs');
     });
 
     it('should handle whitespace-only environment variables', () => {
       process.env.DOCS_PATH = '   ';
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('   ');
+      expect(config.documentationPath).toBe('   ');
     });
 
     it('should handle missing environment variables gracefully', () => {
       delete process.env.DOCS_PATH;
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('./docs');
+      expect(config.documentationPath).toBe('./docs');
     });
 
     it('should preserve other default values when only one option is overridden', () => {
       process.argv = ['node', 'script.js', '--docs-path', '/custom/path'];
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('/custom/path');
-      expect(config.max_toc_depth).toBeUndefined();
-      expect(config.discount_single_top_header).toBe(false);
+      expect(config.documentationPath).toBe('/custom/path');
+      expect(config.maxTocDepth).toBeUndefined();
+      expect(config.discountSingleTopHeader).toBe(false);
     });
 
-    it('should handle CLI override of discount_single_top_header flag', () => {
+    it('should handle CLI override of discountSingleTopHeader flag', () => {
       process.argv = ['node', 'script.js', '--discount-single-top-header'];
 
       const config = createConfig();
-      expect(config.discount_single_top_header).toBe(true);
+      expect(config.discountSingleTopHeader).toBe(true);
     });
 
     it('should not set optional config values when not provided via CLI', () => {
       const config = createConfig();
 
       // These should remain undefined/false as they're only set via CLI
-      expect(config.max_toc_depth).toBeUndefined();
-      expect(config.discount_single_top_header).toBe(false); // Default from DEFAULT_CONFIG
+      expect(config.maxTocDepth).toBeUndefined();
+      expect(config.discountSingleTopHeader).toBe(false); // Default from DEFAULT_CONFIG
     });
 
     it('should handle complex scenario with mixed sources', () => {
@@ -290,17 +290,17 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // CLI should override env for docs_path
-      expect(config.documentation_path).toBe('/from/cli');
+      expect(config.documentationPath).toBe('/from/cli');
       // CLI-only options should be set
-      expect(config.max_toc_depth).toBe(2);
-      expect(config.discount_single_top_header).toBe(false);
+      expect(config.maxTocDepth).toBe(2);
+      expect(config.discountSingleTopHeader).toBe(false);
     });
 
     it('should handle special characters in environment variables', () => {
       process.env.DOCS_PATH = '/path/with spaces & special@chars';
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('/path/with spaces & special@chars');
+      expect(config.documentationPath).toBe('/path/with spaces & special@chars');
     });
 
     it('should handle very long CLI argument values', () => {
@@ -308,7 +308,7 @@ describe('ArgumentParser', () => {
       process.argv = ['node', 'script.js', '--docs-path', longPath];
 
       const config = createConfig();
-      expect(config.documentation_path).toBe(longPath);
+      expect(config.documentationPath).toBe(longPath);
     });
   });
 
@@ -332,9 +332,9 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // Should work with the refactored configuration
-      expect(config.documentation_path).toBe('/test/path');
-      expect(config.max_toc_depth).toBeUndefined();
-      expect(config.discount_single_top_header).toBe(false);
+      expect(config.documentationPath).toBe('/test/path');
+      expect(config.maxTocDepth).toBeUndefined();
+      expect(config.discountSingleTopHeader).toBe(false);
     });
 
     it('should maintain CLI argument precedence with refactored interface', () => {
@@ -349,9 +349,9 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // CLI args should still take precedence over environment
-      expect(config.documentation_path).toBe('/cli/path');
-      expect(config.max_toc_depth).toBe(3);
-      expect(config.discount_single_top_header).toBe(true);
+      expect(config.documentationPath).toBe('/cli/path');
+      expect(config.maxTocDepth).toBe(3);
+      expect(config.discountSingleTopHeader).toBe(true);
     });
 
     it('should handle environment variable configuration without unused properties', () => {
@@ -360,7 +360,7 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // Should work with environment variables even when unused properties are removed
-      expect(config.documentation_path).toBe('/env/documentation');
+      expect(config.documentationPath).toBe('/env/documentation');
     });
 
     it('should handle complex configuration scenarios after refactoring', () => {
@@ -375,9 +375,9 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // All configuration should work correctly
-      expect(config.documentation_path).toBe('/cli/docs');
-      expect(config.max_toc_depth).toBe(5);
-      expect(config.discount_single_top_header).toBe(true);
+      expect(config.documentationPath).toBe('/cli/docs');
+      expect(config.maxTocDepth).toBe(5);
+      expect(config.discountSingleTopHeader).toBe(true);
     });
 
     it('should handle boundary values in configuration after refactoring', () => {
@@ -390,8 +390,8 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // Boundary value handling should still work
-      expect(config.max_toc_depth).toBeUndefined(); // 0 should be ignored
-      expect(config.discount_single_top_header).toBe(true);
+      expect(config.maxTocDepth).toBeUndefined(); // 0 should be ignored
+      expect(config.discountSingleTopHeader).toBe(true);
     });
 
     it('should preserve default behavior when only using refactored properties', () => {
@@ -399,9 +399,9 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // Should still work with all default values
-      expect(config.documentation_path).toBe('./docs');
-      expect(config.max_toc_depth).toBeUndefined();
-      expect(config.discount_single_top_header).toBe(false);
+      expect(config.documentationPath).toBe('./docs');
+      expect(config.maxTocDepth).toBeUndefined();
+      expect(config.discountSingleTopHeader).toBe(false);
     });
 
     it('should handle invalid CLI arguments gracefully after refactoring', () => {
@@ -414,8 +414,8 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // Should handle invalid arguments gracefully
-      expect(config.max_toc_depth).toBeUndefined(); // Invalid should be ignored
-      expect(config.documentation_path).toBe('./docs'); // Empty string should be ignored and default used
+      expect(config.maxTocDepth).toBeUndefined(); // Invalid should be ignored
+      expect(config.documentationPath).toBe('./docs'); // Empty string should be ignored and default used
     });
 
     it('should maintain configuration precedence order after refactoring', () => {
@@ -426,7 +426,7 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // Verify precedence is maintained
-      expect(config.documentation_path).toBe('/from/cli'); // CLI wins
+      expect(config.documentationPath).toBe('/from/cli'); // CLI wins
     });
 
     it('should handle edge cases in configuration after refactoring', () => {
@@ -436,7 +436,7 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // Should handle large values
-      expect(config.max_toc_depth).toBe(999999);
+      expect(config.maxTocDepth).toBe(999999);
     });
 
     it('should maintain tool compatibility with refactored configuration', () => {
@@ -449,9 +449,9 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       // Configuration should be compatible with all tools
-      expect(typeof config.documentation_path).toBe('string');
-      expect(config.max_toc_depth).toBe(2);
-      expect(typeof config.discount_single_top_header).toBe('boolean');
+      expect(typeof config.documentationPath).toBe('string');
+      expect(config.maxTocDepth).toBe(2);
+      expect(typeof config.discountSingleTopHeader).toBe('boolean');
     });
   });
 });

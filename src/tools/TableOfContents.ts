@@ -1,11 +1,11 @@
 import * as path from 'path';
-import { Section, DocumentationConfig, ErrorResponse } from '../types';
+import { Section, Configuration, ErrorResponse } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 
 export class TableOfContents {
-  private config: DocumentationConfig;
+  private config: Configuration;
 
-  constructor(config: DocumentationConfig) {
+  constructor(config: Configuration) {
     this.config = config;
   }
 
@@ -143,8 +143,8 @@ export class TableOfContents {
     maxDepth: number | undefined,
     content: string
   ): number | undefined {
-    // If discount_single_top_header is not enabled, return the original max depth
-    if (!this.config.discount_single_top_header) {
+    // If discountSingleTopHeader is not enabled, return the original max depth
+    if (!this.config.discountSingleTopHeader) {
       return maxDepth;
     }
 
@@ -169,7 +169,7 @@ export class TableOfContents {
    * Get table of contents for a markdown file
    */
   private getTableOfContents(filename: string, maxDepth?: number): Section[] {
-    const fullPath = path.resolve(this.config.documentation_path, filename);
+    const fullPath = path.resolve(this.config.documentationPath, filename);
 
     // Check if file exists
     const validation = MarkdownParser.validateFile(fullPath);
@@ -189,7 +189,7 @@ export class TableOfContents {
 
     // Determine the effective max depth (parameter > config > unlimited)
     // Note: We need to explicitly check for undefined because 0 is a valid value
-    const baseMaxDepth = maxDepth !== undefined ? maxDepth : this.config.max_toc_depth;
+    const baseMaxDepth = maxDepth !== undefined ? maxDepth : this.config.maxTocDepth;
 
     // Calculate effective max depth with discount_single_top_header logic
     const effectiveMaxDepth = this.calculateEffectiveMaxDepth(baseMaxDepth, content);

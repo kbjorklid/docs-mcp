@@ -1,11 +1,11 @@
 import * as path from 'path';
-import { SectionContent, DocumentationConfig, ErrorResponse } from '../types';
+import { SectionContent, Configuration, ErrorResponse } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 
 export class ReadSections {
-  private config: DocumentationConfig;
+  private config: Configuration;
 
-  constructor(config: DocumentationConfig) {
+  constructor(config: Configuration) {
     this.config = config;
   }
 
@@ -99,7 +99,7 @@ export class ReadSections {
               message: 'The specified file was not found',
               details: {
                 filename,
-                search_path: this.config.documentation_path,
+                search_path: this.config.documentationPath,
               },
             },
           };
@@ -165,7 +165,7 @@ export class ReadSections {
     filename: string,
     sectionIds: string[]
   ): SectionContent[] {
-    const fullPath = path.resolve(this.config.documentation_path, filename);
+    const fullPath = path.resolve(this.config.documentationPath, filename);
 
     // Check if file exists
     const validation = MarkdownParser.validateFile(fullPath);

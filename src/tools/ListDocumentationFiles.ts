@@ -1,12 +1,12 @@
 import { glob } from 'glob';
 import * as path from 'path';
-import { FileInfo, DocumentationConfig, ErrorResponse } from '../types';
+import { FileInfo, Configuration, ErrorResponse } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 
 export class ListDocumentationFiles {
-  private config: DocumentationConfig;
+  private config: Configuration;
 
-  constructor(config: DocumentationConfig) {
+  constructor(config: Configuration) {
     this.config = config;
   }
 
@@ -67,7 +67,7 @@ export class ListDocumentationFiles {
 
     // Find all markdown files using hardcoded **/*.md pattern
     const filePaths = await glob('**/*.md', {
-      cwd: this.config.documentation_path,
+      cwd: this.config.documentationPath,
       absolute: false,
     });
 
@@ -85,7 +85,7 @@ export class ListDocumentationFiles {
    * Process a single file and extract metadata
    */
   private async processFile(filePath: string): Promise<FileInfo | null> {
-    const fullPath = path.resolve(this.config.documentation_path, filePath);
+    const fullPath = path.resolve(this.config.documentationPath, filePath);
 
     try {
       const validation = MarkdownParser.validateFile(fullPath);

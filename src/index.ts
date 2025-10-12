@@ -8,7 +8,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 // Import tool classes
-import { DocumentationConfig } from './types';
+import { Configuration } from './types';
 import { ListDocumentationFiles } from './tools/ListDocumentationFiles';
 import { TableOfContents } from './tools/TableOfContents';
 import { ReadSections } from './tools/ReadSections';

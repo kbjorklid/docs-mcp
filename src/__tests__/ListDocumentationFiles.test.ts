@@ -20,9 +20,9 @@ describe('ListDocumentationFiles', () => {
   beforeEach(() => {
     fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
-      documentation_path: fixturesPath,
-      max_toc_depth: 5,
-      discount_single_top_header: false,
+      documentationPath: fixturesPath,
+      maxTocDepth: 5,
+      discountSingleTopHeader: false,
     };
 
     // Setup default markdown parser mocks
@@ -103,7 +103,7 @@ describe('ListDocumentationFiles', () => {
       // Create config with non-existent path
       const invalidConfig = {
         ...mockConfig,
-        documentation_path: '/non/existent/path',
+        documentationPath: '/non/existent/path',
       };
       const invalidListDocumentationFiles = new ListDocumentationFiles(
         invalidConfig
@@ -152,9 +152,9 @@ describe('ListDocumentationFiles', () => {
       it('should work with new configuration without pattern fields', async () => {
         // Create config without pattern fields (post-refactoring config)
         const refactoredConfig = {
-          documentation_path: fixturesPath,
-          max_toc_depth: 5,
-          discount_single_top_header: false,
+          documentationPath: fixturesPath,
+          maxTocDepth: 5,
+          discountSingleTopHeader: false,
         };
 
         const refactoredTool = new ListDocumentationFiles(refactoredConfig);
@@ -169,7 +169,7 @@ describe('ListDocumentationFiles', () => {
       it('should work with new simplified file discovery', async () => {
         // Test that hardcoded **/*.md pattern works correctly
         const simpleConfig = {
-          documentation_path: fixturesPath,
+          documentationPath: fixturesPath,
         };
 
         // Reset mocks to ensure clean test

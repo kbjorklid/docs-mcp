@@ -1,12 +1,12 @@
 import * as path from 'path';
-import { Section, DocumentationConfig, ErrorResponse } from '../types';
+import { Section, Configuration, ErrorResponse } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { ListDocumentationFiles } from './ListDocumentationFiles';
 
 export class Search {
-  private config: DocumentationConfig;
+  private config: Configuration;
 
-  constructor(config: DocumentationConfig) {
+  constructor(config: Configuration) {
     this.config = config;
   }
 
@@ -164,7 +164,7 @@ export class Search {
    * Find matching sections in a file
    */
   private findMatchesInFile(regex: RegExp, filename: string): Section[] {
-    const fullPath = path.resolve(this.config.documentation_path, filename);
+    const fullPath = path.resolve(this.config.documentationPath, filename);
 
     this.validateFile(fullPath, filename);
 

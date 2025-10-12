@@ -10,9 +10,9 @@ describe('TableOfContents', () => {
   beforeEach(() => {
     fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
-      documentation_path: fixturesPath,
-      max_toc_depth: 5,
-      discount_single_top_header: false,
+      documentationPath: fixturesPath,
+      maxTocDepth: 5,
+      discountSingleTopHeader: false,
     };
 
     tableOfContents = new TableOfContents(mockConfig);
@@ -218,11 +218,11 @@ describe('TableOfContents', () => {
       expect(sections).toHaveLength(10); // All sections
     });
 
-    it('should respect config-level max_toc_depth when no parameter is provided', () => {
-      // Create config with max_toc_depth
+    it('should respect config-level maxTocDepth when no parameter is provided', () => {
+      // Create config with maxTocDepth
       const configWithMaxDepth = {
         ...mockConfig,
-        max_toc_depth: 2,
+        maxTocDepth: 2,
       };
       const tocWithConfig = new TableOfContents(configWithMaxDepth);
 
@@ -239,11 +239,11 @@ describe('TableOfContents', () => {
       });
     });
 
-    it('should prioritize parameter max_depth over config max_toc_depth', () => {
-      // Create config with max_toc_depth: 2
+    it('should prioritize parameter max_depth over config maxTocDepth', () => {
+      // Create config with maxTocDepth: 2
       const configWithMaxDepth = {
         ...mockConfig,
-        max_toc_depth: 2,
+        maxTocDepth: 2,
       };
       const tocWithConfig = new TableOfContents(configWithMaxDepth);
 
@@ -278,11 +278,11 @@ describe('TableOfContents', () => {
       expect(levels).toContain(5);
     });
 
-    it('should respect config-level max_toc_depth when set to 0 (disabled)', () => {
-      // Create config with max_toc_depth: 0 (disabled)
+    it('should respect config-level maxTocDepth when set to 0 (disabled)', () => {
+      // Create config with maxTocDepth: 0 (disabled)
       const configWithZeroDepth = {
         ...mockConfig,
-        max_toc_depth: 0,
+        maxTocDepth: 0,
       };
       const tocWithZeroConfig = new TableOfContents(configWithZeroDepth);
 
@@ -318,12 +318,12 @@ describe('TableOfContents', () => {
     });
   });
 
-  describe('discount_single_top_header functionality', () => {
-    it('should not affect max depth when discount_single_top_header is disabled (default)', () => {
-      // Create config with discount_single_top_header: false (default)
+  describe('discountSingleTopHeader functionality', () => {
+    it('should not affect max depth when discountSingleTopHeader is disabled (default)', () => {
+      // Create config with discountSingleTopHeader: false (default)
       const configWithoutDiscount = {
         ...mockConfig,
-        discount_single_top_header: false,
+        discountSingleTopHeader: false,
       };
       const tocWithoutDiscount = new TableOfContents(configWithoutDiscount);
 
@@ -351,11 +351,11 @@ describe('TableOfContents', () => {
       expect(titles).not.toContain('Subsection 2.1');
     });
 
-    it('should increase effective max depth by 1 when discount_single_top_header is enabled and document has single top header', () => {
-      // Create config with discount_single_top_header: true
+    it('should increase effective max depth by 1 when discountSingleTopHeader is enabled and document has single top header', () => {
+      // Create config with discountSingleTopHeader: true
       const configWithDiscount = {
         ...mockConfig,
-        discount_single_top_header: true,
+        discountSingleTopHeader: true,
       };
       const tocWithDiscount = new TableOfContents(configWithDiscount);
 
@@ -385,11 +385,11 @@ describe('TableOfContents', () => {
       expect(titles).not.toContain('Sub-subsection 2.1.1');
     });
 
-    it('should increase effective max depth by 1 when discount_single_top_header is enabled and document has no top headers', () => {
-      // Create config with discount_single_top_header: true
+    it('should increase effective max depth by 1 when discountSingleTopHeader is enabled and document has no top headers', () => {
+      // Create config with discountSingleTopHeader: true
       const configWithDiscount = {
         ...mockConfig,
-        discount_single_top_header: true,
+        discountSingleTopHeader: true,
       };
       const tocWithDiscount = new TableOfContents(configWithDiscount);
 
@@ -417,11 +417,11 @@ describe('TableOfContents', () => {
       expect(titles).not.toContain('Sub-subsection 2.1.1');
     });
 
-    it('should not affect max depth when discount_single_top_header is enabled but document has multiple top headers', () => {
-      // Create config with discount_single_top_header: true
+    it('should not affect max depth when discountSingleTopHeader is enabled but document has multiple top headers', () => {
+      // Create config with discountSingleTopHeader: true
       const configWithDiscount = {
         ...mockConfig,
-        discount_single_top_header: true,
+        discountSingleTopHeader: true,
       };
       const tocWithDiscount = new TableOfContents(configWithDiscount);
 
@@ -450,11 +450,11 @@ describe('TableOfContents', () => {
       expect(titles).not.toContain('Sub-subsection 2.1.1');
     });
 
-    it('should not affect behavior when max_depth is undefined even with discount_single_top_header enabled', () => {
-      // Create config with discount_single_top_header: true
+    it('should not affect behavior when max_depth is undefined even with discountSingleTopHeader enabled', () => {
+      // Create config with discountSingleTopHeader: true
       const configWithDiscount = {
         ...mockConfig,
-        discount_single_top_header: true,
+        discountSingleTopHeader: true,
       };
       const tocWithDiscount = new TableOfContents(configWithDiscount);
 
@@ -474,11 +474,11 @@ describe('TableOfContents', () => {
       expect(levels).toContain(4);
     });
 
-    it('should not affect behavior when max_depth is 0 (disabled) even with discount_single_top_header enabled', () => {
-      // Create config with discount_single_top_header: true
+    it('should not affect behavior when max_depth is 0 (disabled) even with discountSingleTopHeader enabled', () => {
+      // Create config with discountSingleTopHeader: true
       const configWithDiscount = {
         ...mockConfig,
-        discount_single_top_header: true,
+        discountSingleTopHeader: true,
       };
       const tocWithDiscount = new TableOfContents(configWithDiscount);
 
@@ -498,12 +498,12 @@ describe('TableOfContents', () => {
       expect(levels).toContain(4);
     });
 
-    it('should work correctly with config-level max_toc_depth and discount_single_top_header', () => {
-      // Create config with both max_toc_depth and discount_single_top_header
+    it('should work correctly with config-level maxTocDepth and discountSingleTopHeader', () => {
+      // Create config with both maxTocDepth and discountSingleTopHeader
       const configWithBoth = {
         ...mockConfig,
-        max_toc_depth: 2,
-        discount_single_top_header: true,
+        maxTocDepth: 2,
+        discountSingleTopHeader: true,
       };
       const tocWithBoth = new TableOfContents(configWithBoth);
 
@@ -529,12 +529,12 @@ describe('TableOfContents', () => {
       expect(titles).not.toContain('Sub-subsection 2.1.1');
     });
 
-    it('should prioritize parameter max_depth over config when discount_single_top_header is enabled', () => {
-      // Create config with max_toc_depth and discount_single_top_header
+    it('should prioritize parameter max_depth over config when discountSingleTopHeader is enabled', () => {
+      // Create config with maxTocDepth and discountSingleTopHeader
       const configWithBoth = {
         ...mockConfig,
-        max_toc_depth: 1,
-        discount_single_top_header: true,
+        maxTocDepth: 1,
+        discountSingleTopHeader: true,
       };
       const tocWithBoth = new TableOfContents(configWithBoth);
 
@@ -566,9 +566,9 @@ describe('TableOfContents', () => {
     it('should work with new configuration without pattern fields', () => {
       // Create config without pattern fields (post-refactoring config)
       const refactoredConfig = {
-        documentation_path: fixturesPath,
-        max_toc_depth: 5,
-        discount_single_top_header: false,
+        documentationPath: fixturesPath,
+        maxTocDepth: 5,
+        discountSingleTopHeader: false,
       };
 
       const refactoredTool = new TableOfContents(refactoredConfig);

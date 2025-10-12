@@ -30,9 +30,9 @@ describe('Configuration Integration Tests for Refactoring', () => {
     it('should work with all tools using refactored configuration', () => {
       // Create a refactored configuration (without unused properties)
       const refactoredConfig: DocumentationConfig = {
-        documentation_path: fixturesPath,
-        max_toc_depth: 3,
-        discount_single_top_header: false,
+        documentationPath: fixturesPath,
+        maxTocDepth: 3,
+        discountSingleTopHeader: false,
       };
 
       // Test ListDocumentationFiles
@@ -50,7 +50,7 @@ describe('Configuration Integration Tests for Refactoring', () => {
 
     it('should maintain tool functionality with minimal configuration', () => {
       const minimalConfig: DocumentationConfig = {
-        documentation_path: fixturesPath,
+        documentationPath: fixturesPath,
       };
 
       // All tools should work with minimal configuration
@@ -65,9 +65,9 @@ describe('Configuration Integration Tests for Refactoring', () => {
 
     it('should handle end-to-end workflow with refactored configuration', async () => {
       const refactoredConfig: DocumentationConfig = {
-        documentation_path: fixturesPath,
-        max_toc_depth: 2,
-        discount_single_top_header: true,
+        documentationPath: fixturesPath,
+        maxTocDepth: 2,
+        discountSingleTopHeader: true,
       };
 
       // Step 1: List documentation files
@@ -129,7 +129,7 @@ describe('Configuration Integration Tests for Refactoring', () => {
       process.argv = ['node', 'script.js', '--docs-path', '/cli/override'];
 
       const config = createConfig();
-      expect(config.documentation_path).toBe('/cli/override');
+      expect(config.documentationPath).toBe('/cli/override');
 
       // Tools should use CLI-overridden path
       const listTool = new ListDocumentationFiles(config);
@@ -162,9 +162,9 @@ describe('Configuration Integration Tests for Refactoring', () => {
       ];
 
       const config = createConfig();
-      expect(config.max_toc_depth).toBe(2);
+      expect(config.maxTocDepth).toBe(2);
 
-      // TableOfContents should respect the max_toc_depth setting
+      // TableOfContents should respect the maxTocDepth setting
       const tocTool = new TableOfContents(config);
       const tocResult = tocTool.execute('multi-level-headers.md');
       const sections = JSON.parse(tocResult.content[0].text);
@@ -180,7 +180,7 @@ describe('Configuration Integration Tests for Refactoring', () => {
     it('should handle configuration errors consistently across tools', () => {
       // Test with invalid configuration
       const invalidConfig = {
-        documentation_path: '/non/existent/path',
+        documentationPath: '/non/existent/path',
       };
 
       const listTool = new ListDocumentationFiles(invalidConfig as DocumentationConfig);
@@ -195,7 +195,7 @@ describe('Configuration Integration Tests for Refactoring', () => {
 
     it('should handle boundary conditions in all tools', async () => {
       const boundaryConfig: DocumentationConfig = {
-        documentation_path: fixturesPath,
+        documentationPath: fixturesPath,
       };
 
       const listTool = new ListDocumentationFiles(boundaryConfig);
@@ -222,9 +222,9 @@ describe('Configuration Integration Tests for Refactoring', () => {
     it('should work with current configuration format across all tools', async () => {
       // Current configuration with refactored properties
       const currentConfig: DocumentationConfig = {
-        documentation_path: fixturesPath,
-        max_toc_depth: 5,
-        discount_single_top_header: false,
+        documentationPath: fixturesPath,
+        maxTocDepth: 5,
+        discountSingleTopHeader: false,
       };
 
       // All tools should work with current configuration
@@ -257,8 +257,8 @@ describe('Configuration Integration Tests for Refactoring', () => {
       expect(() => readTool.execute('test-doc.md', ['introduction'])).not.toThrow();
 
       // Verify DEFAULT_CONFIG has the expected structure
-      expect(DEFAULT_CONFIG.documentation_path).toBe('./docs');
-      expect(DEFAULT_CONFIG.discount_single_top_header).toBe(false);
+      expect(DEFAULT_CONFIG.documentationPath).toBe('./docs');
+      expect(DEFAULT_CONFIG.discountSingleTopHeader).toBe(false);
     });
   });
 
@@ -267,15 +267,15 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const validationConfigs = [
         // Valid configurations
         {
-          documentation_path: fixturesPath,
+          documentationPath: fixturesPath,
         },
         {
-          documentation_path: fixturesPath,
-          max_toc_depth: 0,
+          documentationPath: fixturesPath,
+          maxTocDepth: 0,
         },
         // Edge cases
         {
-          documentation_path: '',
+          documentationPath: '',
         },
       ];
 
@@ -296,14 +296,14 @@ describe('Configuration Integration Tests for Refactoring', () => {
     it('should handle configuration with optional properties', async () => {
       const optionalConfigs = [
         {
-          documentation_path: fixturesPath,
-          max_toc_depth: undefined,
-          discount_single_top_header: undefined,
+          documentationPath: fixturesPath,
+          maxTocDepth: undefined,
+          discountSingleTopHeader: undefined,
         },
         {
-          documentation_path: fixturesPath,
-          max_toc_depth: 5,
-          discount_single_top_header: true,
+          documentationPath: fixturesPath,
+          maxTocDepth: 5,
+          discountSingleTopHeader: true,
         },
       ];
 
@@ -364,15 +364,15 @@ describe('Configuration Integration Tests for Refactoring', () => {
     it('should handle configuration changes during runtime', async () => {
       // Initial configuration
       const initialConfig: DocumentationConfig = {
-        documentation_path: fixturesPath,
-        max_toc_depth: 2,
+        documentationPath: fixturesPath,
+        maxTocDepth: 2,
       };
 
       // Updated configuration
       const updatedConfig: DocumentationConfig = {
-        documentation_path: fixturesPath,
-        max_toc_depth: 5,
-        discount_single_top_header: true,
+        documentationPath: fixturesPath,
+        maxTocDepth: 5,
+        discountSingleTopHeader: true,
       };
 
       // Test with initial config
@@ -385,7 +385,7 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const updatedResult = updatedTocTool.execute('multi-level-headers.md');
       const updatedSections = JSON.parse(updatedResult.content[0].text);
 
-      // Updated config should return more sections due to higher max_toc_depth
+      // Updated config should return more sections due to higher maxTocDepth
       expect(updatedSections.length).toBeGreaterThanOrEqual(initialSections.length);
     });
   });
