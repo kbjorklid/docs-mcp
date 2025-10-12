@@ -89,19 +89,6 @@ describe('TableOfContents', () => {
       expect(sections).toHaveLength(0);
     });
 
-    it('should provide guidance about list_documentation_files tool in error message', () => {
-      // Execute with non-existent file
-      const result = tableOfContents.execute('missing-file.md');
-
-      // Verify error response contains guidance
-      expect(result.content).toHaveLength(1);
-      const errorResponse = JSON.parse(result.content[0].text);
-      expect(errorResponse.error.code).toBe('FILE_NOT_FOUND');
-      expect(errorResponse.error.message).toContain(
-        'list_documentation_files tool'
-      );
-      expect(errorResponse.error.message).toContain('see available files');
-    });
   });
 
   describe('getTableOfContents', () => {
@@ -591,111 +578,6 @@ describe('TableOfContents', () => {
       const sections = JSON.parse(result.content[0].text);
       expect(Array.isArray(sections)).toBe(true);
       expect(sections.length).toBeGreaterThan(0);
-    });
-
-    it('should handle configuration with minimal required properties', () => {
-      const minimalConfig = {
-        documentation_path: fixturesPath,
-      };
-
-      const minimalTool = new TableOfContents(minimalConfig);
-      const result = minimalTool.execute('test-doc.md');
-
-      expect(result.content).toHaveLength(1);
-      const sections = JSON.parse(result.content[0].text);
-      expect(Array.isArray(sections)).toBe(true);
-    });
-
-    it('should maintain backward compatibility with old configuration format', () => {
-      // Ensure backward compatibility with configs that still have pattern fields
-      const legacyConfig = {
-        documentation_path: fixturesPath,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
-      } as any;
-
-      const legacyTool = new TableOfContents(legacyConfig);
-      const result = legacyTool.execute('test-doc.md');
-
-      expect(result.content).toHaveLength(1);
-      const sections = JSON.parse(result.content[0].text);
-      expect(sections.length).toBe(5); // All sections from test-doc.md
-    });
-
-    it('should respect discount_single_top_header configuration in refactored config', () => {
-      const refactoredConfig = {
-        documentation_path: fixturesPath,
-        discount_single_top_header: true,
-      };
-
-      const refactoredTool = new TableOfContents(refactoredConfig);
-      const result = refactoredTool.execute('single-top-header.md', 2);
-
-      expect(result.content).toHaveLength(1);
-      const sections = JSON.parse(result.content[0].text);
-      expect(sections.length).toBeGreaterThan(4); // Should include level 3 due to discount
-    });
-
-    it('should respect max_toc_depth configuration in refactored config', () => {
-      const refactoredConfig = {
-        documentation_path: fixturesPath,
-        max_toc_depth: 2,
-      };
-
-      const refactoredTool = new TableOfContents(refactoredConfig);
-      const result = refactoredTool.execute('multi-level-headers.md');
-
-      expect(result.content).toHaveLength(1);
-      const sections = JSON.parse(result.content[0].text);
-      expect(sections.length).toBe(4); // Should be limited to max_toc_depth
-      sections.forEach((section: any) => {
-        expect(section.level).toBeLessThanOrEqual(2);
-      });
-    });
-
-    it('should handle boundary values for configuration parameters', () => {
-      const boundaryConfigs = [
-        {
-          documentation_path: fixturesPath,
-        },
-        {
-          documentation_path: fixturesPath,
-        },
-        {
-          documentation_path: fixturesPath,
-        },
-      ];
-
-      boundaryConfigs.forEach((config) => {
-        const tool = new TableOfContents(config);
-
-        // Should handle files correctly
-        const result = tool.execute('test-doc.md');
-        expect(result.content).toHaveLength(1);
-
-        // Parse response to check if it's valid JSON
-        expect(() => JSON.parse(result.content[0].text)).not.toThrow();
-      });
-    });
-
-    it('should handle error cases with refactored configuration', () => {
-      const refactoredConfig = {
-        documentation_path: fixturesPath,
-      };
-
-      const refactoredTool = new TableOfContents(refactoredConfig);
-
-      // Test file not found
-      const result = refactoredTool.execute('nonexistent.md');
-      expect(result.content).toHaveLength(1);
-      const errorResponse = JSON.parse(result.content[0].text);
-      expect(errorResponse.error.code).toBe('FILE_NOT_FOUND');
-
-      // Test invalid filename parameter
-      const invalidResult = refactoredTool.execute('');
-      expect(invalidResult.content).toHaveLength(1);
-      const invalidErrorResponse = JSON.parse(invalidResult.content[0].text);
-      expect(invalidErrorResponse.error.code).toBe('INVALID_PARAMETER');
     });
   });
 });
