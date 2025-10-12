@@ -21,3 +21,5 @@ User should have given you instructions on refactoring to implmenet. If not, do 
 5. Implement the refactoring based on the plan made in #1.
 
 6. Run all tests. Fix if anything is broken.
+
+7. Run "code-maintainaibility-planner" agent, asking it to concentrate on the changed code.
