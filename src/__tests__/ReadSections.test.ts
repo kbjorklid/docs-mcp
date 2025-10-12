@@ -12,8 +12,8 @@ describe('ReadSections', () => {
     mockConfig = {
       documentation_path: fixturesPath,
       max_file_size: 10485760,
-      exclude_patterns: ['node_modules/**'],
-      include_patterns: ['**/*.md'],
+      max_toc_depth: 5,
+      discount_single_top_header: false,
     };
 
     readSections = new ReadSections(mockConfig);
@@ -214,21 +214,18 @@ describe('ReadSections', () => {
     });
   });
 
-  // Tool Compatibility Tests for refactoring
+  // Configuration Compatibility Tests for refactoring
   describe('Configuration Compatibility', () => {
-    it('should work with configuration without auto_index and index_refresh_interval', () => {
-      // Create config without the unused properties (simulating post-refactoring config)
+    it('should work with new configuration without pattern fields', () => {
+      // Create config without pattern fields (post-refactoring config)
       const refactoredConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
         max_toc_depth: 5,
         discount_single_top_header: false,
       };
 
-      // Should still work with the tool even without the unused properties
-      const refactoredTool = new ReadSections(refactoredConfig as any);
+      const refactoredTool = new ReadSections(refactoredConfig);
       const result = refactoredTool.execute('test-doc.md', ['introduction']);
 
       expect(result.content).toHaveLength(1);
@@ -242,11 +239,9 @@ describe('ReadSections', () => {
       const minimalConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: [],
-        include_patterns: ['**/*.md'],
       };
 
-      const minimalTool = new ReadSections(minimalConfig as any);
+      const minimalTool = new ReadSections(minimalConfig);
       const result = minimalTool.execute('test-doc.md', ['introduction']);
 
       expect(result.content).toHaveLength(1);
@@ -255,17 +250,17 @@ describe('ReadSections', () => {
       expect(sections[0].title).toBe('introduction');
     });
 
-    it('should maintain functionality with current configuration format', () => {
-      // Ensure backward compatibility
-      const currentConfig = {
+    it('should maintain backward compatibility with old configuration format', () => {
+      // Ensure backward compatibility with configs that still have pattern fields
+      const legacyConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
         exclude_patterns: ['node_modules/**'],
         include_patterns: ['**/*.md'],
-      };
+      } as any;
 
-      const currentTool = new ReadSections(currentConfig);
-      const result = currentTool.execute('test-doc.md', ['introduction', 'getting-started']);
+      const legacyTool = new ReadSections(legacyConfig);
+      const result = legacyTool.execute('test-doc.md', ['introduction', 'getting-started']);
 
       expect(result.content).toHaveLength(1);
       const sections = JSON.parse(result.content[0].text);
@@ -279,25 +274,19 @@ describe('ReadSections', () => {
         {
           documentation_path: fixturesPath,
           max_file_size: 0, // Minimum
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
         },
         {
           documentation_path: fixturesPath,
           max_file_size: 1, // Just above minimum
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
         },
         {
           documentation_path: fixturesPath,
           max_file_size: Number.MAX_SAFE_INTEGER, // Maximum
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
         },
       ];
 
       boundaryConfigs.forEach((config) => {
-        const tool = new ReadSections(config as any);
+        const tool = new ReadSections(config);
 
         // Should handle files within size limit or return appropriate error
         const result = tool.execute('test-doc.md', ['introduction']);
@@ -312,11 +301,9 @@ describe('ReadSections', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
       };
 
-      const refactoredTool = new ReadSections(refactoredConfig as any);
+      const refactoredTool = new ReadSections(refactoredConfig);
 
       // Test file not found
       const result = refactoredTool.execute('nonexistent.md', ['section1']);
@@ -341,11 +328,9 @@ describe('ReadSections', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
       };
 
-      const refactoredTool = new ReadSections(refactoredConfig as any);
+      const refactoredTool = new ReadSections(refactoredConfig);
 
       // Test single missing section
       const singleMissingResult = refactoredTool.execute('test-doc.md', ['nonexistent']);
@@ -366,11 +351,9 @@ describe('ReadSections', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
       };
 
-      const refactoredTool = new ReadSections(refactoredConfig as any);
+      const refactoredTool = new ReadSections(refactoredConfig);
 
       // Test nested sections
       const nestedResult = refactoredTool.execute('nested-sections.md', ['main-section/subsection-one']);
@@ -389,11 +372,9 @@ describe('ReadSections', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
       };
 
-      const refactoredTool = new ReadSections(refactoredConfig as any);
+      const refactoredTool = new ReadSections(refactoredConfig);
 
       const result = refactoredTool.execute('nonexistent.md', ['section1']);
       const errorResponse = JSON.parse(result.content[0].text);

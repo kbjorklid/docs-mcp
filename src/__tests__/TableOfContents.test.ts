@@ -12,8 +12,8 @@ describe('TableOfContents', () => {
     mockConfig = {
       documentation_path: fixturesPath,
       max_file_size: 10485760,
-      exclude_patterns: ['node_modules/**'],
-      include_patterns: ['**/*.md'],
+      max_toc_depth: 5,
+      discount_single_top_header: false,
     };
 
     tableOfContents = new TableOfContents(mockConfig);
@@ -575,21 +575,18 @@ describe('TableOfContents', () => {
     });
   });
 
-  // Tool Compatibility Tests for refactoring
+  // Configuration Compatibility Tests for refactoring
   describe('Configuration Compatibility', () => {
-    it('should work with configuration without auto_index and index_refresh_interval', () => {
-      // Create config without the unused properties (simulating post-refactoring config)
+    it('should work with new configuration without pattern fields', () => {
+      // Create config without pattern fields (post-refactoring config)
       const refactoredConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
         max_toc_depth: 5,
         discount_single_top_header: false,
       };
 
-      // Should still work with the tool even without the unused properties
-      const refactoredTool = new TableOfContents(refactoredConfig as any);
+      const refactoredTool = new TableOfContents(refactoredConfig);
       const result = refactoredTool.execute('test-doc.md');
 
       expect(result.content).toHaveLength(1);
@@ -602,11 +599,9 @@ describe('TableOfContents', () => {
       const minimalConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: [],
-        include_patterns: ['**/*.md'],
       };
 
-      const minimalTool = new TableOfContents(minimalConfig as any);
+      const minimalTool = new TableOfContents(minimalConfig);
       const result = minimalTool.execute('test-doc.md');
 
       expect(result.content).toHaveLength(1);
@@ -614,17 +609,17 @@ describe('TableOfContents', () => {
       expect(Array.isArray(sections)).toBe(true);
     });
 
-    it('should maintain functionality with current configuration format', () => {
-      // Ensure backward compatibility
-      const currentConfig = {
+    it('should maintain backward compatibility with old configuration format', () => {
+      // Ensure backward compatibility with configs that still have pattern fields
+      const legacyConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
         exclude_patterns: ['node_modules/**'],
         include_patterns: ['**/*.md'],
-      };
+      } as any;
 
-      const currentTool = new TableOfContents(currentConfig);
-      const result = currentTool.execute('test-doc.md');
+      const legacyTool = new TableOfContents(legacyConfig);
+      const result = legacyTool.execute('test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const sections = JSON.parse(result.content[0].text);
@@ -635,12 +630,10 @@ describe('TableOfContents', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
         discount_single_top_header: true,
       };
 
-      const refactoredTool = new TableOfContents(refactoredConfig as any);
+      const refactoredTool = new TableOfContents(refactoredConfig);
       const result = refactoredTool.execute('single-top-header.md', 2);
 
       expect(result.content).toHaveLength(1);
@@ -652,12 +645,10 @@ describe('TableOfContents', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
         max_toc_depth: 2,
       };
 
-      const refactoredTool = new TableOfContents(refactoredConfig as any);
+      const refactoredTool = new TableOfContents(refactoredConfig);
       const result = refactoredTool.execute('multi-level-headers.md');
 
       expect(result.content).toHaveLength(1);
@@ -673,25 +664,19 @@ describe('TableOfContents', () => {
         {
           documentation_path: fixturesPath,
           max_file_size: 0, // Minimum
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
         },
         {
           documentation_path: fixturesPath,
           max_file_size: 1, // Just above minimum
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
         },
         {
           documentation_path: fixturesPath,
           max_file_size: Number.MAX_SAFE_INTEGER, // Maximum
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
         },
       ];
 
       boundaryConfigs.forEach((config) => {
-        const tool = new TableOfContents(config as any);
+        const tool = new TableOfContents(config);
 
         // Should handle files within size limit or return appropriate error
         const result = tool.execute('test-doc.md');
@@ -706,11 +691,9 @@ describe('TableOfContents', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
       };
 
-      const refactoredTool = new TableOfContents(refactoredConfig as any);
+      const refactoredTool = new TableOfContents(refactoredConfig);
 
       // Test file not found
       const result = refactoredTool.execute('nonexistent.md');

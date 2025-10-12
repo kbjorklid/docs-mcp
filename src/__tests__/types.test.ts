@@ -6,9 +6,6 @@ describe('Types', () => {
       expect(DEFAULT_CONFIG).toEqual({
         documentation_path: './docs',
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**', '*.tmp.md'],
-        include_patterns: ['**/*.md'],
-        max_toc_depth: undefined,
         discount_single_top_header: false,
       });
     });
@@ -45,8 +42,6 @@ describe('Types', () => {
       const refactoredConfig = {
         documentation_path: './test-docs',
         max_file_size: 5242880,
-        exclude_patterns: ['test/**', '*.temp.md'],
-        include_patterns: ['**/*.md', '**/*.txt'],
         max_toc_depth: 3,
         discount_single_top_header: true,
       };
@@ -65,14 +60,10 @@ describe('Types', () => {
       const config: DocumentationConfig = {
         documentation_path: './test-docs',
         max_file_size: 5242880,
-        exclude_patterns: ['test/**', '*.temp.md'],
-        include_patterns: ['**/*.md', '**/*.txt'],
       };
 
       expect(config.documentation_path).toBe('./test-docs');
       expect(config.max_file_size).toBe(5242880);
-      expect(config.exclude_patterns).toEqual(['test/**', '*.temp.md']);
-      expect(config.include_patterns).toEqual(['**/*.md', '**/*.txt']);
     });
 
     // Interface Compliance Tests for refactoring
@@ -81,28 +72,22 @@ describe('Types', () => {
       const configWithoutUnusedProps = {
         documentation_path: './test-docs',
         max_file_size: 5242880,
-        exclude_patterns: ['test/**', '*.temp.md'],
-        include_patterns: ['**/*.md', '**/*.txt'],
         max_toc_depth: 5,
         discount_single_top_header: false,
       };
 
       // This should be assignable to DocumentationConfig after refactoring
-      // For now, we'll test that it has all the required properties
-      expect(configWithoutUnusedProps.documentation_path).toBe('./test-docs');
-      expect(configWithoutUnusedProps.max_file_size).toBe(5242880);
-      expect(configWithoutUnusedProps.exclude_patterns).toEqual(['test/**', '*.temp.md']);
-      expect(configWithoutUnusedProps.include_patterns).toEqual(['**/*.md', '**/*.txt']);
-      expect(configWithoutUnusedProps.max_toc_depth).toBe(5);
-      expect(configWithoutUnusedProps.discount_single_top_header).toBe(false);
+      const config: DocumentationConfig = configWithoutUnusedProps;
+      expect(config.documentation_path).toBe('./test-docs');
+      expect(config.max_file_size).toBe(5242880);
+      expect(config.max_toc_depth).toBe(5);
+      expect(config.discount_single_top_header).toBe(false);
     });
 
     it('should accept configuration with optional properties', () => {
       const configWithOptionals: DocumentationConfig = {
         documentation_path: './test-docs',
         max_file_size: 5242880,
-        exclude_patterns: ['test/**'],
-        include_patterns: ['**/*.md'],
         max_toc_depth: 3,
         discount_single_top_header: true,
       };
@@ -115,8 +100,6 @@ describe('Types', () => {
       const configWithoutOptionals: DocumentationConfig = {
         documentation_path: './test-docs',
         max_file_size: 5242880,
-        exclude_patterns: ['test/**'],
-        include_patterns: ['**/*.md'],
       };
 
       expect(configWithoutOptionals.max_toc_depth).toBeUndefined();
@@ -128,20 +111,14 @@ describe('Types', () => {
         {
           documentation_path: './test-docs',
           max_file_size: 0, // Minimum boundary
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
         },
         {
           documentation_path: './test-docs',
           max_file_size: 1, // Just above minimum
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
         },
         {
           documentation_path: './test-docs',
           max_file_size: Number.MAX_SAFE_INTEGER, // Maximum boundary
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
         },
       ];
 
@@ -149,20 +126,6 @@ describe('Types', () => {
         expect(config.max_file_size).toBeGreaterThanOrEqual(0);
         expect(typeof config.max_file_size).toBe('number');
       });
-    });
-
-    it('should handle empty arrays for patterns', () => {
-      const configWithEmptyArrays: DocumentationConfig = {
-        documentation_path: './test-docs',
-        max_file_size: 5242880,
-        exclude_patterns: [],
-        include_patterns: [],
-      };
-
-      expect(Array.isArray(configWithEmptyArrays.exclude_patterns)).toBe(true);
-      expect(configWithEmptyArrays.exclude_patterns).toHaveLength(0);
-      expect(Array.isArray(configWithEmptyArrays.include_patterns)).toBe(true);
-      expect(configWithEmptyArrays.include_patterns).toHaveLength(0);
     });
   });
 });

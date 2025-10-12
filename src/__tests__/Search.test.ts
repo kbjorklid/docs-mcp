@@ -22,8 +22,8 @@ describe('Search', () => {
     mockConfig = {
       documentation_path: fixturesPath,
       max_file_size: 10485760,
-      exclude_patterns: ['node_modules/**'],
-      include_patterns: ['**/*.md'],
+      max_toc_depth: 5,
+      discount_single_top_header: false,
     };
 
     search = new Search(mockConfig);

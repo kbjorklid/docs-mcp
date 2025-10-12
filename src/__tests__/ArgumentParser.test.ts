@@ -194,8 +194,6 @@ describe('ArgumentParser', () => {
 
       expect(config.documentation_path).toBe('./docs');
       expect(config.max_file_size).toBe(10485760);
-      expect(config.exclude_patterns).toEqual(['node_modules/**', '*.tmp.md']);
-      expect(config.include_patterns).toEqual(['**/*.md']);
       expect(config.max_toc_depth).toBeUndefined();
       expect(config.discount_single_top_header).toBe(false);
     });
@@ -265,8 +263,6 @@ describe('ArgumentParser', () => {
       const config = createConfig();
       expect(config.documentation_path).toBe('/custom/path');
       expect(config.max_file_size).toBe(10485760);
-      expect(config.exclude_patterns).toEqual(['node_modules/**', '*.tmp.md']);
-      expect(config.include_patterns).toEqual(['**/*.md']);
       expect(config.max_toc_depth).toBeUndefined();
       expect(config.discount_single_top_header).toBe(false);
     });
@@ -343,8 +339,6 @@ describe('ArgumentParser', () => {
       // Should work with the refactored configuration
       expect(config.documentation_path).toBe('/test/path');
       expect(config.max_file_size).toBe(10485760);
-      expect(config.exclude_patterns).toEqual(['node_modules/**', '*.tmp.md']);
-      expect(config.include_patterns).toEqual(['**/*.md']);
       expect(config.max_toc_depth).toBeUndefined();
       expect(config.discount_single_top_header).toBe(false);
     });
@@ -392,8 +386,6 @@ describe('ArgumentParser', () => {
       expect(config.max_toc_depth).toBe(5);
       expect(config.discount_single_top_header).toBe(true);
       expect(config.max_file_size).toBe(10485760);
-      expect(config.exclude_patterns).toEqual(['node_modules/**', '*.tmp.md']);
-      expect(config.include_patterns).toEqual(['**/*.md']);
     });
 
     it('should handle boundary values in configuration after refactoring', () => {
@@ -417,8 +409,6 @@ describe('ArgumentParser', () => {
       // Should still work with all default values
       expect(config.documentation_path).toBe('./docs');
       expect(config.max_file_size).toBe(10485760);
-      expect(config.exclude_patterns).toEqual(['node_modules/**', '*.tmp.md']);
-      expect(config.include_patterns).toEqual(['**/*.md']);
       expect(config.max_toc_depth).toBeUndefined();
       expect(config.discount_single_top_header).toBe(false);
     });
@@ -471,8 +461,6 @@ describe('ArgumentParser', () => {
       // Configuration should be compatible with all tools
       expect(typeof config.documentation_path).toBe('string');
       expect(typeof config.max_file_size).toBe('number');
-      expect(Array.isArray(config.exclude_patterns)).toBe(true);
-      expect(Array.isArray(config.include_patterns)).toBe(true);
       expect(config.max_toc_depth).toBe(2);
       expect(typeof config.discount_single_top_header).toBe('boolean');
     });

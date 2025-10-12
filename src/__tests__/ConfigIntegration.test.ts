@@ -32,8 +32,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const refactoredConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
         max_toc_depth: 3,
         discount_single_top_header: false,
       };
@@ -55,8 +53,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const minimalConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: [],
-        include_patterns: ['**/*.md'],
       };
 
       // All tools should work with minimal configuration
@@ -73,8 +69,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const refactoredConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
         max_toc_depth: 2,
         discount_single_top_header: true,
       };
@@ -191,8 +185,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const invalidConfig = {
         documentation_path: '/non/existent/path',
         max_file_size: 10485760,
-        exclude_patterns: [],
-        include_patterns: ['**/*.md'],
       };
 
       const listTool = new ListDocumentationFiles(invalidConfig as DocumentationConfig);
@@ -209,8 +201,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const boundaryConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
         max_file_size: 1, // Very small
-        exclude_patterns: [],
-        include_patterns: ['**/*.md'],
       };
 
       const listTool = new ListDocumentationFiles(boundaryConfig);
@@ -235,12 +225,10 @@ describe('Configuration Integration Tests for Refactoring', () => {
 
   describe('Backward Compatibility Integration', () => {
     it('should work with current configuration format across all tools', async () => {
-      // Current configuration with unused properties
+      // Current configuration with refactored properties
       const currentConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
         max_toc_depth: 5,
         discount_single_top_header: false,
       };
@@ -277,8 +265,7 @@ describe('Configuration Integration Tests for Refactoring', () => {
       // Verify DEFAULT_CONFIG has the expected structure
       expect(DEFAULT_CONFIG.documentation_path).toBe('./docs');
       expect(DEFAULT_CONFIG.max_file_size).toBe(10485760);
-      expect(DEFAULT_CONFIG.exclude_patterns).toEqual(['node_modules/**', '*.tmp.md']);
-      expect(DEFAULT_CONFIG.include_patterns).toEqual(['**/*.md']);
+      expect(DEFAULT_CONFIG.discount_single_top_header).toBe(false);
     });
   });
 
@@ -289,22 +276,16 @@ describe('Configuration Integration Tests for Refactoring', () => {
         {
           documentation_path: fixturesPath,
           max_file_size: 10485760,
-          exclude_patterns: ['**/*.tmp'],
-          include_patterns: ['**/*.md'],
         },
         {
           documentation_path: fixturesPath,
           max_file_size: 0,
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
           max_toc_depth: 0,
         },
         // Edge cases
         {
           documentation_path: '',
           max_file_size: 1,
-          exclude_patterns: [''],
-          include_patterns: [''],
         },
       ];
 
@@ -327,16 +308,12 @@ describe('Configuration Integration Tests for Refactoring', () => {
         {
           documentation_path: fixturesPath,
           max_file_size: 10485760,
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
           max_toc_depth: undefined,
           discount_single_top_header: undefined,
         },
         {
           documentation_path: fixturesPath,
           max_file_size: 10485760,
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
           max_toc_depth: 5,
           discount_single_top_header: true,
         },
@@ -401,8 +378,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const initialConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
         max_toc_depth: 2,
       };
 
@@ -410,8 +385,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const updatedConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
         max_file_size: 10485760,
-        exclude_patterns: ['node_modules/**'],
-        include_patterns: ['**/*.md'],
         max_toc_depth: 5,
         discount_single_top_header: true,
       };

@@ -131,8 +131,6 @@ The system maintains the natural hierarchy of markdown headers:
 {
   "documentation_path": "/path/to/documentation",
   "max_file_size": 10485760,
-  "exclude_patterns": ["node_modules/**", "*.tmp.md"],
-  "include_patterns": ["**/*.md"],
   "max_toc_depth": 0,
   "discount_single_top_header": false
 }
@@ -142,8 +140,6 @@ The system maintains the natural hierarchy of markdown headers:
 
 - **documentation_path**: Root directory containing markdown files
 - **max_file_size**: Maximum file size to process (bytes)
-- **exclude_patterns**: Glob patterns for files to exclude
-- **include_patterns**: Glob patterns for files to include
 - **max_toc_depth**: Optional maximum depth for table of contents entries (0 for no limit)
 - **discount_single_top_header**: Whether to apply special handling when document has only one top-level header
 

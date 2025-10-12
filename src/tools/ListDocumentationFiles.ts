@@ -65,19 +65,16 @@ export class ListDocumentationFiles {
   private async getDocumentationFiles(): Promise<FileInfo[]> {
     const files: FileInfo[] = [];
 
-    // Find all markdown files
-    for (const pattern of this.config.include_patterns) {
-      const filePaths = await glob(pattern, {
-        cwd: this.config.documentation_path,
-        ignore: this.config.exclude_patterns,
-        absolute: false,
-      });
+    // Find all markdown files using hardcoded **/*.md pattern
+    const filePaths = await glob('**/*.md', {
+      cwd: this.config.documentation_path,
+      absolute: false,
+    });
 
-      for (const filePath of filePaths) {
-        const fileInfo = await this.processFile(filePath);
-        if (fileInfo) {
-          files.push(fileInfo);
-        }
+    for (const filePath of filePaths) {
+      const fileInfo = await this.processFile(filePath);
+      if (fileInfo) {
+        files.push(fileInfo);
       }
     }
 

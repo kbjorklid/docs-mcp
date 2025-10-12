@@ -2,8 +2,6 @@
 export interface DocumentationConfig {
   documentation_path: string;
   max_file_size: number;
-  exclude_patterns: string[];
-  include_patterns: string[];
   max_toc_depth?: number;
   discount_single_top_header?: boolean;
 }
@@ -51,7 +49,5 @@ export interface ErrorResponse {
 export const DEFAULT_CONFIG: DocumentationConfig = {
   documentation_path: process.env.DOCS_PATH || './docs',
   max_file_size: 10485760, // 10MB
-  exclude_patterns: ['node_modules/**', '*.tmp.md'],
-  include_patterns: ['**/*.md'],
   discount_single_top_header: false,
 };

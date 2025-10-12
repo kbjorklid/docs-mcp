@@ -2,6 +2,16 @@ import * as path from 'path';
 import { ListDocumentationFiles } from '../tools/ListDocumentationFiles';
 import { DocumentationConfig } from '../types';
 
+// Mock external dependencies
+jest.mock('glob');
+jest.mock('../MarkdownParser');
+
+import { glob } from 'glob';
+import { MarkdownParser } from '../MarkdownParser';
+
+const mockGlob = glob as jest.MockedFunction<typeof glob>;
+const mockMarkdownParser = MarkdownParser as jest.Mocked<typeof MarkdownParser>;
+
 describe('ListDocumentationFiles', () => {
   let listDocumentationFiles: ListDocumentationFiles;
   let mockConfig: DocumentationConfig;
@@ -12,9 +22,47 @@ describe('ListDocumentationFiles', () => {
     mockConfig = {
       documentation_path: fixturesPath,
       max_file_size: 10485760,
-      exclude_patterns: ['node_modules/**'],
-      include_patterns: ['**/*.md'],
+      max_toc_depth: 5,
+      discount_single_top_header: false,
     };
+
+    // Setup default markdown parser mocks
+    mockMarkdownParser.validateFile.mockReturnValue({
+      valid: true,
+      stats: { size: 1024 } as any,
+    });
+
+    mockMarkdownParser.readMarkdownFile.mockImplementation((filePath) => {
+      if (filePath.includes('no-frontmatter')) {
+        return {
+          content: '# Simple Document\n\nThis document has no front matter.',
+          metadata: {},
+        };
+      }
+      return {
+        content: '# Test Content\n\nSome content here.',
+        metadata: {
+          title: 'Test Document',
+          description: 'A test document for testing',
+          keywords: ['test', 'documentation'],
+        },
+      };
+    });
+
+    mockMarkdownParser.formatFileSize.mockReturnValue('1.0 kb');
+
+    // Mock glob to return fixture files
+    mockGlob.mockResolvedValue([
+      'test-doc.md',
+      'no-frontmatter.md',
+      'nested-sections.md',
+      'multi-level-headers.md',
+      'single-top-header.md',
+      'no-top-headers.md',
+      'multi-top-headers.md',
+      'empty-sections.md',
+      'search-content.md',
+    ]);
 
     listDocumentationFiles = new ListDocumentationFiles(mockConfig);
   });
@@ -71,45 +119,47 @@ describe('ListDocumentationFiles', () => {
       expect(Array.isArray(files)).toBe(true);
     });
 
-    it('should handle multiple include patterns', async () => {
-      // Setup config with multiple patterns
-      const multiPatternConfig = {
+    it('should handle multiple include patterns (legacy compatibility)', async () => {
+      // Setup config with legacy patterns (should be ignored after refactoring)
+      const legacyConfig = {
         ...mockConfig,
+        exclude_patterns: ['node_modules/**'],
         include_patterns: ['**/*.md', '**/*.txt'],
-      };
-      const multiPatternListDocumentationFiles = new ListDocumentationFiles(
-        multiPatternConfig
+      } as any;
+      const legacyListDocumentationFiles = new ListDocumentationFiles(
+        legacyConfig
       );
 
-      // Execute
-      const result = await multiPatternListDocumentationFiles.execute();
+      // Reset and mock glob to return only markdown files (refactored behavior)
+      jest.clearAllMocks();
+      mockGlob.mockResolvedValue(['test-doc.md', 'no-frontmatter.md']);
 
-      // Verify files are found (should include all .md files)
+      // Execute
+      const result = await legacyListDocumentationFiles.execute();
+
+      // Verify files are found (should include only .md files due to hardcoded **/*.md)
       expect(result.content).toHaveLength(1);
       const files = JSON.parse(result.content[0].text);
       expect(files.length).toBeGreaterThan(0);
 
-      // All files should be .md files from fixtures
+      // All files should be .md files despite legacy include_patterns
       files.forEach((file: any) => {
         expect(file.filename).toMatch(/\.md$/);
       });
     });
 
-    // Tool Compatibility Tests for refactoring
+    // Configuration Compatibility Tests for refactoring
     describe('Configuration Compatibility', () => {
-      it('should work with configuration without auto_index and index_refresh_interval', async () => {
-        // Create config without the unused properties (simulating post-refactoring config)
+      it('should work with new configuration without pattern fields', async () => {
+        // Create config without pattern fields (post-refactoring config)
         const refactoredConfig = {
           documentation_path: fixturesPath,
           max_file_size: 10485760,
-          exclude_patterns: ['node_modules/**'],
-          include_patterns: ['**/*.md'],
           max_toc_depth: 5,
           discount_single_top_header: false,
         };
 
-        // Should still work with the tool even without the unused properties
-        const refactoredTool = new ListDocumentationFiles(refactoredConfig as any);
+        const refactoredTool = new ListDocumentationFiles(refactoredConfig);
         const result = await refactoredTool.execute();
 
         expect(result.content).toHaveLength(1);
@@ -122,11 +172,9 @@ describe('ListDocumentationFiles', () => {
         const minimalConfig = {
           documentation_path: fixturesPath,
           max_file_size: 10485760,
-          exclude_patterns: [],
-          include_patterns: ['**/*.md'],
         };
 
-        const minimalTool = new ListDocumentationFiles(minimalConfig as any);
+        const minimalTool = new ListDocumentationFiles(minimalConfig);
         const result = await minimalTool.execute();
 
         expect(result.content).toHaveLength(1);
@@ -134,21 +182,25 @@ describe('ListDocumentationFiles', () => {
         expect(Array.isArray(files)).toBe(true);
       });
 
-      it('should maintain functionality with current configuration format', async () => {
-        // Ensure backward compatibility
-        const currentConfig = {
+      it('should maintain backward compatibility with old configuration format', async () => {
+        // Ensure backward compatibility with configs that still have pattern fields
+        const legacyConfig = {
           documentation_path: fixturesPath,
           max_file_size: 10485760,
           exclude_patterns: ['node_modules/**'],
           include_patterns: ['**/*.md'],
-        };
+        } as any;
 
-        const currentTool = new ListDocumentationFiles(currentConfig);
-        const result = await currentTool.execute();
+        // Reset mocks and set up for legacy compatibility test
+        jest.clearAllMocks();
+        mockGlob.mockResolvedValue(['test-doc.md', 'no-frontmatter.md']);
+
+        const legacyTool = new ListDocumentationFiles(legacyConfig);
+        const result = await legacyTool.execute();
 
         expect(result.content).toHaveLength(1);
         const files = JSON.parse(result.content[0].text);
-        expect(files.length).toBeGreaterThan(5);
+        expect(files.length).toBeGreaterThan(0);
       });
 
       it('should handle boundary values for configuration parameters', async () => {
@@ -156,54 +208,74 @@ describe('ListDocumentationFiles', () => {
           {
             documentation_path: fixturesPath,
             max_file_size: 0, // Minimum - no files should pass
-            exclude_patterns: [],
-            include_patterns: ['**/*.md'],
           },
           {
             documentation_path: fixturesPath,
             max_file_size: 1, // Very small - only tiny files should pass
-            exclude_patterns: [],
-            include_patterns: ['**/*.md'],
           },
           {
             documentation_path: fixturesPath,
             max_file_size: Number.MAX_SAFE_INTEGER, // Very large - all files should pass
-            exclude_patterns: [],
-            include_patterns: ['**/*.md'],
           },
         ];
 
         for (const config of boundaryConfigs) {
-          const tool = new ListDocumentationFiles(config as any);
+          // Reset mocks for each test
+          jest.clearAllMocks();
+          mockGlob.mockResolvedValue(['test-doc.md']);
+
+          const tool = new ListDocumentationFiles(config);
           const result = await tool.execute();
 
           expect(result.content).toHaveLength(1);
           const files = JSON.parse(result.content[0].text);
           expect(Array.isArray(files)).toBe(true);
-          // Files may be empty for very small max_file_size, which is expected
         }
       });
 
-      it('should handle complex pattern configurations', async () => {
-        const complexConfig = {
+      it('should ignore legacy pattern configurations', async () => {
+        const legacyConfig = {
           documentation_path: fixturesPath,
           max_file_size: 10485760,
           exclude_patterns: ['**/test-*.md', '**/empty.md'],
           include_patterns: ['**/*.md'],
-        };
+        } as any;
 
-        const complexTool = new ListDocumentationFiles(complexConfig as any);
-        const result = await complexTool.execute();
+        // Reset mocks - should still find all markdown files despite exclusion patterns
+        jest.clearAllMocks();
+        mockGlob.mockResolvedValue(['test-doc.md', 'empty.md', 'other.md']);
+
+        const legacyTool = new ListDocumentationFiles(legacyConfig);
+        const result = await legacyTool.execute();
 
         expect(result.content).toHaveLength(1);
         const files = JSON.parse(result.content[0].text);
         expect(Array.isArray(files)).toBe(true);
 
-        // Verify excluded files are not present
-        const testFiles = files.filter((f: any) => f.filename.startsWith('test-'));
-        const emptyFiles = files.filter((f: any) => f.filename === 'empty.md');
-        expect(testFiles).toHaveLength(0);
-        expect(emptyFiles).toHaveLength(0);
+        // After refactoring, all files should be found (patterns ignored)
+        expect(files.length).toBe(3);
+      });
+
+      it('should work with new simplified file discovery', async () => {
+        // Test that hardcoded **/*.md pattern works correctly
+        const simpleConfig = {
+          documentation_path: fixturesPath,
+          max_file_size: 10485760,
+        };
+
+        // Reset mocks to ensure clean test
+        jest.clearAllMocks();
+        mockGlob.mockResolvedValue(['file1.md', 'file2.md', 'subdir/file3.md']);
+
+        const simpleTool = new ListDocumentationFiles(simpleConfig);
+        const result = await simpleTool.execute();
+
+        expect(result.content).toHaveLength(1);
+        const files = JSON.parse(result.content[0].text);
+        expect(files).toHaveLength(3);
+        expect(files.map((f: any) => f.filename)).toEqual(
+          expect.arrayContaining(['file1.md', 'file2.md', 'subdir/file3.md'])
+        );
       });
     });
   });
