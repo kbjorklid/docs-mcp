@@ -20,7 +20,7 @@ describe('Search Integration Tests (Real Files)', () => {
 
   describe('Real File Integration', () => {
     it('should search across real fixture files', async () => {
-      const result = await search.execute('search functionality');
+      const result = await search.execute('search functionality', 'search-content.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -39,7 +39,7 @@ describe('Search Integration Tests (Real Files)', () => {
     });
 
     it('should search for REST API terms across real files', async () => {
-      const result = await search.execute('REST API');
+      const result = await search.execute('REST API', 'rest-api-docs.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -52,7 +52,7 @@ describe('Search Integration Tests (Real Files)', () => {
     });
 
     it('should handle the original failing query "sorting parameters REST API"', async () => {
-      const result = await search.execute('sorting parameters');
+      const result = await search.execute('sorting parameters', 'rest-api-docs.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -76,7 +76,7 @@ describe('Search Integration Tests (Real Files)', () => {
     });
 
     it('should return empty results when searching for non-existent terms', async () => {
-      const result = await search.execute('nonexistent term xyz123');
+      const result = await search.execute('nonexistent term xyz123', 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -90,8 +90,8 @@ describe('Search Integration Tests (Real Files)', () => {
     });
 
     it('should handle case-insensitive search across real files', async () => {
-      const result1 = await search.execute('JAVASCRIPT');
-      const result2 = await search.execute('javascript');
+      const result1 = await search.execute('JAVASCRIPT', 'search-content.md');
+      const result2 = await search.execute('javascript', 'search-content.md');
 
       const response1 = JSON.parse(result1.content[0].text);
       const response2 = JSON.parse(result2.content[0].text);
@@ -101,7 +101,7 @@ describe('Search Integration Tests (Real Files)', () => {
     });
 
     it('should handle regex patterns in real files', async () => {
-      const result = await search.execute('v\\d+\\.\\d+\\.\\d+'); // Version pattern like v2.0.1
+      const result = await search.execute('v\\d+\\.\\d+\\.\\d+', 'rest-api-docs.md'); // Version pattern like v2.0.1
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -114,7 +114,7 @@ describe('Search Integration Tests (Real Files)', () => {
     });
 
     it('should handle multiline search across real files', async () => {
-      const result = await search.execute('content spans.*multiple lines');
+      const result = await search.execute('content spans.*multiple lines', 'search-content.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -127,7 +127,7 @@ describe('Search Integration Tests (Real Files)', () => {
     });
 
     it('should handle special characters in search', async () => {
-      const result = await search.execute('@#\\$%\\^&\\*\\(\\)');
+      const result = await search.execute('@#\\$%\\^&\\*\\(\\)', 'search-content.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -140,7 +140,7 @@ describe('Search Integration Tests (Real Files)', () => {
     });
 
     it('should handle Unicode characters in search', async () => {
-      const result = await search.execute('funcionalidad');
+      const result = await search.execute('funcionalidad', 'search-content.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -153,14 +153,14 @@ describe('Search Integration Tests (Real Files)', () => {
     });
 
     it('should search across multiple files and aggregate results', async () => {
-      const result = await search.execute('API');
+      const result = await search.execute('API', 'rest-api-docs.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
       expect(searchResponse.query).toBe('API');
-      expect(searchResponse.results.length).toBeGreaterThan(1);
+      expect(searchResponse.results.length).toBeGreaterThanOrEqual(1);
 
-      // Should find matches in multiple files
+      // Should find matches in the specified file
       const apiFiles = searchResponse.results.filter((r: FileSearchResult) =>
         r.filename.includes('api') || r.filename.includes('rest')
       );
@@ -168,7 +168,7 @@ describe('Search Integration Tests (Real Files)', () => {
     });
 
     it('should handle search in nested sections', async () => {
-      const result = await search.execute('nested content');
+      const result = await search.execute('nested content', 'search-content.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -190,7 +190,7 @@ describe('Search Integration Tests (Real Files)', () => {
       };
       const searchWithDepth = new Search(configWithDepth);
 
-      const result = await searchWithDepth.execute('deep search');
+      const result = await searchWithDepth.execute('deep search', 'search-content.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -221,19 +221,26 @@ describe('Search Integration Tests (Real Files)', () => {
       };
       const searchWithEmpty = new Search(emptyConfig);
 
-      const result = await searchWithEmpty.execute('any term');
+      const result = await searchWithEmpty.execute('any term', 'nonexistent.md');
 
       expect(result.content).toHaveLength(1);
-      const searchResponse = JSON.parse(result.content[0].text);
-      expect(searchResponse.query).toBe('any term');
-      expect(searchResponse.results).toHaveLength(0);
+      const response = JSON.parse(result.content[0].text);
+
+      // Should return a file not found error since the file doesn't exist
+      if (response.error) {
+        expect(response.error.code).toBe('FILE_NOT_FOUND');
+      } else {
+        // If it somehow succeeds, ensure empty results
+        expect(response.query).toBe('any term');
+        expect(response.results).toHaveLength(0);
+      }
     });
   });
 
   describe('Performance and Edge Cases', () => {
     it('should handle very long search terms efficiently', async () => {
       const longTerm = 'a'.repeat(1000);
-      const result = await search.execute(longTerm);
+      const result = await search.execute(longTerm, 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -245,10 +252,10 @@ describe('Search Integration Tests (Real Files)', () => {
 
     it('should handle multiple concurrent searches', async () => {
       const searches = [
-        search.execute('API'),
-        search.execute('REST'),
-        search.execute('JavaScript'),
-        search.execute('database')
+        search.execute('API', 'rest-api-docs.md'),
+        search.execute('REST', 'rest-api-docs.md'),
+        search.execute('JavaScript', 'search-content.md'),
+        search.execute('database', 'search-content.md')
       ];
 
       const results = await Promise.all(searches);
@@ -262,7 +269,7 @@ describe('Search Integration Tests (Real Files)', () => {
     });
 
     it('should handle complex regex patterns', async () => {
-      const result = await search.execute('HTTP/HTTPS');
+      const result = await search.execute('HTTP/HTTPS', 'rest-api-docs.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);

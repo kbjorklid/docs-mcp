@@ -28,7 +28,7 @@ describe('Search Unit Tests', () => {
       expect(definition.inputSchema.type).toBe('object');
       expect(definition.inputSchema.properties.query).toBeDefined();
       expect(definition.inputSchema.properties.filename).toBeDefined();
-      expect(definition.inputSchema.required).toEqual(['query']);
+      expect(definition.inputSchema.required).toEqual(['query', 'filename']);
     });
 
     it('should have proper query parameter definition', () => {
@@ -40,19 +40,19 @@ describe('Search Unit Tests', () => {
       expect(queryParam.description).toContain('case-insensitive');
     });
 
-    it('should have optional filename parameter', () => {
+    it('should have required filename parameter', () => {
       const definition = Search.getToolDefinition();
       const filenameParam = definition.inputSchema.properties.filename;
 
       expect(filenameParam.type).toBe('string');
-      expect(filenameParam.description).toContain('optional');
-      expect(definition.inputSchema.required).not.toContain('filename');
+      expect(filenameParam.description).toContain('required');
+      expect(definition.inputSchema.required).toContain('filename');
     });
   });
 
   describe('Parameter Validation', () => {
     it('should return error for empty query', async () => {
-      const result = await search.execute('');
+      const result = await search.execute('', 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -61,7 +61,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for whitespace-only query', async () => {
-      const result = await search.execute('   ');
+      const result = await search.execute('   ', 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -69,7 +69,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for null query', async () => {
-      const result = await search.execute(null as any);
+      const result = await search.execute(null as any, 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -77,7 +77,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for undefined query', async () => {
-      const result = await search.execute(undefined as any);
+      const result = await search.execute(undefined as any, 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -85,7 +85,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should trim whitespace from valid query', async () => {
-      const result = await search.execute('  search term  ');
+      const result = await search.execute('  search term  ', 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -95,7 +95,7 @@ describe('Search Unit Tests', () => {
 
   describe('Regular Expression Validation', () => {
     it('should return error for invalid regex syntax', async () => {
-      const result = await search.execute('[unclosed bracket');
+      const result = await search.execute('[unclosed bracket', 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -104,7 +104,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for invalid quantifier', async () => {
-      const result = await search.execute('a{2,1}');
+      const result = await search.execute('a{2,1}', 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -113,7 +113,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for incomplete character class', async () => {
-      const result = await search.execute('[a-z');
+      const result = await search.execute('[a-z', 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -122,7 +122,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for invalid escape sequence', async () => {
-      const result = await search.execute('('); // Unclosed group
+      const result = await search.execute('(', 'test-doc.md'); // Unclosed group
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -131,7 +131,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should handle complex invalid regex patterns', async () => {
-      const result = await search.execute('(?<uncaptured group');
+      const result = await search.execute('(?<uncaptured group', 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -140,7 +140,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should accept valid regex patterns', async () => {
-      const result = await search.execute('\\b[A-Z][a-z]+\\b');
+      const result = await search.execute('\\b[A-Z][a-z]+\\b', 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -168,7 +168,7 @@ describe('Search Unit Tests', () => {
 
   describe('Error Response Format', () => {
     it('should return properly formatted error responses', async () => {
-      const result = await search.execute('');
+      const result = await search.execute('', 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -181,7 +181,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should include error details when available', async () => {
-      const result = await search.execute('[invalid');
+      const result = await search.execute('[invalid', 'test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
