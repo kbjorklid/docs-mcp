@@ -1,4 +1,4 @@
-# AGENTS.md
+# CLAUDE.md
 
 This file provides guidance to AI agents working with code in this repository.
 
@@ -25,13 +25,64 @@ All developer-focused information should be documented in this file (CLAUDE.md) 
 
 This is a TypeScript-based Model Context Protocol (MCP) server that provides documentation reading and navigation tools for markdown-based documentation repositories. The server follows MCP standards and communicates via stdio transport.
 
-## Features
+### Features
 
 The server implements three core tools for documentation management:
 
 1. **list_documentation_files** - Lists all available documentation files with metadata
 2. **table_of_contents** - Provides structured table of contents for markdown files
 3. **read_sections** - Reads specific sections from markdown files
+
+## Development Commands
+
+### Build and Run
+
+- `npm run build` - Compile TypeScript to JavaScript in the `dist/` directory
+- `npm run dev` - Run the server in development mode using tsx (no build step)
+- `npm start` - Run the compiled server from `dist/index.js`
+
+### Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+
+# Important: Run TypeScript compilation first
+npx tsc
+```
+
+### PowerShell Scripts
+
+- `.\run.ps1` - Build and run the server in production mode
+- `.\run.ps1 -Development` - Run in development mode (no build)
+- `.\run.ps1 -Clean` - Clean build directory before running
+- `.\run.ps1 -Help` - Show help information
+
+Note: The script refers to "Hello World MCP Server" in comments but this is actually the Documentation MCP Server.
+
+### Server Testing
+
+Test the MCP server by sending JSON-RPC messages via stdin:
+
+```bash
+# List tools
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | npm start
+
+# List documentation files
+echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_documentation_files","arguments":{}}}' | npm start
+
+# Get table of contents
+echo '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"table_of_contents","arguments":{"filename":"your-file.md"}}}' | npm start
+
+# Read specific sections
+echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"read_sections","arguments":{"filename":"your-file.md","section_ids":["section-id"]}}' | npm start
+```
 
 ## Configuration
 
@@ -61,64 +112,6 @@ The server supports multiple ways to configure the documentation path with the f
 - Glob-based file discovery with include/exclude patterns
 - Auto-indexing with configurable refresh intervals
 
-## Development Commands
-
-### Build and Run
-
-- `npm run build` - Compile TypeScript to JavaScript in the `dist/` directory
-- `npm run dev` - Run the server in development mode using tsx (no build step)
-- `npm start` - Run the compiled server from `dist/index.js`
-
-### Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run tests in watch mode
-npm run test:watch
-```
-
-### PowerShell Scripts
-
-- `.\run.ps1` - Build and run the server in production mode
-- `.\run.ps1 -Development` - Run in development mode (no build)
-- `.\run.ps1 -Clean` - Clean build directory before running
-- `.\run.ps1 -Help` - Show help information
-
-Note: The script refers to "Hello World MCP Server" in comments but this is actually the Documentation MCP Server.
-
-### Testing the Server
-
-Test the MCP server by sending JSON-RPC messages via stdin:
-
-List tools:
-
-```bash
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | npm start
-```
-
-List documentation files:
-
-```bash
-echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_documentation_files","arguments":{}}}' | npm start
-```
-
-Get table of contents:
-
-```bash
-echo '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"table_of_contents","arguments":{"filename":"your-file.md"}}}' | npm start
-```
-
-Read specific sections:
-
-```bash
-echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"read_sections","arguments":{"filename":"your-file.md","section_ids":["section-id"]}}' | npm start
-```
-
 ## Architecture
 
 ### Core Structure
@@ -130,8 +123,6 @@ echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"read_secti
   - **ListDocumentationFiles.ts** - File discovery and metadata extraction
   - **TableOfContents.ts** - Section hierarchy parsing
   - **ReadSections.ts** - Selective content reading
-- **MCP SDK** - Uses `@modelcontextprotocol/sdk` for server infrastructure and stdio transport
-- **TypeScript Configuration** - Targets ES2020 with CommonJS modules
 
 ### MCP Server Pattern
 
@@ -192,123 +183,36 @@ Example tool structure:
 - **@types/js-yaml** - TypeScript types for js-yaml
 - **@types/node** - TypeScript types for Node.js
 
-## Binary Distribution
+## Testing
 
-The package includes a binary entry point:
-
-- `docs-mcp` command points to `dist/index.js`
-
-## Error Handling
-
-The server implements comprehensive error handling with structured error responses:
-
-- **FILE_NOT_FOUND** - Requested file doesn't exist
-- **INVALID_SECTION_ID** - Section identifier is malformed
-- **SECTION_NOT_FOUND** - Requested section doesn't exist
-- **FILE_TOO_LARGE** - File exceeds size limits
-- **PARSE_ERROR** - Error parsing markdown or metadata
-- **FILE_SYSTEM_ERROR** - Error accessing documentation files
-- **UNKNOWN_TOOL** - Tool name not recognized
-- **INTERNAL_ERROR** - General internal server error
-
-All errors follow the JSON format specified in SPECIFICATION.md.
-
-## Recent Changes
-
-### Testing Implementation (Added 2025-10-10)
-
-- Comprehensive test suite added for all three tools with 29 tests
-- Jest framework configured with TypeScript support
-- Test coverage achieved: ~96% for tools folder
-- Test files created:
-  - `src/__tests__/ListDocumentationFiles.test.ts` - 12 tests
-  - `src/__tests__/TableOfContents.test.ts` - 8 tests
-  - `src/__tests__/ReadSections.test.ts` - 9 tests
-- Test fixtures added for consistent testing scenarios
-- Proper mocking implemented for all external dependencies
-
-### Import Path Corrections
-
-- Fixed incorrect `.js` extensions in TypeScript imports
-- Updated source files to use proper TypeScript import conventions
-- Configured Jest to handle TypeScript module resolution correctly
-
-## Development Notes
-
-### File Structure
-
-- Tool classes use dependency injection with `DocumentationConfig`
-- Markdown parsing supports ATX-style headers (`#`, `##`, etc.) but not Setext-style headers
-- Section IDs are generated using path-based conventions (lowercase, hyphens, forward slashes)
-- File size is displayed with 'kb' or 'b' suffixes for readability
-
-### TypeScript Import Conventions
-
-- **Source Files**: Use relative imports without file extensions for TypeScript modules (e.g., `import { Config } from '../types'`)
-- **Compiled Output**: TypeScript compiles to CommonJS modules in `dist/` directory
-- **Module Resolution**: The project uses Node.js module resolution with TypeScript's `moduleResolution: "node"`
-- **CommonJS Target**: Output uses CommonJS modules (`"module": "commonjs"` in tsconfig.json)
-
-### Common Pitfalls
-
-- **Import Extensions**: Do not use `.js` extensions when importing TypeScript modules within the source code
-- **Test Imports**: In test files, import TypeScript modules directly without extensions
-- **Jest Configuration**: Jest requires special configuration to handle TypeScript module resolution correctly
-- **Mocking**: When mocking modules, mock the actual TypeScript module, not the compiled JavaScript version
-
-### Testing
+### Overview
 
 The project uses Jest for testing with TypeScript support. Test configuration is in `jest.config.js`.
 
-#### Test Commands
+**Test Coverage**: ~96% for the tools folder with 29 comprehensive tests covering all three tools.
 
-- `npm test` - Run all tests
-- `npm run test:watch` - Run tests in watch mode
-- `npm run test:coverage` - Run tests with coverage report
-
-#### Test Structure
+### Test Structure
 
 - Tests are located in `src/__tests__/`
 - Test fixtures are in `src/__tests__/fixtures/`
-- Each tool has its own test file: `ListDocumentationFiles.test.ts`, `TableOfContents.test.ts`, `ReadSections.test.ts`
 
-#### Important Notes for Testing
+### TypeScript Import Rules
 
-- **Import Paths**: Use `.ts` extensions when importing TypeScript modules in tests (not `.js`)
-- **Mocking**: Mock dependencies like `MarkdownParser` and `glob` using Jest's mock functionality
-- **Module Resolution**: Jest is configured to handle TypeScript module resolution correctly
-- **Coverage**: Current test coverage is ~96% for the tools folder
+- **Source Files**: Use relative imports without file extensions (e.g., `import { Config } from '../types'`)
+- **Test Files**: Import TypeScript modules directly without extensions
+- **Jest Configuration**: Configured to handle TypeScript module resolution correctly
 
-#### Example Test Structure
-
-```typescript
-import { ToolName } from '../tools/ToolName';
-import { DocumentationConfig } from '../types';
-import { MarkdownParser } from '../MarkdownParser';
-
-// Mock dependencies
-jest.mock('../MarkdownParser');
-const mockMarkdownParser = MarkdownParser as jest.Mocked<typeof MarkdownParser>;
-```
-
-### Environment Variables
-
-- `DOCS_PATH` - Override default documentation directory
-- Configuration can be extended through the `DocumentationConfig` interface in `types.ts`
-
-## Testing Best Practices
-
-### When Adding New Tests
+### Best Practices
 
 1. **Mock External Dependencies**: Always mock `MarkdownParser`, `glob`, and file system operations
-2. **Test Error Cases**: Include tests for all error conditions (file not found, invalid parameters, etc.)
+2. **Test Error Cases**: Include tests for all error conditions
 3. **Parameter Validation**: Test all input validation scenarios
 4. **Edge Cases**: Test empty arrays, null values, and malformed inputs
-5. **Coverage**: Aim for high test coverage (>90%) for tool implementations
+5. **Coverage**: Aim for high test coverage (>80%) for tool implementations
 
 ### Test File Naming
 
-- Use `.test.ts` extension for test files
+- Use `.test.ts` extension
 - Match test file names to source files (e.g., `ToolName.test.ts` for `ToolName.ts`)
 - Place tests in `src/__tests__/` directory
 
@@ -325,3 +229,51 @@ mockMarkdownParser.validateFile.mockReturnValue({
   stats: { size: 1024 } as fs.Stats,
 });
 ```
+
+## Development Notes
+
+### File Structure
+
+- Tool classes use dependency injection with `DocumentationConfig`
+- Markdown parsing supports ATX-style headers (`#`, `##`, etc.) but not Setext-style headers
+- Section IDs are generated using path-based conventions (lowercase, hyphens, forward slashes)
+- File size is displayed with 'kb' or 'b' suffixes for readability
+
+### TypeScript Configuration
+
+- **Module Resolution**: Node.js module resolution with `moduleResolution: "node"`
+- **Target**: ES2020 with CommonJS modules
+- **Compiled Output**: TypeScript compiles to CommonJS modules in `dist/` directory
+
+### Common Pitfalls
+
+- **Import Extensions**: Do not use `.js` extensions when importing TypeScript modules within source code
+- **Module Resolution**: Jest requires special configuration for TypeScript module resolution
+- **Mocking**: Mock the actual TypeScript module, not the compiled JavaScript version
+
+### Environment Variables
+
+- `DOCS_PATH` - Override default documentation directory
+- Configuration can be extended through the `DocumentationConfig` interface in `types.ts`
+
+## Error Handling
+
+The server implements comprehensive error handling with structured error responses:
+
+- **FILE_NOT_FOUND** - Requested file doesn't exist
+- **INVALID_SECTION_ID** - Section identifier is malformed
+- **SECTION_NOT_FOUND** - Requested section doesn't exist
+- **FILE_TOO_LARGE** - File exceeds size limits
+- **PARSE_ERROR** - Error parsing markdown or metadata
+- **FILE_SYSTEM_ERROR** - Error accessing documentation files
+- **UNKNOWN_TOOL** - Tool name not recognized
+- **INTERNAL_ERROR** - General internal server error
+
+All errors follow the JSON format specified in SPECIFICATION.md.
+
+## Binary Distribution
+
+The package includes a binary entry point:
+
+- `docs-mcp` command points to `dist/index.js`
+
