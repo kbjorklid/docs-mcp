@@ -29,6 +29,7 @@ When given a task, you will follow this systematic approach:
 - Consider error scenarios, boundary conditions, and exceptional cases
 - Assess performance, security, and accessibility testing needs if relevant
 - Evaluate mock and fixture requirements
+- Think: do the tests make sense? Do not add tests for trivial things.
 
 **Step 4: Comprehensive Testing Plan Creation**
 Create a detailed testing plan that includes:

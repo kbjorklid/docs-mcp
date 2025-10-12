@@ -111,26 +111,6 @@ export class ReadSections {
               },
             ],
           };
-        } else if (error.message.startsWith('FILE_TOO_LARGE')) {
-          const filename = error.message.split(': ')[1];
-          const errorResponse: ErrorResponse = {
-            error: {
-              code: 'FILE_TOO_LARGE',
-              message: 'File exceeds size limits',
-              details: {
-                filename,
-                max_size: this.config.max_file_size,
-              },
-            },
-          };
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(errorResponse, null, 2),
-              },
-            ],
-          };
         } else if (error.message.startsWith('SECTION_NOT_FOUND')) {
           const parts = error.message.split(': ');
           const filename = parts[1];
@@ -188,15 +168,10 @@ export class ReadSections {
     const fullPath = path.resolve(this.config.documentation_path, filename);
 
     // Check if file exists
-    const validation = MarkdownParser.validateFile(
-      fullPath,
-      this.config.max_file_size
-    );
+    const validation = MarkdownParser.validateFile(fullPath);
     if (!validation.valid) {
       if (validation.error === 'File not found') {
         throw new Error(`FILE_NOT_FOUND: ${filename}`);
-      } else if (validation.error === 'File too large') {
-        throw new Error(`FILE_TOO_LARGE: ${filename}`);
       } else {
         throw new Error(validation.error);
       }

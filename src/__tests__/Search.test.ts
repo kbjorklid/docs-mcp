@@ -21,7 +21,6 @@ describe('Search', () => {
     fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
       documentation_path: fixturesPath,
-      max_file_size: 10485760,
       max_toc_depth: 5,
       discount_single_top_header: false,
     };
@@ -780,19 +779,7 @@ This section contains the search term "database connection" which should be foun
         expect(errorResponse.error.details.filename).toBe('nonexistent.md');
       });
 
-      it('should handle file too large error', async () => {
-        mockMarkdownParser.validateFile.mockReturnValue({
-          valid: false,
-          error: 'File too large',
-        });
-
-        const result = await search.execute('search term', 'large.md');
-
-        expect(result.content).toHaveLength(1);
-        const errorResponse = JSON.parse(result.content[0].text);
-        expect(errorResponse.error.code).toBe('FILE_TOO_LARGE');
-        expect(errorResponse.error.message).toBe('File \'large.md\' exceeds size limit');
-      });
+      // File size handling test removed as max_file_size is no longer supported
 
       it('should handle general parse errors', async () => {
         mockMarkdownParser.readMarkdownFile.mockImplementation(() => {

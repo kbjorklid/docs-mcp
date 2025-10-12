@@ -11,7 +11,6 @@ describe('TableOfContents', () => {
     fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
       documentation_path: fixturesPath,
-      max_file_size: 10485760,
       max_toc_depth: 5,
       discount_single_top_header: false,
     };
@@ -581,7 +580,6 @@ describe('TableOfContents', () => {
       // Create config without pattern fields (post-refactoring config)
       const refactoredConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
         max_toc_depth: 5,
         discount_single_top_header: false,
       };
@@ -598,7 +596,6 @@ describe('TableOfContents', () => {
     it('should handle configuration with minimal required properties', () => {
       const minimalConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
       };
 
       const minimalTool = new TableOfContents(minimalConfig);
@@ -613,7 +610,6 @@ describe('TableOfContents', () => {
       // Ensure backward compatibility with configs that still have pattern fields
       const legacyConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
         exclude_patterns: ['node_modules/**'],
         include_patterns: ['**/*.md'],
       } as any;
@@ -629,7 +625,6 @@ describe('TableOfContents', () => {
     it('should respect discount_single_top_header configuration in refactored config', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
         discount_single_top_header: true,
       };
 
@@ -644,7 +639,6 @@ describe('TableOfContents', () => {
     it('should respect max_toc_depth configuration in refactored config', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
         max_toc_depth: 2,
       };
 
@@ -659,26 +653,23 @@ describe('TableOfContents', () => {
       });
     });
 
-    it('should handle boundary values for max_file_size', () => {
+    it('should handle boundary values for configuration parameters', () => {
       const boundaryConfigs = [
         {
           documentation_path: fixturesPath,
-          max_file_size: 0, // Minimum
         },
         {
           documentation_path: fixturesPath,
-          max_file_size: 1, // Just above minimum
         },
         {
           documentation_path: fixturesPath,
-          max_file_size: Number.MAX_SAFE_INTEGER, // Maximum
         },
       ];
 
       boundaryConfigs.forEach((config) => {
         const tool = new TableOfContents(config);
 
-        // Should handle files within size limit or return appropriate error
+        // Should handle files correctly
         const result = tool.execute('test-doc.md');
         expect(result.content).toHaveLength(1);
 
@@ -690,7 +681,6 @@ describe('TableOfContents', () => {
     it('should handle error cases with refactored configuration', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
       };
 
       const refactoredTool = new TableOfContents(refactoredConfig);

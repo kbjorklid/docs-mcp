@@ -371,7 +371,7 @@ title: Test
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue(stats);
 
-      const result = MarkdownParser.validateFile(filePath, 2048);
+      const result = MarkdownParser.validateFile(filePath);
 
       expect(result).toEqual({
         valid: true,
@@ -384,7 +384,7 @@ title: Test
 
       mockFs.existsSync.mockReturnValue(false);
 
-      const result = MarkdownParser.validateFile(filePath, 2048);
+      const result = MarkdownParser.validateFile(filePath);
 
       expect(result).toEqual({
         valid: false,
@@ -392,18 +392,18 @@ title: Test
       });
     });
 
-    it('should reject file that exceeds size limit', () => {
+    it('should validate any existing file regardless of size', () => {
       const filePath = '/path/to/large.md';
       const stats = { size: 2048 } as fs.Stats;
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue(stats);
 
-      const result = MarkdownParser.validateFile(filePath, 1024);
+      const result = MarkdownParser.validateFile(filePath);
 
       expect(result).toEqual({
-        valid: false,
-        error: 'File too large',
+        valid: true,
+        stats,
       });
     });
 
@@ -415,7 +415,7 @@ title: Test
         throw new Error('Permission denied');
       });
 
-      const result = MarkdownParser.validateFile(filePath, 1024);
+      const result = MarkdownParser.validateFile(filePath);
 
       expect(result).toEqual({
         valid: false,

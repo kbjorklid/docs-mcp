@@ -31,7 +31,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
       // Create a refactored configuration (without unused properties)
       const refactoredConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
         max_toc_depth: 3,
         discount_single_top_header: false,
       };
@@ -52,7 +51,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
     it('should maintain tool functionality with minimal configuration', () => {
       const minimalConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
       };
 
       // All tools should work with minimal configuration
@@ -68,7 +66,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
     it('should handle end-to-end workflow with refactored configuration', async () => {
       const refactoredConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
         max_toc_depth: 2,
         discount_single_top_header: true,
       };
@@ -184,7 +181,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
       // Test with invalid configuration
       const invalidConfig = {
         documentation_path: '/non/existent/path',
-        max_file_size: 10485760,
       };
 
       const listTool = new ListDocumentationFiles(invalidConfig as DocumentationConfig);
@@ -200,7 +196,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
     it('should handle boundary conditions in all tools', async () => {
       const boundaryConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 1, // Very small
       };
 
       const listTool = new ListDocumentationFiles(boundaryConfig);
@@ -228,7 +223,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
       // Current configuration with refactored properties
       const currentConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
         max_toc_depth: 5,
         discount_single_top_header: false,
       };
@@ -264,7 +258,6 @@ describe('Configuration Integration Tests for Refactoring', () => {
 
       // Verify DEFAULT_CONFIG has the expected structure
       expect(DEFAULT_CONFIG.documentation_path).toBe('./docs');
-      expect(DEFAULT_CONFIG.max_file_size).toBe(10485760);
       expect(DEFAULT_CONFIG.discount_single_top_header).toBe(false);
     });
   });
@@ -275,17 +268,14 @@ describe('Configuration Integration Tests for Refactoring', () => {
         // Valid configurations
         {
           documentation_path: fixturesPath,
-          max_file_size: 10485760,
         },
         {
           documentation_path: fixturesPath,
-          max_file_size: 0,
           max_toc_depth: 0,
         },
         // Edge cases
         {
           documentation_path: '',
-          max_file_size: 1,
         },
       ];
 
@@ -307,13 +297,11 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const optionalConfigs = [
         {
           documentation_path: fixturesPath,
-          max_file_size: 10485760,
           max_toc_depth: undefined,
           discount_single_top_header: undefined,
         },
         {
           documentation_path: fixturesPath,
-          max_file_size: 10485760,
           max_toc_depth: 5,
           discount_single_top_header: true,
         },
@@ -377,14 +365,12 @@ describe('Configuration Integration Tests for Refactoring', () => {
       // Initial configuration
       const initialConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
         max_toc_depth: 2,
       };
 
       // Updated configuration
       const updatedConfig: DocumentationConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
         max_toc_depth: 5,
         discount_single_top_header: true,
       };

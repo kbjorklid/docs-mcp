@@ -193,7 +193,6 @@ describe('ArgumentParser', () => {
       const config = createConfig();
 
       expect(config.documentation_path).toBe('./docs');
-      expect(config.max_file_size).toBe(10485760);
       expect(config.max_toc_depth).toBeUndefined();
       expect(config.discount_single_top_header).toBe(false);
     });
@@ -232,7 +231,6 @@ describe('ArgumentParser', () => {
       expect(config.documentation_path).toBe('/env/path'); // From environment
       expect(config.max_toc_depth).toBe(4); // From CLI
       expect(config.discount_single_top_header).toBe(true); // From CLI
-      expect(config.max_file_size).toBe(10485760); // From default
     });
 
     it('should handle empty string environment variables', () => {
@@ -262,7 +260,6 @@ describe('ArgumentParser', () => {
 
       const config = createConfig();
       expect(config.documentation_path).toBe('/custom/path');
-      expect(config.max_file_size).toBe(10485760);
       expect(config.max_toc_depth).toBeUndefined();
       expect(config.discount_single_top_header).toBe(false);
     });
@@ -296,8 +293,6 @@ describe('ArgumentParser', () => {
       expect(config.documentation_path).toBe('/from/cli');
       // CLI-only options should be set
       expect(config.max_toc_depth).toBe(2);
-      // Default values should remain
-      expect(config.max_file_size).toBe(10485760);
       expect(config.discount_single_top_header).toBe(false);
     });
 
@@ -338,7 +333,6 @@ describe('ArgumentParser', () => {
 
       // Should work with the refactored configuration
       expect(config.documentation_path).toBe('/test/path');
-      expect(config.max_file_size).toBe(10485760);
       expect(config.max_toc_depth).toBeUndefined();
       expect(config.discount_single_top_header).toBe(false);
     });
@@ -367,7 +361,6 @@ describe('ArgumentParser', () => {
 
       // Should work with environment variables even when unused properties are removed
       expect(config.documentation_path).toBe('/env/documentation');
-      expect(config.max_file_size).toBe(10485760);
     });
 
     it('should handle complex configuration scenarios after refactoring', () => {
@@ -385,7 +378,6 @@ describe('ArgumentParser', () => {
       expect(config.documentation_path).toBe('/cli/docs');
       expect(config.max_toc_depth).toBe(5);
       expect(config.discount_single_top_header).toBe(true);
-      expect(config.max_file_size).toBe(10485760);
     });
 
     it('should handle boundary values in configuration after refactoring', () => {
@@ -408,7 +400,6 @@ describe('ArgumentParser', () => {
 
       // Should still work with all default values
       expect(config.documentation_path).toBe('./docs');
-      expect(config.max_file_size).toBe(10485760);
       expect(config.max_toc_depth).toBeUndefined();
       expect(config.discount_single_top_header).toBe(false);
     });
@@ -436,7 +427,6 @@ describe('ArgumentParser', () => {
 
       // Verify precedence is maintained
       expect(config.documentation_path).toBe('/from/cli'); // CLI wins
-      expect(config.max_file_size).toBe(10485760); // Default value
     });
 
     it('should handle edge cases in configuration after refactoring', () => {
@@ -460,7 +450,6 @@ describe('ArgumentParser', () => {
 
       // Configuration should be compatible with all tools
       expect(typeof config.documentation_path).toBe('string');
-      expect(typeof config.max_file_size).toBe('number');
       expect(config.max_toc_depth).toBe(2);
       expect(typeof config.discount_single_top_header).toBe('boolean');
     });

@@ -21,7 +21,6 @@ describe('ListDocumentationFiles', () => {
     fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
       documentation_path: fixturesPath,
-      max_file_size: 10485760,
       max_toc_depth: 5,
       discount_single_top_header: false,
     };
@@ -154,7 +153,6 @@ describe('ListDocumentationFiles', () => {
         // Create config without pattern fields (post-refactoring config)
         const refactoredConfig = {
           documentation_path: fixturesPath,
-          max_file_size: 10485760,
           max_toc_depth: 5,
           discount_single_top_header: false,
         };
@@ -171,7 +169,6 @@ describe('ListDocumentationFiles', () => {
       it('should handle configuration with minimal required properties', async () => {
         const minimalConfig = {
           documentation_path: fixturesPath,
-          max_file_size: 10485760,
         };
 
         const minimalTool = new ListDocumentationFiles(minimalConfig);
@@ -186,7 +183,6 @@ describe('ListDocumentationFiles', () => {
         // Ensure backward compatibility with configs that still have pattern fields
         const legacyConfig = {
           documentation_path: fixturesPath,
-          max_file_size: 10485760,
           exclude_patterns: ['node_modules/**'],
           include_patterns: ['**/*.md'],
         } as any;
@@ -207,15 +203,12 @@ describe('ListDocumentationFiles', () => {
         const boundaryConfigs = [
           {
             documentation_path: fixturesPath,
-            max_file_size: 0, // Minimum - no files should pass
           },
           {
             documentation_path: fixturesPath,
-            max_file_size: 1, // Very small - only tiny files should pass
           },
           {
             documentation_path: fixturesPath,
-            max_file_size: Number.MAX_SAFE_INTEGER, // Very large - all files should pass
           },
         ];
 
@@ -236,7 +229,6 @@ describe('ListDocumentationFiles', () => {
       it('should ignore legacy pattern configurations', async () => {
         const legacyConfig = {
           documentation_path: fixturesPath,
-          max_file_size: 10485760,
           exclude_patterns: ['**/test-*.md', '**/empty.md'],
           include_patterns: ['**/*.md'],
         } as any;
@@ -260,7 +252,6 @@ describe('ListDocumentationFiles', () => {
         // Test that hardcoded **/*.md pattern works correctly
         const simpleConfig = {
           documentation_path: fixturesPath,
-          max_file_size: 10485760,
         };
 
         // Reset mocks to ensure clean test

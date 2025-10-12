@@ -102,14 +102,6 @@ export class Search {
           { filename }
         );
       }
-
-      if (error.message.startsWith('FILE_TOO_LARGE:')) {
-        return this.createErrorResponse(
-          'FILE_TOO_LARGE',
-          `File '${filename}' exceeds size limit`,
-          { filename }
-        );
-      }
     }
 
     return this.createErrorResponse(
@@ -185,10 +177,10 @@ export class Search {
   }
 
   /**
-   * Validate file exists and is within size limits
+   * Validate file exists
    */
   private validateFile(fullPath: string, filename: string) {
-    const validation = MarkdownParser.validateFile(fullPath, this.config.max_file_size);
+    const validation = MarkdownParser.validateFile(fullPath);
 
     if (!validation.valid) {
       switch (validation.error) {
@@ -196,8 +188,6 @@ export class Search {
           throw new Error(
             `FILE_NOT_FOUND: File '${filename}' not found. Use the list_documentation_files tool to see available files.`
           );
-        case 'File too large':
-          throw new Error(`FILE_TOO_LARGE: ${filename}`);
         default:
           throw new Error(validation.error);
       }

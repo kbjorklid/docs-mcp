@@ -11,7 +11,6 @@ describe('ReadSections', () => {
     fixturesPath = path.join(__dirname, 'fixtures');
     mockConfig = {
       documentation_path: fixturesPath,
-      max_file_size: 10485760,
       max_toc_depth: 5,
       discount_single_top_header: false,
     };
@@ -220,7 +219,6 @@ describe('ReadSections', () => {
       // Create config without pattern fields (post-refactoring config)
       const refactoredConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
         max_toc_depth: 5,
         discount_single_top_header: false,
       };
@@ -238,7 +236,6 @@ describe('ReadSections', () => {
     it('should handle configuration with minimal required properties', () => {
       const minimalConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
       };
 
       const minimalTool = new ReadSections(minimalConfig);
@@ -254,7 +251,6 @@ describe('ReadSections', () => {
       // Ensure backward compatibility with configs that still have pattern fields
       const legacyConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
         exclude_patterns: ['node_modules/**'],
         include_patterns: ['**/*.md'],
       } as any;
@@ -269,26 +265,23 @@ describe('ReadSections', () => {
       expect(sections[1].title).toBe('getting-started');
     });
 
-    it('should handle boundary values for max_file_size', () => {
+    it('should handle boundary values for configuration parameters', () => {
       const boundaryConfigs = [
         {
           documentation_path: fixturesPath,
-          max_file_size: 0, // Minimum
         },
         {
           documentation_path: fixturesPath,
-          max_file_size: 1, // Just above minimum
         },
         {
           documentation_path: fixturesPath,
-          max_file_size: Number.MAX_SAFE_INTEGER, // Maximum
         },
       ];
 
       boundaryConfigs.forEach((config) => {
         const tool = new ReadSections(config);
 
-        // Should handle files within size limit or return appropriate error
+        // Should handle files correctly
         const result = tool.execute('test-doc.md', ['introduction']);
         expect(result.content).toHaveLength(1);
 
@@ -300,7 +293,6 @@ describe('ReadSections', () => {
     it('should handle error cases with refactored configuration', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
       };
 
       const refactoredTool = new ReadSections(refactoredConfig);
@@ -327,7 +319,6 @@ describe('ReadSections', () => {
     it('should handle section not found errors with refactored configuration', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
       };
 
       const refactoredTool = new ReadSections(refactoredConfig);
@@ -350,7 +341,6 @@ describe('ReadSections', () => {
     it('should handle complex section requests with refactored configuration', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
       };
 
       const refactoredTool = new ReadSections(refactoredConfig);
@@ -371,7 +361,6 @@ describe('ReadSections', () => {
     it('should maintain error detail structure with refactored configuration', () => {
       const refactoredConfig = {
         documentation_path: fixturesPath,
-        max_file_size: 10485760,
       };
 
       const refactoredTool = new ReadSections(refactoredConfig);

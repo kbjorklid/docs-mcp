@@ -232,11 +232,10 @@ export class MarkdownParser {
   }
 
   /**
-   * Check if file exists and is within size limits
+   * Check if file exists
    */
   static validateFile(
-    filePath: string,
-    maxSize: number
+    filePath: string
   ): { valid: boolean; error?: string; stats?: fs.Stats } {
     try {
       if (!fs.existsSync(filePath)) {
@@ -244,10 +243,6 @@ export class MarkdownParser {
       }
 
       const stats = fs.statSync(filePath);
-      if (stats.size > maxSize) {
-        return { valid: false, error: 'File too large' };
-      }
-
       return { valid: true, stats };
     } catch (error) {
       return { valid: false, error: `Error accessing file: ${error}` };

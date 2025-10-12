@@ -1,7 +1,6 @@
 // Configuration interface
 export interface DocumentationConfig {
   documentation_path: string;
-  max_file_size: number;
   max_toc_depth?: number;
   discount_single_top_header?: boolean;
 }
@@ -48,6 +47,5 @@ export interface ErrorResponse {
 // Default configuration
 export const DEFAULT_CONFIG: DocumentationConfig = {
   documentation_path: process.env.DOCS_PATH || './docs',
-  max_file_size: 10485760, // 10MB
   discount_single_top_header: false,
 };

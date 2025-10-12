@@ -172,17 +172,12 @@ export class TableOfContents {
     const fullPath = path.resolve(this.config.documentation_path, filename);
 
     // Check if file exists
-    const validation = MarkdownParser.validateFile(
-      fullPath,
-      this.config.max_file_size
-    );
+    const validation = MarkdownParser.validateFile(fullPath);
     if (!validation.valid) {
       if (validation.error === 'File not found') {
         throw new Error(
           `FILE_NOT_FOUND: File '${filename}' not found. Use the list_documentation_files tool to see available files.`
         );
-      } else if (validation.error === 'File too large') {
-        throw new Error(`FILE_TOO_LARGE: ${filename}`);
       } else {
         throw new Error(validation.error);
       }

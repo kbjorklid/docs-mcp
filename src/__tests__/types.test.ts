@@ -5,7 +5,6 @@ describe('Types', () => {
     it('should have correct default values without unused properties', () => {
       expect(DEFAULT_CONFIG).toEqual({
         documentation_path: './docs',
-        max_file_size: 10485760,
         discount_single_top_header: false,
       });
     });
@@ -41,7 +40,6 @@ describe('Types', () => {
       // Test the refactored configuration without unused properties
       const refactoredConfig = {
         documentation_path: './test-docs',
-        max_file_size: 5242880,
         max_toc_depth: 3,
         discount_single_top_header: true,
       };
@@ -49,7 +47,6 @@ describe('Types', () => {
       // Should be assignable to DocumentationConfig after refactoring
       const config: DocumentationConfig = refactoredConfig;
       expect(config.documentation_path).toBe('./test-docs');
-      expect(config.max_file_size).toBe(5242880);
       expect(config.max_toc_depth).toBe(3);
       expect(config.discount_single_top_header).toBe(true);
     });
@@ -59,11 +56,9 @@ describe('Types', () => {
     it('should accept valid configuration with refactored interface', () => {
       const config: DocumentationConfig = {
         documentation_path: './test-docs',
-        max_file_size: 5242880,
       };
 
       expect(config.documentation_path).toBe('./test-docs');
-      expect(config.max_file_size).toBe(5242880);
     });
 
     // Interface Compliance Tests for refactoring
@@ -71,7 +66,6 @@ describe('Types', () => {
       // Test configuration that excludes the unused properties
       const configWithoutUnusedProps = {
         documentation_path: './test-docs',
-        max_file_size: 5242880,
         max_toc_depth: 5,
         discount_single_top_header: false,
       };
@@ -79,7 +73,6 @@ describe('Types', () => {
       // This should be assignable to DocumentationConfig after refactoring
       const config: DocumentationConfig = configWithoutUnusedProps;
       expect(config.documentation_path).toBe('./test-docs');
-      expect(config.max_file_size).toBe(5242880);
       expect(config.max_toc_depth).toBe(5);
       expect(config.discount_single_top_header).toBe(false);
     });
@@ -87,7 +80,6 @@ describe('Types', () => {
     it('should accept configuration with optional properties', () => {
       const configWithOptionals: DocumentationConfig = {
         documentation_path: './test-docs',
-        max_file_size: 5242880,
         max_toc_depth: 3,
         discount_single_top_header: true,
       };
@@ -99,32 +91,27 @@ describe('Types', () => {
     it('should accept configuration without optional properties', () => {
       const configWithoutOptionals: DocumentationConfig = {
         documentation_path: './test-docs',
-        max_file_size: 5242880,
       };
 
       expect(configWithoutOptionals.max_toc_depth).toBeUndefined();
       expect(configWithoutOptionals.discount_single_top_header).toBeUndefined();
     });
 
-    it('should handle boundary values for max_file_size', () => {
+    it('should handle boundary values for configuration parameters', () => {
       const boundaryConfigs = [
         {
           documentation_path: './test-docs',
-          max_file_size: 0, // Minimum boundary
         },
         {
           documentation_path: './test-docs',
-          max_file_size: 1, // Just above minimum
         },
         {
           documentation_path: './test-docs',
-          max_file_size: Number.MAX_SAFE_INTEGER, // Maximum boundary
         },
       ];
 
       boundaryConfigs.forEach((config, index) => {
-        expect(config.max_file_size).toBeGreaterThanOrEqual(0);
-        expect(typeof config.max_file_size).toBe('number');
+        expect(typeof config.documentation_path).toBe('string');
       });
     });
   });

@@ -88,10 +88,7 @@ export class ListDocumentationFiles {
     const fullPath = path.resolve(this.config.documentation_path, filePath);
 
     try {
-      const validation = MarkdownParser.validateFile(
-        fullPath,
-        this.config.max_file_size
-      );
+      const validation = MarkdownParser.validateFile(fullPath);
       if (!validation.valid || !validation.stats) {
         return null;
       }
