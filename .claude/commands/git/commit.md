@@ -1,5 +1,6 @@
 ---
 description: Commit uncommitted changes to git
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
 ---
 
 ## Context
@@ -24,7 +25,7 @@ Do not re-execute the commands mentioned above; trust that the output is correct
 
 ## Your task
 
-If user has given instructions, follow them and create a git commit based on that input.
+If user has given instructions, follow them and create a git commit based on that.
 
 If there is no user input AND there are staged changes: create a commit of the staged changes.
 
