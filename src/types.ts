@@ -45,6 +45,26 @@ export interface SectionContent {
   content: string;
 }
 
+// Search result interfaces
+export interface SearchResult {
+  query: string;
+  results: FileSearchResult[];
+}
+
+export interface FileSearchResult {
+  filename: string;
+  matches: Section[];
+}
+
+// Internal file list item interface (matches ListDocumentationFiles output)
+export interface FileListItem {
+  filename: string;
+  title: string;
+  description?: string;
+  keywords: string[];
+  size: string;
+}
+
 // Error response interface
 export interface ErrorResponse {
   error: {

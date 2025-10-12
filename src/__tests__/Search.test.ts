@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { Search } from '../tools/Search';
-import { DocumentationConfig } from '../types';
+import { DocumentationConfig, FileListItem } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { ListDocumentationFiles } from '../tools/ListDocumentationFiles';
 
@@ -16,6 +16,71 @@ describe('Search', () => {
   let mockConfig: DocumentationConfig;
   let fixturesPath: string;
   let mockListDocsInstance: jest.Mocked<ListDocumentationFiles>;
+
+  // Test helper methods
+  const createMockFileList = (files: Partial<FileListItem>[]): FileListItem[] => {
+    return files.map((file, index) => ({
+      filename: file.filename || `file${index + 1}.md`,
+      title: file.title || `File ${index + 1}`,
+      description: file.description,
+      keywords: file.keywords || [],
+      size: file.size || '1kb',
+      ...file
+    }));
+  };
+
+  const mockSingleFileSearch = (filename: string, content: string, sections: any[]) => {
+    mockMarkdownParser.validateFile.mockReturnValue({
+      valid: true,
+      stats: { size: 1024 } as any,
+    });
+    mockMarkdownParser.readMarkdownFile.mockReturnValue({
+      content,
+      metadata: {},
+    });
+    mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+      sections,
+      sectionMap: new Map(sections.map(section => [section.id, { start: 0, end: 1 }])),
+    });
+  };
+
+  const mockMultipleFileSearch = (fileConfigs: Array<{ filename: string; content: string; hasMatch: boolean }>) => {
+    // Mock the ListDocumentationFiles response
+    const mockFiles = createMockFileList(fileConfigs.map(config => ({ filename: config.filename })));
+    mockListDocsInstance.execute.mockResolvedValue({
+      content: [{
+        type: 'text',
+        text: JSON.stringify(mockFiles),
+      }],
+    });
+
+    // Mock each file's content and parsing
+    fileConfigs.forEach((config, index) => {
+      const sections = config.hasMatch
+        ? [{ id: 'section1', title: 'Section 1', level: 1, character_count: 20 }]
+        : [];
+
+      if (index === 0) {
+        mockMarkdownParser.readMarkdownFile.mockReturnValueOnce({
+          content: config.content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValueOnce({
+          sections,
+          sectionMap: new Map(sections.map(section => [section.id, { start: 0, end: 1 }])),
+        });
+      } else {
+        mockMarkdownParser.readMarkdownFile.mockReturnValueOnce({
+          content: config.content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValueOnce({
+          sections,
+          sectionMap: new Map(sections.map(section => [section.id, { start: 0, end: 1 }])),
+        });
+      }
+    });
+  };
 
   beforeEach(() => {
     fixturesPath = path.join(__dirname, 'fixtures');
@@ -33,7 +98,7 @@ describe('Search', () => {
     } as any;
     mockListDocumentationFiles.mockImplementation(() => mockListDocsInstance);
 
-    // Mock MarkdownParser static methods
+    // Default MarkdownParser mocks
     mockMarkdownParser.validateFile.mockReturnValue({
       valid: true,
       stats: { size: 1024 } as any,
@@ -102,31 +167,10 @@ describe('Search', () => {
       });
 
       it('should trim whitespace from valid query', async () => {
-        // Setup mock for multi-file search
-        mockListDocsInstance.execute.mockResolvedValue({
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                files: [
-                  { path: 'test.md', filename: 'test.md', title: 'Test File' },
-                ],
-              }),
-            },
-          ],
-        });
-
-        // Mock file content that contains the search term
-        mockMarkdownParser.readMarkdownFile.mockReturnValue({
-          content: 'Test content with search term',
-          metadata: {},
-        });
-        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
-          sections: [
-            { id: 'section1', title: 'Section 1', level: 1, character_count: 10 },
-          ],
-          sectionMap: new Map([['section1', { start: 0, end: 0 }]]),
-        });
+        // Setup mock for multi-file search using helper
+        mockMultipleFileSearch([
+          { filename: 'test.md', content: 'Test content with search term', hasMatch: true }
+        ]);
 
         const result = await search.execute('  search term  ');
 
@@ -592,37 +636,11 @@ This section does not contain the search term.`;
 
     describe('Multiple Files Search', () => {
       it('should search across all files when filename not specified', async () => {
-        // Mock ListDocumentationFiles response
-        mockListDocsInstance.execute.mockResolvedValue({
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                files: [
-                  { path: 'file1.md', filename: 'file1.md', title: 'File 1' },
-                  { path: 'file2.md', filename: 'file2.md', title: 'File 2' },
-                ],
-              }),
-            },
-          ],
-        });
-
-        // Mock file 1 content (contains search term)
-        mockMarkdownParser.readMarkdownFile.mockReturnValueOnce({
-          content: '# Section 1\nThis contains search term.',
-          metadata: {},
-        }).mockReturnValueOnce({
-          content: '# Section 2\nThis does not contain it.',
-          metadata: {},
-        });
-
-        mockMarkdownParser.parseMarkdownSections.mockReturnValueOnce({
-          sections: [{ id: 'section1', title: 'Section 1', level: 1, character_count: 15 }],
-          sectionMap: new Map([['section1', { start: 0, end: 1 }]]),
-        }).mockReturnValueOnce({
-          sections: [{ id: 'section2', title: 'Section 2', level: 1, character_count: 20 }],
-          sectionMap: new Map([['section2', { start: 0, end: 1 }]]),
-        });
+        // Setup mock for multiple files using helper
+        mockMultipleFileSearch([
+          { filename: 'file1.md', content: '# Section 1\nThis contains search term.', hasMatch: true },
+          { filename: 'file2.md', content: '# Section 2\nThis does not contain it.', hasMatch: false }
+        ]);
 
         const result = await search.execute('search term');
 
@@ -639,12 +657,10 @@ This section does not contain the search term.`;
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                files: [
-                  { path: 'valid.md', filename: 'valid.md', title: 'Valid File' },
-                  { path: 'invalid.md', filename: 'invalid.md', title: 'Invalid File' },
-                ],
-              }),
+              text: JSON.stringify([
+                { filename: 'valid.md', title: 'Valid File' },
+                { filename: 'invalid.md', title: 'Invalid File' },
+              ]),
             },
           ],
         });
@@ -795,22 +811,55 @@ This section contains the search term "database connection" which should be foun
       });
     });
 
+    describe('Type Safety and Data Structure Validation', () => {
+      it('should handle invalid response from ListDocumentationFiles tool', async () => {
+        // Mock ListDocumentationFiles returning invalid structure
+        mockListDocsInstance.execute.mockResolvedValue({
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({ files: [] }), // Wrong structure - should be array directly
+            },
+          ],
+        });
+
+        const result = await search.execute('search term');
+
+        expect(result.content).toHaveLength(1);
+        const errorResponse = JSON.parse(result.content[0].text);
+        expect(errorResponse.error.code).toBe('INTERNAL_ERROR');
+        expect(errorResponse.error.message).toBe('Invalid response from file listing tool');
+      });
+
+      it('should handle empty array from ListDocumentationFiles tool', async () => {
+        // Mock ListDocumentationFiles returning empty array
+        mockListDocsInstance.execute.mockResolvedValue({
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify([]),
+            },
+          ],
+        });
+
+        const result = await search.execute('search term');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results).toHaveLength(0);
+        expect(searchResponse.query).toBe('search term');
+      });
+    });
+
     describe('Edge Cases', () => {
       it('should handle very long search terms', async () => {
         const longTerm = 'a'.repeat(1000);
         const content = `# Test Section
 This contains a very long search term: ${longTerm}`;
 
-        mockMarkdownParser.readMarkdownFile.mockReturnValue({
-          content,
-          metadata: {},
-        });
-        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
-          sections: [
-            { id: 'test-section', title: 'Test Section', level: 1, character_count: 50 },
-          ],
-          sectionMap: new Map([['test-section', { start: 0, end: 1 }]]),
-        });
+        mockSingleFileSearch('test.md', content, [
+          { id: 'test-section', title: 'Test Section', level: 1, character_count: 50 }
+        ]);
 
         const result = await search.execute(longTerm, 'test.md');
 
@@ -823,16 +872,9 @@ This contains a very long search term: ${longTerm}`;
         const content = `# Internationalization
 Testing with café, naïve, and 中文 characters.`;
 
-        mockMarkdownParser.readMarkdownFile.mockReturnValue({
-          content,
-          metadata: {},
-        });
-        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
-          sections: [
-            { id: 'internationalization', title: 'Internationalization', level: 1, character_count: 25 },
-          ],
-          sectionMap: new Map([['internationalization', { start: 0, end: 1 }]]),
-        });
+        mockSingleFileSearch('test.md', content, [
+          { id: 'internationalization', title: 'Internationalization', level: 1, character_count: 25 }
+        ]);
 
         const result = await search.execute('café', 'test.md');
 
