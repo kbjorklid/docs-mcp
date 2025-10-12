@@ -60,8 +60,8 @@ describe('Search', () => {
       const definition = Search.getToolDefinition();
 
       expect(definition.name).toBe('search');
-      expect(definition.description).toContain('exact text matches');
-      expect(definition.description).toContain('simple exact phrase searches');
+      expect(definition.description).toContain('regular expressions');
+      expect(definition.description).toContain('multiline matching');
       expect(definition.inputSchema.type).toBe('object');
       expect(definition.inputSchema.properties.query).toBeDefined();
       expect(definition.inputSchema.properties.filename).toBeDefined();
@@ -138,6 +138,334 @@ describe('Search', () => {
         expect(searchResponse.query).toBe('search term');
         expect(searchResponse.results).toHaveLength(1);
         expect(searchResponse.results[0].filename).toBe('test.md');
+      });
+    });
+
+    describe('Regular Expression Functionality', () => {
+      it('should handle simple regex patterns', async () => {
+        const content = `# Testing Section
+This section contains database connections and database queries.`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'testing-section', title: 'Testing Section', level: 1, character_count: 30 },
+          ],
+          sectionMap: new Map([['testing-section', { start: 0, end: 1 }]]),
+        });
+
+        const result = await search.execute('database.+', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.query).toBe('database.+');
+        expect(searchResponse.results).toHaveLength(1);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+
+      it('should handle character classes', async () => {
+        const content = `# Configuration
+Set port to 3000 or 8080 or 9000.`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'configuration', title: 'Configuration', level: 1, character_count: 25 },
+          ],
+          sectionMap: new Map([['configuration', { start: 0, end: 1 }]]),
+        });
+
+        const result = await search.execute('[0-9]{4}', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+
+      it('should handle word boundaries', async () => {
+        const content = `# API Documentation
+The API endpoint is api.example.com but not apidirect.`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'api-documentation', title: 'API Documentation', level: 1, character_count: 30 },
+          ],
+          sectionMap: new Map([['api-documentation', { start: 0, end: 1 }]]),
+        });
+
+        const result = await search.execute('\\bapi\\b', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+
+      it('should handle quantifiers', async () => {
+        const content = `# Error Handling
+HTTP status codes: 200, 404, 500.`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'error-handling', title: 'Error Handling', level: 1, character_count: 20 },
+          ],
+          sectionMap: new Map([['error-handling', { start: 0, end: 1 }]]),
+        });
+
+        const result = await search.execute('\\d{3}', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+
+      it('should handle alternation', async () => {
+        const content = `# Authentication
+Use JWT or OAuth for authentication.`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'authentication', title: 'Authentication', level: 1, character_count: 25 },
+          ],
+          sectionMap: new Map([['authentication', { start: 0, end: 1 }]]),
+        });
+
+        const result = await search.execute('JWT|OAuth', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+
+      it('should handle special regex characters', async () => {
+        const content = `# Email Validation
+Contact: user@example.com or admin@site.org.`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'email-validation', title: 'Email Validation', level: 1, character_count: 30 },
+          ],
+          sectionMap: new Map([['email-validation', { start: 0, end: 1 }]]),
+        });
+
+        const result = await search.execute('[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+
+      it('should handle URL matching', async () => {
+        const content = `# API Endpoints
+Available endpoints: https://api.example.com/v1/users and http://localhost:3000/api/data`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'api-endpoints', title: 'API Endpoints', level: 1, character_count: 50 },
+          ],
+          sectionMap: new Map([['api-endpoints', { start: 0, end: 1 }]]),
+        });
+
+        const result = await search.execute('https?://[^\\s]+', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+    });
+
+    describe('Multiline Regular Expression Support', () => {
+      it('should match patterns across line breaks using dotAll', async () => {
+        const content = `# Multi-line Section
+This is the first line
+and this is the second line
+with more content here.`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'multi-line-section', title: 'Multi-line Section', level: 1, character_count: 40 },
+          ],
+          sectionMap: new Map([['multi-line-section', { start: 0, end: 3 }]]),
+        });
+
+        const result = await search.execute('first line.*second line', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+
+      it('should match patterns spanning multiple lines', async () => {
+        const content = `# Configuration
+Host: localhost
+Port: 3000
+Database: myapp
+User: admin`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'configuration', title: 'Configuration', level: 1, character_count: 35 },
+          ],
+          sectionMap: new Map([['configuration', { start: 0, end: 5 }]]),
+        });
+
+        const result = await search.execute('Host.*Database', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+
+      it('should handle complex multiline patterns', async () => {
+        const content = `# API Documentation
+Request:
+GET /api/users
+Headers: Content-Type: application/json
+Response:
+Status: 200 OK`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'api-documentation', title: 'API Documentation', level: 1, character_count: 50 },
+          ],
+          sectionMap: new Map([['api-documentation', { start: 0, end: 6 }]]),
+        });
+
+        const result = await search.execute('Request.*Response', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+    });
+
+    describe('Invalid Regular Expression Handling', () => {
+      it('should return error for invalid regex syntax', async () => {
+        const result = await search.execute('[unclosed bracket');
+
+        expect(result.content).toHaveLength(1);
+        const errorResponse = JSON.parse(result.content[0].text);
+        expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
+        expect(errorResponse.error.message).toContain('Invalid regular expression');
+      });
+
+      it('should return error for invalid quantifier', async () => {
+        const result = await search.execute('a{2,1}');
+
+        expect(result.content).toHaveLength(1);
+        const errorResponse = JSON.parse(result.content[0].text);
+        expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
+        expect(errorResponse.error.message).toContain('Invalid regular expression');
+      });
+
+      it('should return error for incomplete character class', async () => {
+        const result = await search.execute('[a-z');
+
+        expect(result.content).toHaveLength(1);
+        const errorResponse = JSON.parse(result.content[0].text);
+        expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
+        expect(errorResponse.error.message).toContain('Invalid regular expression');
+      });
+
+      it('should return error for invalid escape sequence', async () => {
+        const result = await search.execute('('); // Unclosed group
+
+        expect(result.content).toHaveLength(1);
+        const errorResponse = JSON.parse(result.content[0].text);
+        expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
+        expect(errorResponse.error.message).toContain('Invalid regular expression');
+      });
+
+      it('should handle complex invalid regex patterns', async () => {
+        const result = await search.execute('(?<uncaptured group');
+
+        expect(result.content).toHaveLength(1);
+        const errorResponse = JSON.parse(result.content[0].text);
+        expect(errorResponse.error.code).toBe('INVALID_PARAMETER');
+        expect(errorResponse.error.message).toContain('Invalid regular expression');
+      });
+    });
+
+    describe('Case-Insensitive Regular Expression Support', () => {
+      it('should be case-insensitive for uppercase patterns', async () => {
+        const content = `# JavaScript Testing
+This section contains JavaScript and javascript.`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'javascript-testing', title: 'JavaScript Testing', level: 1, character_count: 30 },
+          ],
+          sectionMap: new Map([['javascript-testing', { start: 0, end: 1 }]]),
+        });
+
+        const result = await search.execute('JAVASCRIPT', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+
+      it('should be case-insensitive for mixed patterns', async () => {
+        const content = `# HTTP Methods
+GET, POST, PUT, DELETE methods are supported.`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'http-methods', title: 'HTTP Methods', level: 1, character_count: 25 },
+          ],
+          sectionMap: new Map([['http-methods', { start: 0, end: 1 }]]),
+        });
+
+        const result = await search.execute('get|post', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
       });
     });
 
@@ -348,8 +676,8 @@ This section does not contain the search term.`;
       });
     });
 
-    describe('Special Characters and Technical Terms', () => {
-      it('should handle search terms with special characters', async () => {
+    describe('Backward Compatibility with Simple Terms', () => {
+      it('should handle exact text matching (backward compatibility)', async () => {
         const content = `# API Documentation
 The API endpoint is https://api.example.com/v1.0 with authentication token xyz123.`;
 
@@ -364,14 +692,14 @@ The API endpoint is https://api.example.com/v1.0 with authentication token xyz12
           sectionMap: new Map([['api-documentation', { start: 0, end: 1 }]]),
         });
 
-        const result = await search.execute('https://api.example.com/v1.0', 'test.md');
+        const result = await search.execute('api.example.com', 'test.md');
 
         expect(result.content).toHaveLength(1);
         const searchResponse = JSON.parse(result.content[0].text);
         expect(searchResponse.results[0].matches).toHaveLength(1);
       });
 
-      it('should handle search terms with symbols', async () => {
+      it('should handle special characters in simple terms (regex escaped)', async () => {
         const content = `# Configuration
 Use @#$%^&*() symbols in your configuration.`;
 
@@ -386,14 +714,14 @@ Use @#$%^&*() symbols in your configuration.`;
           sectionMap: new Map([['configuration', { start: 0, end: 1 }]]),
         });
 
-        const result = await search.execute('@#$%^&*()', 'test.md');
+        const result = await search.execute('@#\\$%\\^&\\*\\(\\)', 'test.md');
 
         expect(result.content).toHaveLength(1);
         const searchResponse = JSON.parse(result.content[0].text);
         expect(searchResponse.results[0].matches).toHaveLength(1);
       });
 
-      it('should handle quoted search terms', async () => {
+      it('should handle quoted text with regex escaping', async () => {
         const content = `# Examples
 Use "quoted text" in your documentation.`;
 
@@ -409,6 +737,28 @@ Use "quoted text" in your documentation.`;
         });
 
         const result = await search.execute('"quoted text"', 'test.md');
+
+        expect(result.content).toHaveLength(1);
+        const searchResponse = JSON.parse(result.content[0].text);
+        expect(searchResponse.results[0].matches).toHaveLength(1);
+      });
+
+      it('should maintain backward compatibility with existing search patterns', async () => {
+        const content = `# Database Connection
+This section contains the search term "database connection" which should be found.`;
+
+        mockMarkdownParser.readMarkdownFile.mockReturnValue({
+          content,
+          metadata: {},
+        });
+        mockMarkdownParser.parseMarkdownSections.mockReturnValue({
+          sections: [
+            { id: 'database-connection', title: 'Database Connection', level: 1, character_count: 30 },
+          ],
+          sectionMap: new Map([['database-connection', { start: 0, end: 1 }]]),
+        });
+
+        const result = await search.execute('database connection', 'test.md');
 
         expect(result.content).toHaveLength(1);
         const searchResponse = JSON.parse(result.content[0].text);

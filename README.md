@@ -7,7 +7,7 @@ A Model Context Protocol (MCP) server that provides tools for reading and naviga
 - **List Documentation Files**: Discover and browse available documentation files with metadata
 - **Table of Contents**: Generate structured table of contents with configurable depth control
 - **Read Sections**: Read specific sections of documentation by their IDs
-- **Search**: Find exact text matches across documentation files with case-insensitive search
+- **Search**: Find text patterns using regular expressions across documentation files with multiline matching support
 - **Configurable Max Depth**: Limit table of contents depth for better navigation
 - **Multiple Path Configuration**: Support for command line, environment variables, and default paths
 - **Comprehensive Error Handling**: Clear error messages and validation
@@ -217,27 +217,6 @@ npm start -- --docs-path ./docs --max-toc-depth 2 --discount-single-top-header
    - With `--max-toc-depth 2` + `--discount-single-top-header`: Shows levels 1 and 2 (no change)
    - With `--max-toc-depth 2` alone: Shows levels 1 and 2 (no change)
 
-## Usage Examples
-
-### Basic Workflow
-
-```bash
-# 1. Start the server with your documentation
-npm start -- --docs-path /path/to/your/docs
-
-# 2. List available documentation files
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_documentation_files","arguments":{}}}' | npm start -- --docs-path /path/to/your/docs
-
-# 3. Get table of contents for a specific file
-echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"table_of_contents","arguments":{"filename":"user-guide.md"}}}' | npm start -- --docs-path /path/to/your/docs
-
-# 4. Search for specific text
-echo '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search","arguments":{"query":"installation guide"}}}' | npm start -- --docs-path /path/to/your/docs
-
-# 5. Read specific sections
-echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"read_sections","arguments":{"filename":"user-guide.md","section_ids":["introduction","getting-started"]}}}' | npm start -- --docs-path /path/to/your/docs
-```
-
 
 ## Available Tools
 
@@ -245,8 +224,7 @@ The server provides four tools for working with documentation:
 
 ### list_documentation_files
 Lists all available documentation files with metadata including file size, modification time, and front matter information.
-
-**Usage:** No parameters required
+No parameters required.
 
 ### table_of_contents
 Provides a structured table of contents for a markdown file, showing section hierarchy with IDs.
@@ -274,17 +252,20 @@ Reads specific sections from a markdown file by their IDs.
 - `section_ids` (required) - Array of section identifiers to read
 
 ### search
-Searches for exact text matches in documentation files, returning headers and section IDs where the search phrase is found. This tool performs case-insensitive exact phrase searches.
+Searches for text patterns using regular expressions in documentation files, returning headers and section IDs where the search pattern is found. Supports full regular expression syntax with multiline matching (the "s" flag is enabled automatically for dotAll behavior).
 
 **Parameters:**
-- `query` (required) - The exact phrase to search for (case-insensitive)
+- `query` (required) - The regular expression pattern to search for (case-insensitive). The pattern automatically includes the "i" and "s" flags for case-insensitive and multiline matching
 - `filename` (optional) - Specific file to search in. If not provided, searches all available documentation files
 
-**Examples:**
-- Search across all files: `{"query": "installation guide"}`
-- Search in specific file: `{"query": "API reference", "filename": "developer-docs.md"}`
+**Regular Expression Features:**
+- **Case-insensitive matching**: Patterns automatically ignore case
+- **Multiline matching**: `.` matches newlines (dotAll flag enabled)
+- **Full regex syntax**: Supports character classes, quantifiers, alternation, groups, etc.
+- **Backward compatibility**: Simple text strings work as exact matches
 
-**Note:** This tool is designed for simple exact phrase searches only, not fuzzy matching or complex search patterns.
+**Error Handling:**
+Invalid regular expressions will return an `INVALID_PARAMETER` error with a descriptive message.
 
 
 ## Configuration Precedence

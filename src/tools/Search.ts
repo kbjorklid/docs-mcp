@@ -17,13 +17,13 @@ export class Search {
     return {
       name: 'search',
       description:
-        'Search for exact text matches in documentation files. Returns headers and section IDs where the search phrase is found in either the header text or section content. This tool performs simple exact phrase searches only (not fuzzy matching).',
+        'Search for text matches using regular expressions in documentation files. Returns headers and section IDs where the search pattern is found in either the header text or section content. Supports full regular expression syntax with multiline matching (the "s" flag is enabled automatically for dotAll behavior).',
       inputSchema: {
         type: 'object',
         properties: {
           query: {
             type: 'string',
-            description: 'The exact phrase to search for (case-insensitive). Use simple text phrases only, not regular expressions or fuzzy search patterns.',
+            description: 'The regular expression pattern to search for (case-insensitive). The pattern automatically includes the "i" and "s" flags for case-insensitive and multiline matching. Examples: "foo.*bar" matches across line breaks, "\\b[A-Z][a-z]+\\b" matches capitalized words, "https?://[^\\s]+" matches URLs.',
           },
           filename: {
             type: 'string',
@@ -46,8 +46,20 @@ export class Search {
       );
     }
 
+    // Validate regular expression
+    const trimmedQuery = query.trim();
+    let regex: RegExp;
     try {
-      const searchResults = await this.performSearchAcrossFiles(query.trim(), filename);
+      regex = new RegExp(trimmedQuery, 'is'); // i = case-insensitive, s = dotAll (multiline matching)
+    } catch (error) {
+      return this.createErrorResponse(
+        'INVALID_PARAMETER',
+        `Invalid regular expression: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your regex syntax.`
+      );
+    }
+
+    try {
+      const searchResults = await this.performSearchAcrossFiles(regex, filename);
       return {
         content: [
           {
@@ -110,19 +122,19 @@ export class Search {
   /**
    * Perform search across files with improved performance
    */
-  private async performSearchAcrossFiles(query: string, filename?: string) {
+  private async performSearchAcrossFiles(regex: RegExp, filename?: string) {
     return filename
-      ? await this.searchInSpecificFile(query, filename)
-      : await this.searchAcrossAllFiles(query);
+      ? await this.searchInSpecificFile(regex, filename)
+      : await this.searchAcrossAllFiles(regex);
   }
 
   /**
    * Search in a specific file
    */
-  private async searchInSpecificFile(query: string, filename: string) {
-    const matches = this.findMatchesInFile(query, filename);
+  private async searchInSpecificFile(regex: RegExp, filename: string) {
+    const matches = this.findMatchesInFile(regex, filename);
     return {
-      query,
+      query: regex.source,
       results: [{ filename, matches }],
     };
   }
@@ -130,14 +142,14 @@ export class Search {
   /**
    * Search across all documentation files concurrently
    */
-  private async searchAcrossAllFiles(query: string) {
+  private async searchAcrossAllFiles(regex: RegExp) {
     const listDocumentationFiles = new ListDocumentationFiles(this.config);
     const filesResult = await listDocumentationFiles.execute();
     const filesData = JSON.parse(filesResult.content[0].text as string);
 
     const searchPromises = filesData.files.map(async (file: { path: string }) => {
       try {
-        const matches = this.findMatchesInFile(query, file.path);
+        const matches = this.findMatchesInFile(regex, file.path);
         return matches.length > 0 ? { filename: file.path, matches } : null;
       } catch (error) {
         console.warn(`Warning: Could not search in file ${file.path}:`, error);
@@ -153,23 +165,22 @@ export class Search {
       )
       .map(result => result.value);
 
-    return { query, results };
+    return { query: regex.source, results };
   }
 
   /**
    * Find matching sections in a file
    */
-  private findMatchesInFile(query: string, filename: string): Section[] {
+  private findMatchesInFile(regex: RegExp, filename: string): Section[] {
     const fullPath = path.resolve(this.config.documentation_path, filename);
 
     this.validateFile(fullPath, filename);
 
     const { content } = MarkdownParser.readMarkdownFile(fullPath);
     const { sections, sectionMap } = MarkdownParser.parseMarkdownSections(content);
-    const normalizedQuery = query.toLowerCase();
 
     return sections.filter(section =>
-      this.doesSectionContainQuery(section, content, sectionMap, normalizedQuery)
+      this.doesSectionContainQuery(section, content, sectionMap, regex)
     );
   }
 
@@ -200,17 +211,17 @@ export class Search {
     section: Section,
     content: string,
     sectionMap: Map<string, { start: number; end: number }>,
-    normalizedQuery: string
+    regex: RegExp
   ): boolean {
-    return this.doesHeaderMatch(section, normalizedQuery) ||
-           this.doesContentMatch(section, content, sectionMap, normalizedQuery);
+    return this.doesHeaderMatch(section, regex) ||
+           this.doesContentMatch(section, content, sectionMap, regex);
   }
 
   /**
    * Check if section header matches the search query
    */
-  private doesHeaderMatch(section: Section, normalizedQuery: string): boolean {
-    return section.title.toLowerCase().includes(normalizedQuery);
+  private doesHeaderMatch(section: Section, regex: RegExp): boolean {
+    return regex.test(section.title);
   }
 
   /**
@@ -220,15 +231,15 @@ export class Search {
     section: Section,
     content: string,
     sectionMap: Map<string, { start: number; end: number }>,
-    normalizedQuery: string
+    regex: RegExp
   ): boolean {
     const range = sectionMap.get(section.id);
     if (!range) return false;
 
     const contentLines = content.split('\n');
     const sectionContentLines = contentLines.slice(range.start, range.end + 1);
-    const normalizedSectionContent = sectionContentLines.join('\n').toLowerCase();
+    const sectionContent = sectionContentLines.join('\n');
 
-    return normalizedSectionContent.includes(normalizedQuery);
+    return regex.test(sectionContent);
   }
 }
