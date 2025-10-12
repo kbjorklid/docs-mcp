@@ -17,17 +17,21 @@ export class Search {
     return {
       name: 'search',
       description:
-        'Search for text matches using regular expressions in documentation files. Returns headers and section IDs where the search pattern is found in either the header text or section content. Supports full regular expression syntax with multiline matching (the "s" flag is enabled automatically for dotAll behavior).',
+        'Search for text matches using regular expressions in documentation files. ' +
+        'Returns headers and section IDs where the search pattern is found in either the header text or section content. ' + 
+        'Spports full regular expression syntax with multiline matching (the "s" flag is enabled automatically for dotAll behavior).',
       inputSchema: {
         type: 'object',
         properties: {
           query: {
             type: 'string',
-            description: 'The regular expression pattern to search for (case-insensitive). The pattern automatically includes the "i" and "s" flags for case-insensitive and multiline matching. Examples: "foo.*bar" matches across line breaks, "\\b[A-Z][a-z]+\\b" matches capitalized words, "https?://[^\\s]+" matches URLs.',
+            description: 'The regular expression pattern to search for (case-insensitive, multiline-matching). ' + 
+            'Examples: "foo.*bar" matches across line breaks, "\\b[A-Z][a-z]+\\b" matches capitalized words.',
           },
           filename: {
             type: 'string',
-            description: 'Optional specific file to search in. If not provided, searches all available documentation files. Use the list_documentation_files tool to see available files.',
+            description: 'optional specific file to search in. If not provided, searches all available ' + 
+            'documentation files. Use the list_documentation_files tool to see available files.',
           },
         },
         required: ['query'],
@@ -57,7 +61,8 @@ export class Search {
     } catch (error) {
       return this.createErrorResponse(
         'INVALID_PARAMETER',
-        `Invalid regular expression: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your regex syntax.`
+        `Invalid regular expression: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your regex syntax.`,
+        { error: error instanceof Error ? error : new Error(String(error)) }
       );
     }
 
@@ -296,7 +301,9 @@ export class Search {
     regex: RegExp
   ): boolean {
     const range = sectionMap.get(section.id);
-    if (!range) return false;
+    if (!range) {
+      return false;
+    }
 
     const contentLines = content.split('\n');
     const sectionContentLines = contentLines.slice(range.start, range.end + 1);
