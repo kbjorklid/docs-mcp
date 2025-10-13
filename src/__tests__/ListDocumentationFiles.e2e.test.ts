@@ -167,5 +167,130 @@ describe('list_documentations E2E Tests', () => {
       expect(listDocsTool.inputSchema).toBeDefined();
       expect(listDocsTool.inputSchema.type).toBe('object');
     });
+
+    it('should handle non-existent documentation paths gracefully', async () => {
+      // Create a new server process with non-existent path
+      const invalidServerProcess = spawn('node', [join(__dirname, '..', '..', 'dist', 'index.js'), '--docs-path', '/non/existent/path'], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+
+      await sleep(100);
+
+      // Initialize the invalid server
+      const initRequest: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 10,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2024-11-05',
+          capabilities: {},
+          clientInfo: { name: 'test-client', version: '1.0.0' }
+        }
+      };
+
+      try {
+        const initResponse = await sendRequestToServer(invalidServerProcess, initRequest);
+        expect(initResponse.error).toBeUndefined();
+
+        // Try to list documentation files
+        const listRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 11,
+          method: 'tools/call',
+          params: {
+            name: 'list_documentation_files',
+            arguments: {}
+          }
+        };
+
+        const listResponse = await sendRequestToServer(invalidServerProcess, listRequest);
+
+        // Should return an empty array for non-existent paths rather than an error
+        expect(listResponse.error).toBeUndefined();
+        expect(listResponse.result).toBeDefined();
+        expect(listResponse.result.content).toBeDefined();
+
+        const content = listResponse.result.content;
+        const files = content[0].text ? JSON.parse(content[0].text) : content[0];
+        expect(Array.isArray(files)).toBe(true);
+        expect(files.length).toBe(0);
+      } finally {
+        invalidServerProcess.kill();
+        await sleep(100);
+      }
+    });
+
+    it('should handle configuration compatibility correctly', async () => {
+      // This test verifies that the simplified configuration works correctly
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 12,
+        method: 'tools/call',
+        params: {
+          name: 'list_documentation_files',
+          arguments: {}
+        }
+      };
+
+      const response = await sendRequest(request);
+
+      expect(response.error).toBeUndefined();
+      expect(response.result).toBeDefined();
+
+      // Verify the response structure is correct with simplified configuration
+      expect(response.result.content).toBeDefined();
+      expect(Array.isArray(response.result.content)).toBe(true);
+      expect(response.result.content.length).toBeGreaterThan(0);
+
+      // Verify files returned are only markdown files
+      const content = response.result.content;
+      const files = content[0].text ? JSON.parse(content[0].text) : content[0];
+      expect(Array.isArray(files)).toBe(true);
+
+      files.forEach((file: any) => {
+        expect(file.filename).toMatch(/\.md$/);
+        expect(file.size).toBeDefined();
+        expect(typeof file.size).toBe('string');
+      });
+    });
   });
+
+  async function sendRequestToServer(serverProcess: ChildProcess, request: JSONRPCRequest): Promise<JSONRPCResponse> {
+    return new Promise((resolve, reject) => {
+      if (!serverProcess.stdin || !serverProcess.stdout) {
+        reject(new Error('Server process not properly initialized'));
+        return;
+      }
+
+      let responseData = '';
+
+      const onData = (data: Buffer) => {
+        responseData += data.toString();
+
+        // Try to parse complete JSON-RPC response
+        try {
+          const lines = responseData.trim().split('\n');
+          for (const line of lines) {
+            if (line.trim()) {
+              const response = JSON.parse(line);
+              serverProcess.stdout?.removeListener('data', onData);
+              resolve(response);
+              return;
+            }
+          }
+        } catch (e) {
+          // Not yet a complete JSON response, continue accumulating
+        }
+      };
+
+      serverProcess.stdout?.on('data', onData);
+      serverProcess.stdin.write(JSON.stringify(request) + '\n');
+
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        serverProcess.stdout?.removeListener('data', onData);
+        reject(new Error('Request timeout'));
+      }, 5000);
+    });
+  }
 });
