@@ -50,17 +50,18 @@ describe('ListDocumentationFiles', () => {
 
     mockMarkdownParser.formatFileSize.mockReturnValue('1.0 kb');
 
-    // Mock glob to return fixture files
+    // Mock glob to return fixture files with new subdirectory structure
     mockGlob.mockResolvedValue([
-      'test-doc.md',
-      'no-frontmatter.md',
-      'nested-sections.md',
-      'multi-level-headers.md',
-      'single-top-header.md',
-      'no-top-headers.md',
-      'multi-top-headers.md',
-      'empty-sections.md',
-      'search-content.md',
+      'shared/test-doc.md',
+      'shared/no-frontmatter.md',
+      'table-of-contents/nested-sections.md',
+      'table-of-contents/multi-level-headers.md',
+      'table-of-contents/single-top-header.md',
+      'table-of-contents/no-top-headers.md',
+      'table-of-contents/multi-top-headers.md',
+      'table-of-contents/empty-sections.md',
+      'search/search-content.md',
+      'search/rest-api-docs.md',
     ]);
 
     listDocumentationFiles = new ListDocumentationFiles(mockConfig);
@@ -77,9 +78,9 @@ describe('ListDocumentationFiles', () => {
       expect(files.length).toBeGreaterThan(5); // All fixture files
 
       // Check test-doc.md has proper metadata
-      const testDoc = files.find((f: any) => f.filename === 'test-doc.md');
+      const testDoc = files.find((f: any) => f.filename === 'shared/test-doc.md');
       expect(testDoc).toEqual({
-        filename: 'test-doc.md',
+        filename: 'shared/test-doc.md',
         title: 'Test Document',
         description: 'A test document for testing',
         keywords: ['test', 'documentation'],
@@ -88,10 +89,10 @@ describe('ListDocumentationFiles', () => {
 
       // Check no-frontmatter.md uses filename as title
       const noFrontmatter = files.find(
-        (f: any) => f.filename === 'no-frontmatter.md'
+        (f: any) => f.filename === 'shared/no-frontmatter.md'
       );
       expect(noFrontmatter).toEqual({
-        filename: 'no-frontmatter.md',
+        filename: 'shared/no-frontmatter.md',
         title: 'no-frontmatter',
         description: undefined,
         keywords: [],
@@ -131,7 +132,7 @@ describe('ListDocumentationFiles', () => {
 
       // Reset and mock glob to return only markdown files (refactored behavior)
       jest.clearAllMocks();
-      mockGlob.mockResolvedValue(['test-doc.md', 'no-frontmatter.md']);
+      mockGlob.mockResolvedValue(['shared/test-doc.md', 'shared/no-frontmatter.md']);
 
       // Execute
       const result = await legacyListDocumentationFiles.execute();

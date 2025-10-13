@@ -21,7 +21,7 @@ describe('ReadSections', () => {
   describe('execute', () => {
     it('should return content for valid sections', () => {
       // Execute with test-doc.md and known sections
-      const result = readSections.execute('test-doc.md', [
+      const result = readSections.execute('shared/test-doc.md', [
         'introduction',
         'getting-started',
       ]);
@@ -107,16 +107,16 @@ describe('ReadSections', () => {
 
     it('should handle section not found error with helpful message', () => {
       // Execute with non-existent section
-      const result = readSections.execute('test-doc.md', ['nonexistent']);
+      const result = readSections.execute('shared/test-doc.md', ['nonexistent']);
 
       // Verify error response
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('SECTION_NOT_FOUND');
       expect(errorResponse.error.message).toBe(
-        "Sections [nonexistent] not found in 'test-doc.md'. Use the table_of_contents tool to see available sections."
+        "Sections [nonexistent] not found in 'shared/test-doc.md'. Use the table_of_contents tool to see available sections."
       );
-      expect(errorResponse.error.details.filename).toBe('test-doc.md');
+      expect(errorResponse.error.details.filename).toBe('shared/test-doc.md');
       expect(errorResponse.error.details.missing_sections).toEqual([
         'nonexistent',
       ]);
@@ -124,7 +124,7 @@ describe('ReadSections', () => {
 
     it('should handle multiple missing sections', () => {
       // Execute with multiple non-existent sections
-      const result = readSections.execute('test-doc.md', [
+      const result = readSections.execute('shared/test-doc.md', [
         'missing1',
         'missing2',
       ]);
@@ -134,7 +134,7 @@ describe('ReadSections', () => {
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('SECTION_NOT_FOUND');
       expect(errorResponse.error.message).toBe(
-        "Sections [missing1, missing2] not found in 'test-doc.md'. Use the table_of_contents tool to see available sections."
+        "Sections [missing1, missing2] not found in 'shared/test-doc.md'. Use the table_of_contents tool to see available sections."
       );
       expect(errorResponse.error.details.missing_sections).toEqual([
         'missing1',
@@ -144,7 +144,7 @@ describe('ReadSections', () => {
 
     it('should handle partial section matches', () => {
       // Execute with one existing and one non-existent section
-      const result = readSections.execute('test-doc.md', [
+      const result = readSections.execute('shared/test-doc.md', [
         'introduction',
         'missing',
       ]);
@@ -154,7 +154,7 @@ describe('ReadSections', () => {
       const errorResponse = JSON.parse(result.content[0].text);
       expect(errorResponse.error.code).toBe('SECTION_NOT_FOUND');
       expect(errorResponse.error.message).toBe(
-        "Sections [missing] not found in 'test-doc.md'. Use the table_of_contents tool to see available sections."
+        "Sections [missing] not found in 'shared/test-doc.md'. Use the table_of_contents tool to see available sections."
       );
       expect(errorResponse.error.details.missing_sections).toEqual(['missing']);
     });
@@ -164,7 +164,7 @@ describe('ReadSections', () => {
   describe('readSections', () => {
     it('should handle single section request', () => {
       // Execute with single section
-      const result = readSections.execute('test-doc.md', ['introduction']);
+      const result = readSections.execute('shared/test-doc.md', ['introduction']);
 
       // Verify single section returned
       const sections = JSON.parse(result.content[0].text);
@@ -175,7 +175,7 @@ describe('ReadSections', () => {
 
     it('should handle nested sections', () => {
       // Execute with nested-sections.md
-      const result = readSections.execute('nested-sections.md', [
+      const result = readSections.execute('table-of-contents/nested-sections.md', [
         'main-section/subsection-one',
       ]);
 
@@ -188,7 +188,7 @@ describe('ReadSections', () => {
 
     it('should handle file without frontmatter', () => {
       // Execute with no-frontmatter.md
-      const result = readSections.execute('no-frontmatter.md', [
+      const result = readSections.execute('shared/no-frontmatter.md', [
         'simple-document',
       ]);
 
@@ -213,7 +213,7 @@ describe('ReadSections', () => {
       };
 
       const refactoredTool = new ReadSections(refactoredConfig);
-      const result = refactoredTool.execute('test-doc.md', ['introduction']);
+      const result = refactoredTool.execute('shared/test-doc.md', ['introduction']);
 
       expect(result.content).toHaveLength(1);
       const sections = JSON.parse(result.content[0].text);

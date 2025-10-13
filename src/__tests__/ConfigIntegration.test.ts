@@ -41,11 +41,11 @@ describe('Configuration Integration Tests for Refactoring', () => {
 
       // Test TableOfContents
       const tocTool = new TableOfContents(refactoredConfig);
-      expect(() => tocTool.execute('test-doc.md')).not.toThrow();
+      expect(() => tocTool.execute('shared/test-doc.md')).not.toThrow();
 
       // Test ReadSections
       const readTool = new ReadSections(refactoredConfig);
-      expect(() => readTool.execute('test-doc.md', ['introduction'])).not.toThrow();
+      expect(() => readTool.execute('shared/test-doc.md', ['introduction'])).not.toThrow();
     });
 
     it('should maintain tool functionality with minimal configuration', () => {
@@ -59,8 +59,8 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const readTool = new ReadSections(minimalConfig);
 
       expect(() => listTool.execute()).not.toThrow();
-      expect(() => tocTool.execute('test-doc.md')).not.toThrow();
-      expect(() => readTool.execute('test-doc.md', ['introduction'])).not.toThrow();
+      expect(() => tocTool.execute('shared/test-doc.md')).not.toThrow();
+      expect(() => readTool.execute('shared/test-doc.md', ['introduction'])).not.toThrow();
     });
 
     it('should handle end-to-end workflow with refactored configuration', async () => {
@@ -78,13 +78,13 @@ describe('Configuration Integration Tests for Refactoring', () => {
 
       // Step 2: Get table of contents for a file
       const tocTool = new TableOfContents(refactoredConfig);
-      const tocResult = tocTool.execute('test-doc.md');
+      const tocResult = tocTool.execute('shared/test-doc.md');
       const sections = JSON.parse(tocResult.content[0].text);
       expect(sections.length).toBeGreaterThan(0);
 
       // Step 3: Read specific sections
       const readTool = new ReadSections(refactoredConfig);
-      const readResult = readTool.execute('test-doc.md', ['introduction']);
+      const readResult = readTool.execute('shared/test-doc.md', ['introduction']);
       const content = JSON.parse(readResult.content[0].text);
       expect(content.length).toBe(1);
       expect(content[0].title).toBe('introduction');
@@ -112,11 +112,11 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const files = JSON.parse(listResult.content[0].text);
       expect(files.length).toBeGreaterThan(0);
 
-      const tocResult = tocTool.execute('test-doc.md');
+      const tocResult = tocTool.execute('shared/test-doc.md');
       const sections = JSON.parse(tocResult.content[0].text);
       expect(sections.length).toBeGreaterThan(0);
 
-      const readResult = readTool.execute('test-doc.md', ['introduction']);
+      const readResult = readTool.execute('shared/test-doc.md', ['introduction']);
       const content = JSON.parse(readResult.content[0].text);
       expect(content[0].title).toBe('introduction');
     });
@@ -143,12 +143,12 @@ describe('Configuration Integration Tests for Refactoring', () => {
       expect(Array.isArray(files)).toBe(true);
 
       // Other tools should return appropriate errors for non-existent files
-      const tocResult = tocTool.execute('test-doc.md');
+      const tocResult = tocTool.execute('shared/test-doc.md');
       expect(tocResult.content).toHaveLength(1);
       const tocError = JSON.parse(tocResult.content[0].text);
       expect(tocError.error.code).toBe('FILE_NOT_FOUND');
 
-      const readResult = readTool.execute('test-doc.md', ['introduction']);
+      const readResult = readTool.execute('shared/test-doc.md', ['introduction']);
       expect(readResult.content).toHaveLength(1);
       const readError = JSON.parse(readResult.content[0].text);
       expect(readError.error.code).toBe('FILE_NOT_FOUND');
@@ -166,7 +166,7 @@ describe('Configuration Integration Tests for Refactoring', () => {
 
       // TableOfContents should respect the maxTocDepth setting
       const tocTool = new TableOfContents(config);
-      const tocResult = tocTool.execute('multi-level-headers.md');
+      const tocResult = tocTool.execute('table-of-contents/multi-level-headers.md');
       const sections = JSON.parse(tocResult.content[0].text);
 
       // Should be limited to max depth of 2
@@ -189,8 +189,8 @@ describe('Configuration Integration Tests for Refactoring', () => {
 
       // All tools should handle invalid paths gracefully
       expect(() => listTool.execute()).not.toThrow();
-      expect(() => tocTool.execute('test-doc.md')).not.toThrow();
-      expect(() => readTool.execute('test-doc.md', ['introduction'])).not.toThrow();
+      expect(() => tocTool.execute('shared/test-doc.md')).not.toThrow();
+      expect(() => readTool.execute('shared/test-doc.md', ['introduction'])).not.toThrow();
     });
 
     it('should handle boundary conditions in all tools', async () => {
@@ -208,11 +208,11 @@ describe('Configuration Integration Tests for Refactoring', () => {
       expect(() => JSON.parse(listResult.content[0].text)).not.toThrow();
 
       // TOC and Read tools might fail due to size limit
-      const tocResult = tocTool.execute('test-doc.md');
+      const tocResult = tocTool.execute('shared/test-doc.md');
       expect(tocResult.content).toHaveLength(1);
       expect(() => JSON.parse(tocResult.content[0].text)).not.toThrow();
 
-      const readResult = readTool.execute('test-doc.md', ['introduction']);
+      const readResult = readTool.execute('shared/test-doc.md', ['introduction']);
       expect(readResult.content).toHaveLength(1);
       expect(() => JSON.parse(readResult.content[0].text)).not.toThrow();
     });
@@ -237,11 +237,11 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const files = JSON.parse(listResult.content[0].text);
       expect(files.length).toBeGreaterThan(0);
 
-      const tocResult = tocTool.execute('test-doc.md');
+      const tocResult = tocTool.execute('shared/test-doc.md');
       const sections = JSON.parse(tocResult.content[0].text);
       expect(sections.length).toBeGreaterThan(0);
 
-      const readResult = readTool.execute('test-doc.md', ['introduction']);
+      const readResult = readTool.execute('shared/test-doc.md', ['introduction']);
       const content = JSON.parse(readResult.content[0].text);
       expect(content[0].title).toBe('introduction');
     });
@@ -253,8 +253,8 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const readTool = new ReadSections(DEFAULT_CONFIG);
 
       expect(() => listTool.execute()).not.toThrow();
-      expect(() => tocTool.execute('test-doc.md')).not.toThrow();
-      expect(() => readTool.execute('test-doc.md', ['introduction'])).not.toThrow();
+      expect(() => tocTool.execute('shared/test-doc.md')).not.toThrow();
+      expect(() => readTool.execute('shared/test-doc.md', ['introduction'])).not.toThrow();
 
       // Verify DEFAULT_CONFIG has the expected structure
       expect(DEFAULT_CONFIG.documentationPath).toBe('./docs');
@@ -316,10 +316,10 @@ describe('Configuration Integration Tests for Refactoring', () => {
         const listResult = await listTool.execute();
         expect(listResult.content).toHaveLength(1);
 
-        const tocResult = tocTool.execute('test-doc.md');
+        const tocResult = tocTool.execute('shared/test-doc.md');
         expect(tocResult.content).toHaveLength(1);
 
-        const readResult = readTool.execute('test-doc.md', ['introduction']);
+        const readResult = readTool.execute('shared/test-doc.md', ['introduction']);
         expect(readResult.content).toHaveLength(1);
       }
     });
@@ -344,18 +344,18 @@ describe('Configuration Integration Tests for Refactoring', () => {
       const files = JSON.parse(listResult.content[0].text);
 
       // Find a file to work with
-      const testFile = files.find((f: any) => f.filename === 'test-doc.md');
+      const testFile = files.find((f: any) => f.filename === 'shared/test-doc.md');
       expect(testFile).toBeDefined();
 
       // Get table of contents
       const tocTool = new TableOfContents(config);
-      const tocResult = tocTool.execute('test-doc.md');
+      const tocResult = tocTool.execute('shared/test-doc.md');
       const sections = JSON.parse(tocResult.content[0].text);
 
       // Read first section
       if (sections.length > 0) {
         const readTool = new ReadSections(config);
-        const readResult = readTool.execute('test-doc.md', [sections[0].id]);
+        const readResult = readTool.execute('shared/test-doc.md', [sections[0].id]);
         const content = JSON.parse(readResult.content[0].text);
         expect(content[0].title).toBe(sections[0].id);
       }
@@ -377,12 +377,12 @@ describe('Configuration Integration Tests for Refactoring', () => {
 
       // Test with initial config
       const initialTocTool = new TableOfContents(initialConfig);
-      const initialResult = initialTocTool.execute('multi-level-headers.md');
+      const initialResult = initialTocTool.execute('table-of-contents/multi-level-headers.md');
       const initialSections = JSON.parse(initialResult.content[0].text);
 
       // Test with updated config
       const updatedTocTool = new TableOfContents(updatedConfig);
-      const updatedResult = updatedTocTool.execute('multi-level-headers.md');
+      const updatedResult = updatedTocTool.execute('table-of-contents/multi-level-headers.md');
       const updatedSections = JSON.parse(updatedResult.content[0].text);
 
       // Updated config should return more sections due to higher maxTocDepth

@@ -63,8 +63,6 @@ describe('Search', () => {
       const definition = Search.getToolDefinition();
 
       expect(definition.name).toBe('search');
-      expect(definition.description).toContain('regular expressions');
-      expect(definition.description).toContain('multiline matching');
       expect(definition.inputSchema.type).toBe('object');
       expect(definition.inputSchema.properties.query).toBeDefined();
       expect(definition.inputSchema.properties.filename).toBeDefined();

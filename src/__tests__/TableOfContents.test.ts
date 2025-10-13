@@ -21,7 +21,7 @@ describe('TableOfContents', () => {
   describe('execute', () => {
     it('should return table of contents for valid file', () => {
       // Execute with test-doc.md
-      const result = tableOfContents.execute('test-doc.md');
+      const result = tableOfContents.execute('shared/test-doc.md');
 
       // Verify
       expect(result.content).toHaveLength(1);
@@ -82,7 +82,7 @@ describe('TableOfContents', () => {
 
     it('should handle empty sections', () => {
       // Execute with file that has no headers
-      const result = tableOfContents.execute('empty-sections.md');
+      const result = tableOfContents.execute('table-of-contents/empty-sections.md');
 
       // Verify empty sections array
       const sections = JSON.parse(result.content[0].text);
@@ -94,7 +94,7 @@ describe('TableOfContents', () => {
   describe('getTableOfContents', () => {
     it('should handle nested sections correctly', () => {
       // Execute with nested-sections.md
-      const result = tableOfContents.execute('nested-sections.md');
+      const result = tableOfContents.execute('table-of-contents/nested-sections.md');
 
       // Verify nested structure
       const sections = JSON.parse(result.content[0].text);
@@ -108,7 +108,7 @@ describe('TableOfContents', () => {
 
     it('should handle file without frontmatter', () => {
       // Execute with no-frontmatter.md
-      const result = tableOfContents.execute('no-frontmatter.md');
+      const result = tableOfContents.execute('shared/no-frontmatter.md');
 
       // Verify sections are parsed correctly
       expect(result.content).toHaveLength(1);
@@ -121,7 +121,7 @@ describe('TableOfContents', () => {
   describe('max depth functionality', () => {
     it('should return all sections when no max depth is specified', () => {
       // Execute with multi-level-headers.md without max depth
-      const result = tableOfContents.execute('multi-level-headers.md');
+      const result = tableOfContents.execute('table-of-contents/multi-level-headers.md');
 
       // Verify all sections are returned
       expect(result.content).toHaveLength(1);
@@ -139,7 +139,7 @@ describe('TableOfContents', () => {
 
     it('should return only level 1 and 2 sections when max_depth is 2', () => {
       // Execute with max_depth: 2
-      const result = tableOfContents.execute('multi-level-headers.md', 2);
+      const result = tableOfContents.execute('table-of-contents/multi-level-headers.md', 2);
 
       // Verify only level 1 and 2 sections are returned
       expect(result.content).toHaveLength(1);
@@ -166,7 +166,7 @@ describe('TableOfContents', () => {
 
     it('should return only level 1, 2, and 3 sections when max_depth is 3', () => {
       // Execute with max_depth: 3
-      const result = tableOfContents.execute('multi-level-headers.md', 3);
+      const result = tableOfContents.execute('table-of-contents/multi-level-headers.md', 3);
 
       // Verify only level 1, 2, and 3 sections are returned
       expect(result.content).toHaveLength(1);
@@ -196,7 +196,7 @@ describe('TableOfContents', () => {
 
     it('should return only level 1 sections when max_depth is 1', () => {
       // Execute with max_depth: 1
-      const result = tableOfContents.execute('multi-level-headers.md', 1);
+      const result = tableOfContents.execute('table-of-contents/multi-level-headers.md', 1);
 
       // Verify only level 1 sections are returned
       expect(result.content).toHaveLength(1);
@@ -210,7 +210,7 @@ describe('TableOfContents', () => {
 
     it('should handle max_depth larger than actual header levels', () => {
       // Execute with max_depth: 10 (larger than any header in the file)
-      const result = tableOfContents.execute('multi-level-headers.md', 10);
+      const result = tableOfContents.execute('table-of-contents/multi-level-headers.md', 10);
 
       // Verify all sections are returned (same as no max depth)
       expect(result.content).toHaveLength(1);
@@ -227,7 +227,7 @@ describe('TableOfContents', () => {
       const tocWithConfig = new TableOfContents(configWithMaxDepth);
 
       // Execute without max_depth parameter
-      const result = tocWithConfig.execute('multi-level-headers.md');
+      const result = tocWithConfig.execute('table-of-contents/multi-level-headers.md');
 
       // Verify only level 1 and 2 sections are returned
       expect(result.content).toHaveLength(1);
@@ -248,7 +248,7 @@ describe('TableOfContents', () => {
       const tocWithConfig = new TableOfContents(configWithMaxDepth);
 
       // Execute with max_depth: 3 parameter (should override config)
-      const result = tocWithConfig.execute('multi-level-headers.md', 3);
+      const result = tocWithConfig.execute('table-of-contents/multi-level-headers.md', 3);
 
       // Verify level 1, 2, and 3 sections are returned (parameter takes precedence)
       expect(result.content).toHaveLength(1);
@@ -262,7 +262,7 @@ describe('TableOfContents', () => {
 
     it('should handle edge case max_depth of 0 by returning all sections (disabled)', () => {
       // Execute with max_depth: 0 (disabled)
-      const result = tableOfContents.execute('multi-level-headers.md', 0);
+      const result = tableOfContents.execute('table-of-contents/multi-level-headers.md', 0);
 
       // Verify all sections are returned (same as no max depth)
       expect(result.content).toHaveLength(1);
@@ -287,7 +287,7 @@ describe('TableOfContents', () => {
       const tocWithZeroConfig = new TableOfContents(configWithZeroDepth);
 
       // Execute without max_depth parameter
-      const result = tocWithZeroConfig.execute('multi-level-headers.md');
+      const result = tocWithZeroConfig.execute('table-of-contents/multi-level-headers.md');
 
       // Verify all sections are returned (0 in config means disabled)
       expect(result.content).toHaveLength(1);
@@ -305,7 +305,7 @@ describe('TableOfContents', () => {
 
     it('should work correctly with simple documents when max_depth is specified', () => {
       // Execute with simple document and max_depth
-      const result = tableOfContents.execute('test-doc.md', 1);
+      const result = tableOfContents.execute('shared/test-doc.md', 1);
 
       // Verify only level 1 sections are returned
       expect(result.content).toHaveLength(1);
@@ -328,7 +328,7 @@ describe('TableOfContents', () => {
       const tocWithoutDiscount = new TableOfContents(configWithoutDiscount);
 
       // Execute with single-top-header.md and max_depth: 2
-      const result = tocWithoutDiscount.execute('single-top-header.md', 2);
+      const result = tocWithoutDiscount.execute('table-of-contents/single-top-header.md', 2);
 
       // Verify effective max depth is 2 (no discount applied)
       expect(result.content).toHaveLength(1);
@@ -360,7 +360,7 @@ describe('TableOfContents', () => {
       const tocWithDiscount = new TableOfContents(configWithDiscount);
 
       // Execute with single-top-header.md and max_depth: 2
-      const result = tocWithDiscount.execute('single-top-header.md', 2);
+      const result = tocWithDiscount.execute('table-of-contents/single-top-header.md', 2);
 
       // Verify effective max depth is 3 (2 + 1 discount)
       expect(result.content).toHaveLength(1);
@@ -394,7 +394,7 @@ describe('TableOfContents', () => {
       const tocWithDiscount = new TableOfContents(configWithDiscount);
 
       // Execute with no-top-headers.md and max_depth: 2
-      const result = tocWithDiscount.execute('no-top-headers.md', 2);
+      const result = tocWithDiscount.execute('table-of-contents/no-top-headers.md', 2);
 
       // Verify effective max depth is 3 (2 + 1 discount)
       expect(result.content).toHaveLength(1);
@@ -426,7 +426,7 @@ describe('TableOfContents', () => {
       const tocWithDiscount = new TableOfContents(configWithDiscount);
 
       // Execute with multi-top-headers.md and max_depth: 2
-      const result = tocWithDiscount.execute('multi-top-headers.md', 2);
+      const result = tocWithDiscount.execute('table-of-contents/multi-top-headers.md', 2);
 
       // Verify effective max depth is 2 (no discount applied due to multiple top headers)
       expect(result.content).toHaveLength(1);
@@ -459,7 +459,7 @@ describe('TableOfContents', () => {
       const tocWithDiscount = new TableOfContents(configWithDiscount);
 
       // Execute with single-top-header.md without max_depth parameter
-      const result = tocWithDiscount.execute('single-top-header.md');
+      const result = tocWithDiscount.execute('table-of-contents/single-top-header.md');
 
       // Verify all sections are returned (no max depth limit)
       expect(result.content).toHaveLength(1);
@@ -483,7 +483,7 @@ describe('TableOfContents', () => {
       const tocWithDiscount = new TableOfContents(configWithDiscount);
 
       // Execute with single-top-header.md with max_depth: 0 (disabled)
-      const result = tocWithDiscount.execute('single-top-header.md', 0);
+      const result = tocWithDiscount.execute('table-of-contents/single-top-header.md', 0);
 
       // Verify all sections are returned (max depth disabled)
       expect(result.content).toHaveLength(1);
@@ -508,7 +508,7 @@ describe('TableOfContents', () => {
       const tocWithBoth = new TableOfContents(configWithBoth);
 
       // Execute with single-top-header.md without max_depth parameter
-      const result = tocWithBoth.execute('single-top-header.md');
+      const result = tocWithBoth.execute('table-of-contents/single-top-header.md');
 
       // Verify effective max depth is 3 (config 2 + 1 discount)
       expect(result.content).toHaveLength(1);
@@ -539,7 +539,7 @@ describe('TableOfContents', () => {
       const tocWithBoth = new TableOfContents(configWithBoth);
 
       // Execute with single-top-header.md with max_depth: 2 parameter
-      const result = tocWithBoth.execute('single-top-header.md', 2);
+      const result = tocWithBoth.execute('table-of-contents/single-top-header.md', 2);
 
       // Verify effective max depth is 3 (parameter 2 + 1 discount, not config 1 + 1)
       expect(result.content).toHaveLength(1);
@@ -572,7 +572,7 @@ describe('TableOfContents', () => {
       };
 
       const refactoredTool = new TableOfContents(refactoredConfig);
-      const result = refactoredTool.execute('test-doc.md');
+      const result = refactoredTool.execute('shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const sections = JSON.parse(result.content[0].text);

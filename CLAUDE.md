@@ -194,7 +194,11 @@ The project uses Jest for testing with TypeScript support. Test configuration is
 ### Test Structure
 
 - Tests are located in `src/__tests__/`
-- Test fixtures are in `src/__tests__/fixtures/`
+- Test fixtures are organized in subdirectories under `src/__tests__/fixtures/`:
+  - **shared/** - Common fixtures used by multiple test types (test-doc.md, no-frontmatter.md)
+  - **table-of-contents/** - Fixtures for TOC testing (multi-level-headers.md, nested-sections.md, etc.)
+  - **search/** - Fixtures for search testing (search-content.md, rest-api-docs.md)
+  - **list-files/** - Empty directory (uses shared fixtures)
 
 ### TypeScript Import Rules
 

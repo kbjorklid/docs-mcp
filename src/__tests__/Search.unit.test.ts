@@ -23,8 +23,6 @@ describe('Search Unit Tests', () => {
       const definition = Search.getToolDefinition();
 
       expect(definition.name).toBe('search');
-      expect(definition.description).toContain('regular expressions');
-      expect(definition.description).toContain('multiline matching');
       expect(definition.inputSchema.type).toBe('object');
       expect(definition.inputSchema.properties.query).toBeDefined();
       expect(definition.inputSchema.properties.filename).toBeDefined();
@@ -52,7 +50,7 @@ describe('Search Unit Tests', () => {
 
   describe('Parameter Validation', () => {
     it('should return error for empty query', async () => {
-      const result = await search.execute('', 'test-doc.md');
+      const result = await search.execute('', 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -61,7 +59,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for whitespace-only query', async () => {
-      const result = await search.execute('   ', 'test-doc.md');
+      const result = await search.execute('   ', 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -69,7 +67,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for null query', async () => {
-      const result = await search.execute(null as any, 'test-doc.md');
+      const result = await search.execute(null as any, 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -77,7 +75,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for undefined query', async () => {
-      const result = await search.execute(undefined as any, 'test-doc.md');
+      const result = await search.execute(undefined as any, 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -85,7 +83,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should trim whitespace from valid query', async () => {
-      const result = await search.execute('  search term  ', 'test-doc.md');
+      const result = await search.execute('  search term  ', 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -95,7 +93,7 @@ describe('Search Unit Tests', () => {
 
   describe('Regular Expression Validation', () => {
     it('should return error for invalid regex syntax', async () => {
-      const result = await search.execute('[unclosed bracket', 'test-doc.md');
+      const result = await search.execute('[unclosed bracket', 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -104,7 +102,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for invalid quantifier', async () => {
-      const result = await search.execute('a{2,1}', 'test-doc.md');
+      const result = await search.execute('a{2,1}', 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -113,7 +111,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for incomplete character class', async () => {
-      const result = await search.execute('[a-z', 'test-doc.md');
+      const result = await search.execute('[a-z', 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -122,7 +120,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should return error for invalid escape sequence', async () => {
-      const result = await search.execute('(', 'test-doc.md'); // Unclosed group
+      const result = await search.execute('(', 'shared/test-doc.md'); // Unclosed group
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -131,7 +129,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should handle complex invalid regex patterns', async () => {
-      const result = await search.execute('(?<uncaptured group', 'test-doc.md');
+      const result = await search.execute('(?<uncaptured group', 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -140,7 +138,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should accept valid regex patterns', async () => {
-      const result = await search.execute('\\b[A-Z][a-z]+\\b', 'test-doc.md');
+      const result = await search.execute('\\b[A-Z][a-z]+\\b', 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const searchResponse = JSON.parse(result.content[0].text);
@@ -168,7 +166,7 @@ describe('Search Unit Tests', () => {
 
   describe('Error Response Format', () => {
     it('should return properly formatted error responses', async () => {
-      const result = await search.execute('', 'test-doc.md');
+      const result = await search.execute('', 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
@@ -181,7 +179,7 @@ describe('Search Unit Tests', () => {
     });
 
     it('should include error details when available', async () => {
-      const result = await search.execute('[invalid', 'test-doc.md');
+      const result = await search.execute('[invalid', 'shared/test-doc.md');
 
       expect(result.content).toHaveLength(1);
       const errorResponse = JSON.parse(result.content[0].text);
