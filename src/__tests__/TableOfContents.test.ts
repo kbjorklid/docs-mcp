@@ -19,30 +19,7 @@ describe('TableOfContents', () => {
   });
 
   describe('execute', () => {
-    it('should return table of contents for valid file', () => {
-      // Execute with test-doc.md
-      const result = tableOfContents.execute('shared/test-doc.md');
-
-      // Verify
-      expect(result.content).toHaveLength(1);
-      const sections = JSON.parse(result.content[0].text);
-      expect(sections).toHaveLength(5); // Introduction, Getting Started, Installation, Configuration, Advanced Topics
-
-      expect(sections[0]).toEqual({
-        id: 'introduction',
-        title: 'Introduction',
-        level: 1,
-        character_count: expect.any(Number),
-      });
-
-      expect(sections[1]).toEqual({
-        id: 'getting-started',
-        title: 'Getting Started',
-        level: 1,
-        character_count: expect.any(Number),
-      });
-    });
-
+    
     it('should return error when filename is not provided', () => {
       // Execute
       const result = tableOfContents.execute('');

@@ -19,25 +19,7 @@ describe('ReadSections', () => {
   });
 
   describe('execute', () => {
-    it('should return content for valid sections', () => {
-      // Execute with test-doc.md and known sections
-      const result = readSections.execute('shared/test-doc.md', [
-        'introduction',
-        'getting-started',
-      ]);
-
-      // Verify
-      expect(result.content).toHaveLength(1);
-      const sections = JSON.parse(result.content[0].text);
-      expect(sections).toHaveLength(2);
-      expect(sections[0].title).toBe('introduction');
-      expect(sections[1].title).toBe('getting-started');
-      expect(sections[0].content).toContain('This is the introduction section');
-      expect(sections[1].content).toContain(
-        'This is the getting started section'
-      );
-    });
-
+    
     it('should return error when filename is not provided', () => {
       // Execute
       const result = readSections.execute('', ['section1']);
@@ -161,47 +143,7 @@ describe('ReadSections', () => {
 
   });
 
-  describe('readSections', () => {
-    it('should handle single section request', () => {
-      // Execute with single section
-      const result = readSections.execute('shared/test-doc.md', ['introduction']);
-
-      // Verify single section returned
-      const sections = JSON.parse(result.content[0].text);
-      expect(sections).toHaveLength(1);
-      expect(sections[0].title).toBe('introduction');
-      expect(sections[0].content).toContain('This is the introduction section');
-    });
-
-    it('should handle nested sections', () => {
-      // Execute with nested-sections.md
-      const result = readSections.execute('table-of-contents/nested-sections.md', [
-        'main-section/subsection-one',
-      ]);
-
-      // Verify nested section is returned
-      const sections = JSON.parse(result.content[0].text);
-      expect(sections).toHaveLength(1);
-      expect(sections[0].title).toBe('main-section/subsection-one');
-      expect(sections[0].content).toContain('Content for subsection one');
-    });
-
-    it('should handle file without frontmatter', () => {
-      // Execute with no-frontmatter.md
-      const result = readSections.execute('shared/no-frontmatter.md', [
-        'simple-document',
-      ]);
-
-      // Verify section is returned correctly
-      const sections = JSON.parse(result.content[0].text);
-      expect(sections).toHaveLength(1);
-      expect(sections[0].title).toBe('simple-document');
-      expect(sections[0].content).toContain(
-        'This document has no front matter'
-      );
-    });
-  });
-
+  
   // Configuration Compatibility Tests for refactoring
   describe('Configuration Compatibility', () => {
     it('should work with new configuration without pattern fields', () => {

@@ -68,38 +68,7 @@ describe('ListDocumentationFiles', () => {
   });
 
   describe('execute', () => {
-    it('should return list of documentation files with metadata', async () => {
-      // Execute
-      const result = await listDocumentationFiles.execute();
-
-      // Verify
-      expect(result.content).toHaveLength(1);
-      const files = JSON.parse(result.content[0].text);
-      expect(files.length).toBeGreaterThan(5); // All fixture files
-
-      // Check test-doc.md has proper metadata
-      const testDoc = files.find((f: any) => f.filename === 'shared/test-doc.md');
-      expect(testDoc).toEqual({
-        filename: 'shared/test-doc.md',
-        title: 'Test Document',
-        description: 'A test document for testing',
-        keywords: ['test', 'documentation'],
-        size: expect.any(String),
-      });
-
-      // Check no-frontmatter.md uses filename as title
-      const noFrontmatter = files.find(
-        (f: any) => f.filename === 'shared/no-frontmatter.md'
-      );
-      expect(noFrontmatter).toEqual({
-        filename: 'shared/no-frontmatter.md',
-        title: 'no-frontmatter',
-        description: undefined,
-        keywords: [],
-        size: expect.any(String),
-      });
-    });
-
+    
     it('should handle file system errors gracefully', async () => {
       // Create config with non-existent path
       const invalidConfig = {

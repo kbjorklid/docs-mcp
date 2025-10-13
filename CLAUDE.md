@@ -27,11 +27,12 @@ This is a TypeScript-based Model Context Protocol (MCP) server that provides doc
 
 ### Features
 
-The server implements three core tools for documentation management:
+The server implements four core tools for documentation management:
 
 1. **list_documentation_files** - Lists all available documentation files with metadata
 2. **table_of_contents** - Provides structured table of contents for markdown files
 3. **read_sections** - Reads specific sections from markdown files
+4. **search** - Searches for text patterns across documentation files using regular expressions
 
 ## Development Commands
 
@@ -81,7 +82,10 @@ echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"list_docum
 echo '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"table_of_contents","arguments":{"filename":"your-file.md"}}}' | npm start
 
 # Read specific sections
-echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"read_sections","arguments":{"filename":"your-file.md","section_ids":["section-id"]}}' | npm start
+echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"read_sections","arguments":{"filename":"your-file.md","section_ids":["section-id"]}}}' | npm start
+
+# Search for content
+echo '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"search","arguments":{"query":"search pattern","filename":"your-file.md"}}}' | npm start
 ```
 
 ## Configuration
@@ -123,6 +127,7 @@ The server supports multiple ways to configure the documentation path with the f
   - **ListDocumentationFiles.ts** - File discovery and metadata extraction
   - **TableOfContents.ts** - Section hierarchy parsing
   - **ReadSections.ts** - Selective content reading
+  - **Search.ts** - Text pattern search with regular expression support
 
 ### MCP Server Pattern
 
@@ -189,16 +194,66 @@ Example tool structure:
 
 The project uses Jest for testing with TypeScript support. Test configuration is in `jest.config.js`.
 
-**Test Coverage**: ~96% for the tools folder with 29 comprehensive tests covering all three tools.
+**Test Strategy**: End-to-end black-box testing is the primary approach. The bulk of tests (70+%) are e2e tests that exercise the actual MCP server process through JSON-RPC protocol communication. Only edge cases, error conditions, and scenarios that are impractical to test via the full server process are tested with unit/integration tests.
+
+**Test Coverage**: ~95% overall with 283 tests, including comprehensive e2e coverage for all 4 MCP tools.
 
 ### Test Structure
 
 - Tests are located in `src/__tests__/`
-- Test fixtures are organized in subdirectories under `src/__tests__/fixtures/`:
-  - **shared/** - Common fixtures used by multiple test types (test-doc.md, no-frontmatter.md)
-  - **table-of-contents/** - Fixtures for TOC testing (multi-level-headers.md, nested-sections.md, etc.)
-  - **search/** - Fixtures for search testing (search-content.md, rest-api-docs.md)
-  - **list-files/** - Empty directory (uses shared fixtures)
+- **End-to-End Tests** (Primary testing approach):
+  - `ListDocumentationFiles.e2e.test.ts` - Black-box e2e tests for file listing tool
+  - `TableOfContents.e2e.test.ts` - Black-box e2e tests for TOC tool (14 tests)
+  - `ReadSections.e2e.test.ts` - Black-box e2e tests for section reading tool (19 tests)
+  - `Search.e2e.test.ts` - Black-box e2e tests for search tool (19 tests)
+- **Unit/Integration Tests** (Secondary - for edge cases only):
+  - `ToolName.test.ts` - Unit tests for parameter validation, error handling, and business logic
+  - `MarkdownParser.test.ts` - Core parsing logic tests
+  - `ConfigIntegration.test.ts` - Configuration handling tests
+  - `Search.unit.test.ts` - Search-specific edge cases and regex validation
+
+### End-to-End Test Architecture
+
+#### Black-Box Testing Approach
+E2E tests follow a true black-box methodology:
+- **Real Server Process**: Spawns actual MCP server using `child_process.spawn()`
+- **JSON-RPC Protocol**: Communicates via stdin/stdout using the actual MCP protocol
+- **No Internal Imports**: Tests only through the public server API
+- **Real File System**: Uses actual markdown files from dedicated e2e fixtures
+- **Complete Request Lifecycle**: Tests initialization, tool execution, and cleanup
+
+#### E2E Test Fixtures
+Located in `src/__tests__/fixtures/e2e/`:
+- **list-documentations/** - Files for testing file discovery and metadata:
+  - `user-guide.md` - Basic user documentation
+  - `api-reference.md` - Documentation with YAML front matter
+  - `README.md` - Simple documentation file
+- **table-of-contents/** - Files for testing TOC generation:
+  - `simple-headers.md` - Basic header structure
+  - `complex-nested.md` - Deep nested hierarchy
+  - `with-front-matter.md` - Document with metadata
+  - `no-headers.md` - Edge case with no headers
+  - `single-header.md` - Minimal content
+  - `special-characters.md` - Headers with symbols
+- **read-sections/** - Files for testing section content extraction:
+  - `complex-guide.md` - Comprehensive nested documentation
+  - `api-docs.md` - Technical API documentation
+  - `edge-cases.md` - Unicode and special characters
+- **search/** - Files for testing search functionality:
+  - `api-documentation.md` - REST API content
+  - `user-guide.md` - General user documentation
+  - `technical-specs.md` - Technical specifications
+  - `code-examples.md` - Multi-language code snippets
+  - `special-characters.md` - International and special content
+
+#### E2E Test Coverage
+Each tool's e2e tests cover:
+- **Happy Path Scenarios** - Normal usage patterns
+- **Tool Availability** - Verification via `tools/list`
+- **Parameter Validation** - Required and optional parameters
+- **Error Handling** - File not found, invalid inputs, malformed requests
+- **Edge Cases** - Empty files, special characters, large content
+- **Integration Scenarios** - Real-world usage patterns
 
 ### TypeScript Import Rules
 
@@ -206,31 +261,83 @@ The project uses Jest for testing with TypeScript support. Test configuration is
 - **Test Files**: Import TypeScript modules directly without extensions
 - **Jest Configuration**: Configured to handle TypeScript module resolution correctly
 
-### Best Practices
+### Testing Best Practices
 
-1. **Mock External Dependencies**: Always mock `MarkdownParser`, `glob`, and file system operations
-2. **Test Error Cases**: Include tests for all error conditions
-3. **Parameter Validation**: Test all input validation scenarios
-4. **Edge Cases**: Test empty arrays, null values, and malformed inputs
-5. **Coverage**: Aim for high test coverage (>80%) for tool implementations
+#### End-to-End Tests (Primary)
+1. **Black-Box Approach**: Never import internal modules, test only through JSON-RPC protocol
+2. **Real Server Process**: Always spawn actual MCP server process for each test
+3. **Dedicated Fixtures**: Use separate e2e fixtures, don't share with unit tests
+4. **Complete Lifecycle**: Test server initialization, tool execution, and cleanup
+5. **Real File System**: Use actual markdown files and file system operations
+6. **Error Response Testing**: Validate JSON-RPC error responses, not exceptions
+
+#### Unit Tests (Secondary - Edge Cases Only)
+1. **Mock External Dependencies**: Only for edge cases that can't be tested via e2e
+2. **Parameter Validation**: Test input validation scenarios that are impractical via full server
+3. **Business Logic**: Test complex configuration combinations and edge case logic
+4. **Performance Edge Cases**: Test scenarios that would be too slow in e2e (large data, etc.)
 
 ### Test File Naming
 
-- Use `.test.ts` extension
-- Match test file names to source files (e.g., `ToolName.test.ts` for `ToolName.ts`)
-- Place tests in `src/__tests__/` directory
+- **E2E Tests**: Use `.e2e.test.ts` extension (e.g., `ToolName.e2e.test.ts`)
+- **Unit Tests**: Use `.test.ts` extension (e.g., `ToolName.test.ts`)
+- Place all tests in `src/__tests__/` directory
+- E2E fixtures go in `src/__tests__/fixtures/e2e/tool-name/`
 
-### Mock Patterns
+### E2E Test Pattern
 
 ```typescript
-// Mock MarkdownParser static methods
-jest.mock('../MarkdownParser');
-const mockMarkdownParser = MarkdownParser as jest.Mocked<typeof MarkdownParser>;
+// Standard e2e test structure
+describe('ToolName E2E Tests', () => {
+  let serverProcess: ChildProcess;
+  const testDocsPath = join(__dirname, 'fixtures', 'e2e', 'tool-name');
 
-// Setup mock return values
-mockMarkdownParser.validateFile.mockReturnValue({
-  valid: true,
-  stats: { size: 1024 } as fs.Stats,
+  beforeAll(async () => {
+    // Spawn actual MCP server
+    serverProcess = spawn('node', [join(__dirname, '..', '..', 'dist', 'index.js'), '--docs-path', testDocsPath]);
+    // Initialize server
+  });
+
+  afterAll(async () => {
+    // Clean up server process
+    if (serverProcess) serverProcess.kill();
+  });
+
+  async function sendRequest(request: JSONRPCRequest): Promise<JSONRPCResponse> {
+    // JSON-RPC communication logic
+  }
+
+  describe('tool_name tool', () => {
+    it('should test functionality via real MCP server', async () => {
+      const request = {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'tool_name', arguments: { /* params */ } }
+      };
+      const response = await sendRequest(request);
+      // Validate real server response
+    });
+  });
+});
+```
+
+### Unit Test Pattern (When Needed)
+
+```typescript
+// Only for edge cases that can't be tested via e2e
+describe('ToolName Unit Tests', () => {
+  describe('Parameter Validation', () => {
+    it('should handle edge case inputs', () => {
+      // Test specific edge cases
+    });
+  });
+
+  describe('Business Logic', () => {
+    it('should handle complex configuration', () => {
+      // Test business logic that's hard to test via e2e
+    });
+  });
 });
 ```
 
