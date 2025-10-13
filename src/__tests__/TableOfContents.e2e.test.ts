@@ -61,25 +61,13 @@ describe('table_of_contents E2E Tests', () => {
     });
 
     it('should respect max_depth parameter', async () => {
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 3,
-        method: 'tools/call',
-        params: {
-          name: 'table_of_contents',
-          arguments: {
-            filename: 'simple-headers.md',
-            max_depth: 2
-          }
-        }
-      };
+      const response = await helper.callTool('table_of_contents', {
+        filename: 'simple-headers.md',
+        max_depth: 2
+      });
 
-      const response = await helper.sendRequest(request);
-
-      expect(response.error).toBeUndefined();
-
-      const content = response.result.content[0];
-      const sections = JSON.parse(content.text);
+      helper.expectSuccessfulResponse(response);
+      const sections = helper.parseJsonContent(response);
 
       // Should only include headers up to level 2
       const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
@@ -91,24 +79,12 @@ describe('table_of_contents E2E Tests', () => {
     });
 
     it('should handle complex nested structures correctly', async () => {
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 4,
-        method: 'tools/call',
-        params: {
-          name: 'table_of_contents',
-          arguments: {
-            filename: 'complex-nested.md'
-          }
-        }
-      };
+      const response = await helper.callTool('table_of_contents', {
+        filename: 'complex-nested.md'
+      });
 
-      const response = await helper.sendRequest(request);
-
-      expect(response.error).toBeUndefined();
-
-      const content = response.result.content[0];
-      const sections = JSON.parse(content.text);
+      helper.expectSuccessfulResponse(response);
+      const sections = helper.parseJsonContent(response);
 
       // Check that we have headers at all levels (1-6)
       const levels = new Set(sections.map((s: any) => s.level));
@@ -307,32 +283,11 @@ describe('table_of_contents E2E Tests', () => {
 
   describe('Error handling', () => {
     it('should handle non-existent file gracefully', async () => {
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 11,
-        method: 'tools/call',
-        params: {
-          name: 'table_of_contents',
-          arguments: {
-            filename: 'non-existent-file.md'
-          }
-        }
-      };
+      const response = await helper.callTool('table_of_contents', {
+        filename: 'non-existent-file.md'
+      });
 
-      const response = await helper.sendRequest(request);
-
-      expect(response.error).toBeUndefined();
-      expect(response.result).toBeDefined();
-      expect(response.result.content).toBeDefined();
-
-      const content = response.result.content[0];
-      expect(content.type).toBe('text');
-
-      const errorResponse = JSON.parse(content.text);
-      expect(errorResponse.error).toBeDefined();
-      expect(errorResponse.error.code).toBeDefined();
-      expect(errorResponse.error.message).toBeDefined();
-      expect(errorResponse.error.code).toBe('FILE_NOT_FOUND');
+      helper.expectErrorWithCode(response, 'FILE_NOT_FOUND');
     });
 
     it('should handle missing filename parameter', async () => {

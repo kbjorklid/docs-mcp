@@ -259,6 +259,73 @@ export class E2ETestHelper {
     return errorData;
   }
 
+  // Custom server initialization with arguments and environment
+  async initializeServerWithArgs(args: string[] = [], env: Record<string, string> = {}): Promise<void> {
+    const serverProcess = await this.spawnServerWithArgs(args);
+
+    // Initialize the server
+    const initRequest: JSONRPCRequest = {
+      jsonrpc: '2.0',
+      id: 0,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2024-11-05',
+        capabilities: {},
+        clientInfo: { name: 'test-client', version: '1.0.0' }
+      }
+    };
+
+    const initResponse = await this.sendRequestToServer(serverProcess, initRequest);
+    this.expectNoError(initResponse);
+
+    // Store the server process for cleanup
+    this.serverProcess = serverProcess;
+  }
+
+  // Create and initialize a helper with custom arguments
+  static async createWithArgs(testFixtureDir: string, args: string[] = [], env: Record<string, string> = {}): Promise<E2ETestHelper> {
+    const helper = new E2ETestHelper(testFixtureDir);
+    await helper.initializeServerWithArgs(args, env);
+    return helper;
+  }
+
+  // Common assertion helpers for specific response patterns
+  expectErrorWithCode(response: JSONRPCResponse, expectedCode: string): void {
+    this.expectNoError(response);
+    const errorData = this.parseErrorContent(response);
+    expect(errorData.error.code).toBe(expectedCode);
+  }
+
+  expectFileList(response: JSONRPCResponse, expectedFileNames: string[]): void {
+    this.expectSuccessfulResponse(response);
+    const content = this.parseContentArray(response);
+    expect(content.length).toBeGreaterThan(0);
+
+    const files = content[0].text ? JSON.parse(content[0].text) : content[0];
+    expect(Array.isArray(files)).toBe(true);
+
+    const fileNames = files.map((file: any) => file.filename);
+    expectedFileNames.forEach(fileName => {
+      expect(fileNames).toContain(fileName);
+    });
+  }
+
+  expectSearchResults(response: JSONRPCResponse, expectedQuery: string, expectedMinMatches: number = 1): void {
+    this.expectSuccessfulResponse(response);
+    const searchResult = this.parseJsonContent(response);
+    expect(searchResult.query).toBe(expectedQuery);
+    expect(searchResult.results).toBeDefined();
+    expect(Array.isArray(searchResult.results)).toBe(true);
+    expect(searchResult.results.length).toBeGreaterThanOrEqual(expectedMinMatches);
+  }
+
+  expectSectionsInResponse(response: JSONRPCResponse, expectedMinSections: number = 1): void {
+    this.expectSuccessfulResponse(response);
+    const sections = this.parseJsonContent(response);
+    expect(Array.isArray(sections)).toBe(true);
+    expect(sections.length).toBeGreaterThanOrEqual(expectedMinSections);
+  }
+
   // Static factory method for use in test files
   static create(testFixtureDir: string): E2ETestHelper {
     return new E2ETestHelper(testFixtureDir);

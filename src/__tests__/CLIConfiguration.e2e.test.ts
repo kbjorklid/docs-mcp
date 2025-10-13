@@ -60,37 +60,8 @@ Just a simple document with basic content.`);
   });
 
   async function startServerWithArgs(args: string[] = [], env: Record<string, string> = {}): Promise<E2ETestHelper> {
-    // Create a custom helper that spawns server with specific args
-    const customHelper = new E2ETestHelper('temp-cli-config');
-
-    // Spawn server with custom arguments
-    const serverProcess = await customHelper.spawnServerWithArgs(args);
-
-    // Set environment variables if provided
-    if (Object.keys(env).length > 0) {
-      // For now, we'll use the default approach since E2ETestHelper doesn't support custom env
-      // This could be enhanced in the future if needed
-    }
-
-    // Initialize the server
-    const initRequest: JSONRPCRequest = {
-      jsonrpc: '2.0',
-      id: 0,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: { name: 'test-client', version: '1.0.0' }
-      }
-    };
-
-    const initResponse = await customHelper.sendRequestToServer(serverProcess, initRequest);
-    customHelper.expectNoError(initResponse);
-
-    // Store the server process in the helper for cleanup
-    (customHelper as any).serverProcess = serverProcess;
-
-    return customHelper;
+    // Use the new helper method for cleaner server initialization
+    return await E2ETestHelper.createWithArgs('temp-cli-config', args, env);
   }
 
   describe('--docs-path CLI argument', () => {
@@ -98,16 +69,7 @@ Just a simple document with basic content.`);
       helper = await startServerWithArgs(['--docs-path', tempDocsPath]);
 
       const response = await helper.callTool('list_documentation_files', {});
-      helper.expectSuccessfulResponse(response);
-
-      const content = helper.parseContentArray(response);
-      expect(content.length).toBeGreaterThan(0);
-
-      // Should find our test files
-      const files = content[0].text ? JSON.parse(content[0].text) : content[0];
-      const fileNames = files.map((file: any) => file.filename);
-      expect(fileNames).toContain('test.md');
-      expect(fileNames).toContain('simple.md');
+      helper.expectFileList(response, ['test.md', 'simple.md']);
     });
 
     it('should use short form -d argument', async () => {
@@ -115,7 +77,6 @@ Just a simple document with basic content.`);
 
       const response = await helper.callTool('list_documentation_files', {});
       helper.expectSuccessfulResponse(response);
-
       const content = helper.parseContentArray(response);
       expect(content.length).toBeGreaterThan(0);
     });

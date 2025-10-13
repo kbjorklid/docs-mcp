@@ -23,20 +23,11 @@ describe('list_documentations E2E Tests', () => {
     it('should list all available documentation files with metadata', async () => {
       const response = await helper.callTool('list_documentation_files', {});
 
-      helper.expectSuccessfulResponse(response);
-      const content = helper.parseContentArray(response);
-      expect(content.length).toBeGreaterThan(0);
-
-      // Find the files we created in our test fixtures
-      const files = content[0].text ? JSON.parse(content[0].text) : content[0];
-      expect(Array.isArray(files)).toBe(true);
-
-      const fileNames = files.map((file: any) => file.filename);
-      expect(fileNames).toContain('user-guide.md');
-      expect(fileNames).toContain('api-reference.md');
-      expect(fileNames).toContain('README.md');
+      helper.expectFileList(response, ['user-guide.md', 'api-reference.md', 'README.md']);
 
       // Check that metadata is properly included
+      const content = helper.parseContentArray(response);
+      const files = content[0].text ? JSON.parse(content[0].text) : content[0];
       const apiReferenceFile = files.find((file: any) => file.filename === 'api-reference.md');
       expect(apiReferenceFile).toBeDefined();
       expect(apiReferenceFile.title).toBe('API Reference');

@@ -27,34 +27,15 @@ describe('Search E2E Tests', () => {
     });
 
     it('should search for basic text patterns in a single file', async () => {
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 2,
-        method: 'tools/call',
-        params: {
-          name: 'search',
-          arguments: {
-            query: 'authentication',
-            filename: 'api-documentation.md'
-          }
-        }
-      };
+      const response = await helper.callTool('search', {
+        query: 'authentication',
+        filename: 'api-documentation.md'
+      });
 
-      const response = await helper.sendRequest(request);
+      helper.expectSearchResults(response, 'authentication', 1);
 
-      expect(response.error).toBeUndefined();
-      expect(response.result).toBeDefined();
-      expect(response.result.content).toBeDefined();
-      expect(Array.isArray(response.result.content)).toBe(true);
-
-      const content = response.result.content[0];
-      expect(content.type).toBe('text');
-
-      const searchResult = JSON.parse(content.text);
-      expect(searchResult.query).toBe('authentication');
-      expect(searchResult.results).toBeDefined();
-      expect(Array.isArray(searchResult.results)).toBe(true);
-      expect(searchResult.results.length).toBe(1);
+      // Additional detailed checks
+      const searchResult = helper.parseJsonContent(response);
       expect(searchResult.results[0].filename).toBe('api-documentation.md');
       expect(Array.isArray(searchResult.results[0].matches)).toBe(true);
       expect(searchResult.results[0].matches.length).toBeGreaterThan(0);
