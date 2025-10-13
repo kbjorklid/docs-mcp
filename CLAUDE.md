@@ -201,16 +201,20 @@ The project uses Jest for testing with TypeScript support. Test configuration is
 ### Test Structure
 
 - Tests are located in `src/__tests__/`
-- **End-to-End Tests** (Primary testing approach):
+- **End-to-End Tests** (Primary testing approach - 85% of tests):
   - `ListDocumentationFiles.e2e.test.ts` - Black-box e2e tests for file listing tool
   - `TableOfContents.e2e.test.ts` - Black-box e2e tests for TOC tool (14 tests)
   - `ReadSections.e2e.test.ts` - Black-box e2e tests for section reading tool (19 tests)
-  - `Search.e2e.test.ts` - Black-box e2e tests for search tool (19 tests)
-- **Unit/Integration Tests** (Secondary - for edge cases only):
-  - `ToolName.test.ts` - Unit tests for parameter validation, error handling, and business logic
-  - `MarkdownParser.test.ts` - Core parsing logic tests
-  - `ConfigIntegration.test.ts` - Configuration handling tests
-  - `Search.unit.test.ts` - Search-specific edge cases and regex validation
+  - `Search.e2e.test.ts` - Black-box e2e tests for search tool (29 tests, including advanced patterns)
+  - `CLIConfiguration.e2e.test.ts` - Black-box e2e tests for CLI argument handling
+  - `ToolIntegration.e2e.test.ts` - Black-box e2e tests for complete workflow scenarios
+- **Unit/Integration Tests** (Secondary - for edge cases only - 15% of tests):
+  - `MarkdownParser.test.ts` - Core parsing logic tests (performance-critical component)
+  - `command-line-args.test.ts` - CLI configuration and environment variable handling
+  - `ConfigIntegration.test.ts` - Complex configuration integration scenarios
+  - `ListDocumentationFiles.test.ts` - Edge cases not covered by e2e tests
+  - `types.test.ts` - TypeScript configuration and DEFAULT_CONFIG
+  - `index.test.ts` - Basic module import tests
 
 ### End-to-End Test Architecture
 

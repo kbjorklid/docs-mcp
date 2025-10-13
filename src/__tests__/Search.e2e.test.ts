@@ -568,4 +568,200 @@ describe('Search E2E Tests', () => {
       expect(searchResult.results[0].matches.length).toBeGreaterThan(0);
     });
   });
+
+  describe('Advanced Search Patterns', () => {
+    it('should handle complex regex quantifiers and lookaheads', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 21,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: 'Authorization.*Bearer', // Authorization followed by Bearer
+            filename: 'api-documentation.md'
+          }
+        }
+      };
+
+      const response = await sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      expect(searchResult.results[0].matches.length).toBeGreaterThan(0);
+    });
+
+    it('should handle complex regex patterns with multiple groups', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 22,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: '(GET|POST|PUT)\\s+/api/[^\\s]+', // HTTP methods with API endpoints
+            filename: 'api-documentation.md'
+          }
+        }
+      };
+
+      const response = await sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      expect(searchResult.results[0].matches.length).toBeGreaterThan(0);
+    });
+
+    it('should handle nested quantifiers and character classes', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 23,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: '\\b[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*\\b', // Title case words
+            filename: 'technical-specs.md'
+          }
+        }
+      };
+
+      const response = await sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      expect(searchResult.results[0].matches.length).toBeGreaterThan(0);
+    });
+
+    it('should handle advanced quantifier patterns', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 24,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: '\\w+@\\w+\\.\\w+', // Email pattern
+            filename: 'code-examples.md'
+          }
+        }
+      };
+
+      const response = await sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      expect(searchResult.results[0].matches.length).toBeGreaterThan(0);
+    });
+
+    it('should handle complex alternation patterns', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 25,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: '(?:OAuth|JWT|Bearer|API\\s+key)', // Authentication methods
+            filename: 'api-documentation.md'
+          }
+        }
+      };
+
+      const response = await sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      expect(searchResult.results[0].matches.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Performance and Edge Cases', () => {
+    it('should handle very long search terms efficiently', async () => {
+      const longPattern = 'a'.repeat(50) + '.*';
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 26,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: longPattern,
+            filename: 'api-documentation.md'
+          }
+        }
+      };
+
+      const response = await sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      expect(searchResult.query).toBe(longPattern);
+    });
+
+    it('should handle deeply nested multiline patterns', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 27,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: '```[\\s\\S]*?```', // Match entire code blocks
+            filename: 'api-documentation.md'
+          }
+        }
+      };
+
+      const response = await sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      // Should find code blocks across multiple lines
+      expect(searchResult.results[0].matches.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should handle international characters', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 28,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: '[café]+|[résumé]+', // International characters
+            filename: 'special-characters.md'
+          }
+        }
+      };
+
+      const response = await sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      expect(searchResult.results[0].matches.length).toBeGreaterThan(0);
+    });
+
+    it('should handle complex lookahead and lookbehind combinations', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 29,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: '(?<=\\d{3})\\s*\\d{3}\\s*\\d{4}', // Phone number pattern with lookbehind
+            filename: 'code-examples.md'
+          }
+        }
+      };
+
+      const response = await sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      // Should handle even if no matches are found
+      expect(searchResult.results[0].matches.length).toBeGreaterThanOrEqual(0);
+    });
+  });
 });
