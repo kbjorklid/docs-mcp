@@ -198,6 +198,8 @@ The project uses Jest for testing with TypeScript support. Test configuration is
 
 **Test Coverage**: ~95% overall with 283 tests, including comprehensive e2e coverage for all 4 MCP tools.
 
+ALWAYS after any code, test, or test data modification, RUN ALL TESTS to make sure nothing is broken.
+
 ### Test Structure
 
 - Tests are located in `src/__tests__/`

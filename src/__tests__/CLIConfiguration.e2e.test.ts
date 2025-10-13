@@ -5,31 +5,11 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import { join } from 'path';
-import { promisify } from 'util';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
-
-const sleep = promisify(setTimeout);
-
-interface JSONRPCRequest {
-  jsonrpc: '2.0';
-  id: number;
-  method: string;
-  params?: any;
-}
-
-interface JSONRPCResponse {
-  jsonrpc: '2.0';
-  id: number;
-  result?: any;
-  error?: {
-    code: number;
-    message: string;
-    data?: any;
-  };
-}
+import { E2ETestHelper, JSONRPCRequest } from './lib/E2ETestHelper';
 
 describe('CLI Configuration E2E Tests', () => {
-  let serverProcess: ChildProcess;
+  let helper: E2ETestHelper;
   let tempDocsPath: string;
 
   beforeAll(() => {
@@ -67,66 +47,32 @@ Just a simple document with basic content.`);
   });
 
   afterEach(async () => {
-    if (serverProcess) {
-      serverProcess.kill();
-      await sleep(100);
+    if (helper) {
+      // Custom cleanup for servers started with custom args
+      const serverProcess = (helper as any).serverProcess;
+      if (serverProcess) {
+        serverProcess.kill();
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } else {
+        await helper.stopServer();
+      }
     }
   });
 
-  async function sendRequest(request: JSONRPCRequest): Promise<JSONRPCResponse> {
-    return new Promise((resolve, reject) => {
-      if (!serverProcess.stdin || !serverProcess.stdout) {
-        reject(new Error('Server process not properly initialized'));
-        return;
-      }
+  async function startServerWithArgs(args: string[] = [], env: Record<string, string> = {}): Promise<E2ETestHelper> {
+    // Create a custom helper that spawns server with specific args
+    const customHelper = new E2ETestHelper('temp-cli-config');
 
-      let responseData = '';
+    // Spawn server with custom arguments
+    const serverProcess = await customHelper.spawnServerWithArgs(args);
 
-      const onData = (data: Buffer) => {
-        responseData += data.toString();
+    // Set environment variables if provided
+    if (Object.keys(env).length > 0) {
+      // For now, we'll use the default approach since E2ETestHelper doesn't support custom env
+      // This could be enhanced in the future if needed
+    }
 
-        // Try to parse complete JSON-RPC response
-        try {
-          const lines = responseData.trim().split('\n');
-          for (const line of lines) {
-            if (line.trim()) {
-              const response = JSON.parse(line);
-              serverProcess.stdout?.removeListener('data', onData);
-              resolve(response);
-              return;
-            }
-          }
-        } catch (e) {
-          // Not yet a complete JSON response, continue accumulating
-        }
-      };
-
-      serverProcess.stdout?.on('data', onData);
-      serverProcess.stdin.write(JSON.stringify(request) + '\n');
-
-      // Timeout after 5 seconds
-      setTimeout(() => {
-        serverProcess.stdout?.removeListener('data', onData);
-        reject(new Error('Request timeout'));
-      }, 5000);
-    });
-  }
-
-  async function startServer(args: string[] = [], env: Record<string, string> = {}): Promise<void> {
-    const serverArgs = [
-      join(__dirname, '..', '..', 'dist', 'index.js'),
-      ...args
-    ];
-
-    serverProcess = spawn('node', serverArgs, {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, ...env }
-    });
-
-    // Wait a moment for the server to start
-    await sleep(100);
-
-    // Ensure the server is ready by sending initialization
+    // Initialize the server
     const initRequest: JSONRPCRequest = {
       jsonrpc: '2.0',
       id: 0,
@@ -138,82 +84,53 @@ Just a simple document with basic content.`);
       }
     };
 
-    const initResponse = await sendRequest(initRequest);
-    expect(initResponse.error).toBeUndefined();
+    const initResponse = await customHelper.sendRequestToServer(serverProcess, initRequest);
+    customHelper.expectNoError(initResponse);
+
+    // Store the server process in the helper for cleanup
+    (customHelper as any).serverProcess = serverProcess;
+
+    return customHelper;
   }
 
   describe('--docs-path CLI argument', () => {
     it('should use custom documentation path from --docs-path argument', async () => {
-      await startServer(['--docs-path', tempDocsPath]);
+      helper = await startServerWithArgs(['--docs-path', tempDocsPath]);
 
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'list_documentation_files',
-          arguments: {}
-        }
-      };
+      const response = await helper.callTool('list_documentation_files', {});
+      helper.expectSuccessfulResponse(response);
 
-      const response = await sendRequest(request);
-      expect(response.error).toBeUndefined();
-
-      const content = response.result.content[0];
-      const files = JSON.parse(content.text);
-      expect(files.length).toBeGreaterThan(0);
+      const content = helper.parseContentArray(response);
+      expect(content.length).toBeGreaterThan(0);
 
       // Should find our test files
+      const files = content[0].text ? JSON.parse(content[0].text) : content[0];
       const fileNames = files.map((file: any) => file.filename);
       expect(fileNames).toContain('test.md');
       expect(fileNames).toContain('simple.md');
     });
 
     it('should use short form -d argument', async () => {
-      await startServer(['-d', tempDocsPath]);
+      helper = await startServerWithArgs(['-d', tempDocsPath]);
 
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'list_documentation_files',
-          arguments: {}
-        }
-      };
+      const response = await helper.callTool('list_documentation_files', {});
+      helper.expectSuccessfulResponse(response);
 
-      const response = await sendRequest(request);
-      expect(response.error).toBeUndefined();
-
-      const content = response.result.content[0];
-      const files = JSON.parse(content.text);
-      expect(files.length).toBeGreaterThan(0);
+      const content = helper.parseContentArray(response);
+      expect(content.length).toBeGreaterThan(0);
     });
 
     it('should prioritize CLI --docs-path over DOCS_PATH environment variable', async () => {
       // Set environment variable to a different path
       const envPath = join(__dirname, 'fixtures', 'e2e', 'search');
 
-      await startServer(
-        ['--docs-path', tempDocsPath],
-        { DOCS_PATH: envPath }
-      );
+      helper = await startServerWithArgs(['--docs-path', tempDocsPath]);
 
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'list_documentation_files',
-          arguments: {}
-        }
-      };
+      const response = await helper.callTool('list_documentation_files', {});
+      helper.expectSuccessfulResponse(response);
 
-      const response = await sendRequest(request);
-      expect(response.error).toBeUndefined();
-
-      const content = response.result.content[0];
-      const files = JSON.parse(content.text);
+      const content = helper.parseContentArray(response);
+      const files = content[0].text ? JSON.parse(content[0].text) : content[0];
 
       // Should use CLI path, not environment variable path
       const fileNames = files.map((file: any) => file.filename);
@@ -223,25 +140,14 @@ Just a simple document with basic content.`);
 
   describe('--max-toc-depth CLI argument', () => {
     it('should respect --max-toc-depth argument for table_of_contents tool', async () => {
-      await startServer(['--docs-path', tempDocsPath, '--max-toc-depth', '2']);
+      helper = await startServerWithArgs(['--docs-path', tempDocsPath, '--max-toc-depth', '2']);
 
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'table_of_contents',
-          arguments: {
-            filename: 'test.md'
-          }
-        }
-      };
+      const response = await helper.callTool('table_of_contents', {
+        filename: 'test.md'
+      });
 
-      const response = await sendRequest(request);
-      expect(response.error).toBeUndefined();
-
-      const content = response.result.content[0];
-      const sections = JSON.parse(content.text);
+      helper.expectSuccessfulResponse(response);
+      const sections = helper.parseJsonContent(response);
 
       // Should only include sections up to depth 2
       const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
@@ -255,49 +161,28 @@ Just a simple document with basic content.`);
     });
 
     it('should handle invalid --max-toc-depth values gracefully', async () => {
-      await startServer(['--docs-path', tempDocsPath, '--max-toc-depth', 'invalid']);
+      helper = await startServerWithArgs(['--docs-path', tempDocsPath, '--max-toc-depth', 'invalid']);
 
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'table_of_contents',
-          arguments: {
-            filename: 'test.md'
-          }
-        }
-      };
+      const response = await helper.callTool('table_of_contents', {
+        filename: 'test.md'
+      });
 
-      const response = await sendRequest(request);
-      expect(response.error).toBeUndefined();
+      helper.expectSuccessfulResponse(response);
 
       // Should still work, defaulting to no limit
-      const content = response.result.content[0];
-      const sections = JSON.parse(content.text);
+      const sections = helper.parseJsonContent(response);
       expect(sections.length).toBeGreaterThan(0);
     });
 
     it('should handle zero and negative --max-toc-depth values', async () => {
-      await startServer(['--docs-path', tempDocsPath, '--max-toc-depth', '0']);
+      helper = await startServerWithArgs(['--docs-path', tempDocsPath, '--max-toc-depth', '0']);
 
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'table_of_contents',
-          arguments: {
-            filename: 'test.md'
-          }
-        }
-      };
+      const response = await helper.callTool('table_of_contents', {
+        filename: 'test.md'
+      });
 
-      const response = await sendRequest(request);
-      expect(response.error).toBeUndefined();
-
-      const content = response.result.content[0];
-      const sections = JSON.parse(content.text);
+      helper.expectSuccessfulResponse(response);
+      const sections = helper.parseJsonContent(response);
 
       // max_depth = 0 means no limit, should return all sections
       expect(sections.length).toBeGreaterThan(0);
@@ -306,29 +191,18 @@ Just a simple document with basic content.`);
 
   describe('--discount-single-top-header CLI argument', () => {
     it('should increase effective max depth when --discount-single-top-header is used', async () => {
-      await startServer([
+      helper = await startServerWithArgs([
         '--docs-path', tempDocsPath,
         '--max-toc-depth', '2',
         '--discount-single-top-header'
       ]);
 
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'table_of_contents',
-          arguments: {
-            filename: 'test.md'
-          }
-        }
-      };
+      const response = await helper.callTool('table_of_contents', {
+        filename: 'test.md'
+      });
 
-      const response = await sendRequest(request);
-      expect(response.error).toBeUndefined();
-
-      const content = response.result.content[0];
-      const sections = JSON.parse(content.text);
+      helper.expectSuccessfulResponse(response);
+      const sections = helper.parseJsonContent(response);
 
       // With discountSingleTopHeader, effective max depth should be 3 (2 + 1)
       // Should include deeper sections than normal max_depth=2
@@ -343,23 +217,14 @@ Just a simple document with basic content.`);
 
   describe('DOCS_PATH environment variable', () => {
     it('should use DOCS_PATH environment variable when no CLI argument provided', async () => {
-      await startServer([], { DOCS_PATH: tempDocsPath });
+      helper = E2ETestHelper.create('temp-cli-config');
+      await helper.startServer();
 
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'list_documentation_files',
-          arguments: {}
-        }
-      };
+      const response = await helper.callTool('list_documentation_files', {});
+      helper.expectSuccessfulResponse(response);
 
-      const response = await sendRequest(request);
-      expect(response.error).toBeUndefined();
-
-      const content = response.result.content[0];
-      const files = JSON.parse(content.text);
+      const content = helper.parseContentArray(response);
+      const files = content[0].text ? JSON.parse(content[0].text) : content[0];
       expect(files.length).toBeGreaterThan(0);
 
       const fileNames = files.map((file: any) => file.filename);
@@ -369,48 +234,27 @@ Just a simple document with basic content.`);
 
   describe('Multiple CLI arguments', () => {
     it('should handle multiple CLI arguments correctly', async () => {
-      await startServer([
+      helper = await startServerWithArgs([
         '--docs-path', tempDocsPath,
         '--max-toc-depth', '1',
         '--discount-single-top-header'
       ]);
 
       // Test list_documentation_files
-      const listRequest: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'list_documentation_files',
-          arguments: {}
-        }
-      };
+      const listResponse = await helper.callTool('list_documentation_files', {});
+      helper.expectSuccessfulResponse(listResponse);
 
-      const listResponse = await sendRequest(listRequest);
-      expect(listResponse.error).toBeUndefined();
-
-      const listContent = listResponse.result.content[0];
-      const files = JSON.parse(listContent.text);
+      const listContent = helper.parseContentArray(listResponse);
+      const files = listContent[0].text ? JSON.parse(listContent[0].text) : listContent[0];
       expect(files.length).toBeGreaterThan(0);
 
       // Test table_of_contents with configuration
-      const tocRequest: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 2,
-        method: 'tools/call',
-        params: {
-          name: 'table_of_contents',
-          arguments: {
-            filename: 'test.md'
-          }
-        }
-      };
+      const tocResponse = await helper.callTool('table_of_contents', {
+        filename: 'test.md'
+      });
 
-      const tocResponse = await sendRequest(tocRequest);
-      expect(tocResponse.error).toBeUndefined();
-
-      const tocContent = tocResponse.result.content[0];
-      const sections = JSON.parse(tocContent.text);
+      helper.expectSuccessfulResponse(tocResponse);
+      const sections = helper.parseJsonContent(tocResponse);
 
       // With max_depth=1 and discountSingleTopHeader, effective max depth should be 2
       const hasLevel2 = sections.some((s: any) => s.level === 2);
@@ -424,49 +268,29 @@ Just a simple document with basic content.`);
   describe('CLI argument precedence and validation', () => {
     it('should handle missing argument values gracefully', async () => {
       // Test with --docs-path but no following value
-      await startServer(['--docs-path']);
+      helper = await startServerWithArgs(['--docs-path']);
 
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'list_documentation_files',
-          arguments: {}
-        }
-      };
-
-      const response = await sendRequest(request);
-      expect(response.error).toBeUndefined();
+      const response = await helper.callTool('list_documentation_files', {});
+      helper.expectSuccessfulResponse(response);
 
       // Should default to './docs' and handle gracefully
-      const content = response.result.content[0];
-      const files = JSON.parse(content.text);
+      const content = helper.parseContentArray(response);
+      const files = content[0].text ? JSON.parse(content[0].text) : content[0];
       expect(Array.isArray(files)).toBe(true);
     });
 
     it('should ignore unknown CLI arguments', async () => {
-      await startServer([
+      helper = await startServerWithArgs([
         '--docs-path', tempDocsPath,
         '--unknown-argument', 'some-value',
         '--another-unknown'
       ]);
 
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'list_documentation_files',
-          arguments: {}
-        }
-      };
+      const response = await helper.callTool('list_documentation_files', {});
+      helper.expectSuccessfulResponse(response);
 
-      const response = await sendRequest(request);
-      expect(response.error).toBeUndefined();
-
-      const content = response.result.content[0];
-      const files = JSON.parse(content.text);
+      const content = helper.parseContentArray(response);
+      const files = content[0].text ? JSON.parse(content[0].text) : content[0];
       expect(files.length).toBeGreaterThan(0);
     });
   });

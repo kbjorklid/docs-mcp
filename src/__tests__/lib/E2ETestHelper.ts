@@ -247,7 +247,13 @@ export class E2ETestHelper {
 
   // Error response parsing
   parseErrorContent(response: JSONRPCResponse): any {
-    const text = this.parseTextContent(response);
+    this.expectNoError(response);
+    expect(response.result.content).toBeDefined();
+    expect(Array.isArray(response.result.content)).toBe(true);
+    expect(response.result.content.length).toBeGreaterThan(0);
+    expect(response.result.content[0].type).toBe('text');
+
+    const text = response.result.content[0].text;
     const errorData = JSON.parse(text);
     expect(errorData.error).toBeDefined();
     return errorData;
