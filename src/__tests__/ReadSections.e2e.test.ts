@@ -5,134 +5,31 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import { join } from 'path';
-import { promisify } from 'util';
-
-const sleep = promisify(setTimeout);
-
-interface JSONRPCRequest {
-  jsonrpc: '2.0';
-  id: number;
-  method: string;
-  params?: any;
-}
-
-interface JSONRPCResponse {
-  jsonrpc: '2.0';
-  id: number;
-  result?: any;
-  error?: {
-    code: number;
-    message: string;
-    data?: any;
-  };
-}
+import { E2ETestHelper, JSONRPCRequest } from './lib/E2ETestHelper';
 
 describe('read_sections E2E Tests', () => {
-  let serverProcess: ChildProcess;
-  const testDocsPath = join(__dirname, 'fixtures', 'e2e', 'read-sections');
+  let helper: E2ETestHelper;
 
   beforeAll(async () => {
-    // Spawn the MCP server process
-    serverProcess = spawn('node', [join(__dirname, '..', '..', 'dist', 'index.js'), '--docs-path', testDocsPath], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, DOCS_PATH: testDocsPath }
-    });
-
-    // Wait a moment for the server to start
-    await sleep(100);
-
-    // Ensure the server is ready by sending a simple ping
-    const initRequest: JSONRPCRequest = {
-      jsonrpc: '2.0',
-      id: 0,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: { name: 'test-client', version: '1.0.0' }
-      }
-    };
-
-    const initResponse = await sendRequest(initRequest);
-    expect(initResponse.error).toBeUndefined();
+    helper = E2ETestHelper.create('read-sections');
+    await helper.startServer();
   }, 10000);
 
   afterAll(async () => {
-    if (serverProcess) {
-      serverProcess.kill();
-      await sleep(100);
-    }
+    await helper.stopServer();
   });
-
-  async function sendRequest(request: JSONRPCRequest): Promise<JSONRPCResponse> {
-    return new Promise((resolve, reject) => {
-      if (!serverProcess.stdin || !serverProcess.stdout) {
-        reject(new Error('Server process not properly initialized'));
-        return;
-      }
-
-      let responseData = '';
-
-      const onData = (data: Buffer) => {
-        responseData += data.toString();
-
-        // Try to parse complete JSON-RPC response
-        try {
-          const lines = responseData.trim().split('\n');
-          for (const line of lines) {
-            if (line.trim()) {
-              const response = JSON.parse(line);
-              serverProcess.stdout?.removeListener('data', onData);
-              resolve(response);
-              return;
-            }
-          }
-        } catch (e) {
-          // Not yet a complete JSON response, continue accumulating
-        }
-      };
-
-      serverProcess.stdout?.on('data', onData);
-      serverProcess.stdin.write(JSON.stringify(request) + '\n');
-
-      // Timeout after 5 seconds
-      setTimeout(() => {
-        serverProcess.stdout?.removeListener('data', onData);
-        reject(new Error('Request timeout'));
-      }, 5000);
-    });
-  }
 
   describe('tools/list - verify read_sections tool availability', () => {
     it('should list read_sections tool with correct schema', async () => {
-      const request: JSONRPCRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/list',
-        params: {}
-      };
-
-      const response = await sendRequest(request);
-
-      expect(response.error).toBeUndefined();
-      expect(response.result).toBeDefined();
-      expect(response.result.tools).toBeDefined();
-      expect(Array.isArray(response.result.tools)).toBe(true);
-
-      const tools = response.result.tools;
-      const readSectionsTool = tools.find((tool: any) => tool.name === 'read_sections');
-      expect(readSectionsTool).toBeDefined();
-      expect(readSectionsTool.description).toBeDefined();
-      expect(readSectionsTool.inputSchema).toBeDefined();
-      expect(readSectionsTool.inputSchema.type).toBe('object');
+      const tool = await helper.verifyToolAvailable('read_sections');
 
       // Check required parameters
-      expect(readSectionsTool.inputSchema.required).toContain('filename');
-      expect(readSectionsTool.inputSchema.required).toContain('section_ids');
+      expect(tool.inputSchema.required).toContain('filename');
+      expect(tool.inputSchema.required).toContain('section_ids');
 
       // Check parameter definitions
-      expect(readSectionsTool.inputSchema.properties.filename).toBeDefined();
-      expect(readSectionsTool.inputSchema.properties.section_ids).toBeDefined();
+      expect(tool.inputSchema.properties.filename).toBeDefined();
+      expect(tool.inputSchema.properties.section_ids).toBeDefined();
     });
   });
 
@@ -151,7 +48,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -189,7 +86,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -229,7 +126,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -263,7 +160,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -292,7 +189,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -319,7 +216,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -349,7 +246,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -376,7 +273,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -408,7 +305,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -438,7 +335,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -469,7 +366,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -493,7 +390,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -517,7 +414,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -542,7 +439,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -567,7 +464,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -594,7 +491,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
@@ -634,8 +531,8 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response1 = await sendRequest(request1);
-      const response2 = await sendRequest(request2);
+      const response1 = await helper.sendRequest(request1);
+      const response2 = await helper.sendRequest(request2);
 
       expect(response1.error).toBeUndefined();
       expect(response2.error).toBeUndefined();
@@ -665,7 +562,7 @@ describe('read_sections E2E Tests', () => {
         }
       };
 
-      const response = await sendRequest(request);
+      const response = await helper.sendRequest(request);
 
       expect(response.error).toBeUndefined();
       expect(response.result).toBeDefined();
