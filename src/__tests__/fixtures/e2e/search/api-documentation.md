@@ -1,103 +1,86 @@
 ---
 title: API Documentation
-description: Comprehensive API reference documentation
+description: Comprehensive API documentation for testing search functionality
 keywords:
   - API
   - REST
   - HTTP
-  - endpoints
   - authentication
+  - endpoints
+  - v2.1.0
 ---
 
 # API Documentation
 
-This is the complete API documentation for our service.
+This is the comprehensive API documentation for our platform.
 
 ## Getting Started
 
-Welcome to the API v2.1.0 documentation. This guide will help you integrate with our RESTful API.
+Welcome to the API platform documentation.
 
 ## Authentication
 
-### JWT Authentication
+Authentication is required for all API endpoints. You can use JWT Bearer tokens or OAuth 2.0.
 
-Use JSON Web Tokens for authentication:
+### Bearer Token Authentication
 
-```bash
-curl -H "Authorization: Bearer <token>" https://api.example.com/users
-```
+Include the Authorization header: `Authorization: Bearer <your-token>`
 
 ### OAuth 2.0
 
-OAuth 2.0 is also supported for third-party integrations.
+Use the OAuth 2.0 flow for web applications.
 
-## Endpoints
+## API Endpoints
 
 ### Users Management
 
-#### GET /api/users
+GET /api/users - Retrieve all users
+POST /api/users - Create a new user
+PUT /api/users/:id - Update user
+DELETE /api/users/:id - Delete user
 
-Retrieve all users from the system.
+### Authentication Endpoints
 
-**Parameters:**
-- `page` (optional): Page number for pagination
-- `limit` (optional): Number of results per page
+POST /api/auth/login - User login
+POST /api/auth/logout - User logout
+POST /api/auth/refresh - Refresh JWT token
 
-**Response:**
-```json
-{
-  "users": [],
-  "total": 100,
-  "page": 1
-}
+### Data Management
+
+GET /api/data - Retrieve data
+POST /api/data - Create data
+PUT /api/data/:id - Update data
+
+## HTTP Status Codes
+
+- 200: Success
+- 201: Created
+- 400: Bad Request
+- 401: Unauthorized
+- 404: Not Found
+- 500: Internal Server Error
+
+## Version Information
+
+Current API version: v2.1.0
+Legacy versions: v1.0.0, v2.0.1
+
+## Code Examples
+
+```javascript
+// API request example
+const response = await fetch('/api/users', {
+  headers: {
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  }
+});
 ```
-
-#### POST /api/users
-
-Create a new user account.
-
-#### PUT /api/users/{id}
-
-Update user information by ID.
-
-### Posts Management
-
-#### GET /api/posts
-
-Retrieve all posts with optional filtering.
-
-**Query Parameters:**
-- `category`: Filter by category
-- `author`: Filter by author ID
-- `date`: Filter by publication date
-
-#### POST /api/posts
-
-Create a new post with rich content.
 
 ## Error Handling
 
-The API returns standard HTTP status codes:
-
-- `200 OK`: Request successful
-- `201 Created`: Resource created successfully
-- `400 Bad Request`: Invalid request parameters
-- `401 Unauthorized`: Authentication required
-- `404 Not Found`: Resource not found
-- `500 Internal Server Error`: Server error
+All endpoints return appropriate HTTP status codes and error messages in JSON format.
 
 ## Rate Limiting
 
 API calls are limited to 1000 requests per hour per API key.
-
-## Advanced Features
-
-### Webhooks
-
-Configure webhooks to receive real-time notifications.
-
-### Bulk Operations
-
-Perform bulk operations on multiple resources simultaneously.
-
-State-of-the-art filtering capabilities with well-known patterns.

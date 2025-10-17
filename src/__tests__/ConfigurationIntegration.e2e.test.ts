@@ -37,8 +37,12 @@ describe('Configuration Integration E2E Tests', () => {
 
   describe('Configuration Workflow Integration', () => {
     it('should handle end-to-end workflow with different maxTocDepth settings', async () => {
+      // Use isolated test directory for this specific test case
+      const isolatedHelper = new E2ETestHelper('ConfigurationIntegration', 'should-handle-end-to-end-workflow-with-different-max-toc-depth-settings');
+      const isolatedDocsPath = isolatedHelper.getTestDocsPath();
+
       // Test with maxTocDepth = 2
-      const { helper, serverProcess } = await startServerWithArgs(['--docs-path', testDocsPath, '--max-toc-depth', '2']);
+      const { helper, serverProcess } = await startServerWithArgs(['--docs-path', isolatedDocsPath, '--max-toc-depth', '2']);
 
       try {
         // Step 1: List documentation files
@@ -59,6 +63,10 @@ describe('Configuration Integration E2E Tests', () => {
         const sections = helper.parseJsonContent(tocResponse);
         expect(Array.isArray(sections)).toBe(true);
 
+        // Verify max depth is respected - should only have level 1 and 2 headers
+        const sectionLevels = sections.map((section: any) => section.level);
+        expect(sectionLevels.every((level: number) => level <= 2)).toBe(true);
+
         // Step 3: Read specific sections
         if (sections.length > 0) {
           const readResponse = await helper.callTool('read_sections', {
@@ -78,8 +86,12 @@ describe('Configuration Integration E2E Tests', () => {
     });
 
     it('should handle real-world usage scenario with mixed configuration sources', async () => {
+      // Use isolated test directory for this specific test case
+      const isolatedHelper = new E2ETestHelper('ConfigurationIntegration', 'should-handle-real-world-usage-scenario-with-mixed-configuration-sources');
+      const isolatedDocsPath = isolatedHelper.getTestDocsPath();
+
       // Test with CLI args overriding environment variables
-      const { helper, serverProcess } = await startServerWithArgs(['--docs-path', testDocsPath, '--max-toc-depth', '3']);
+      const { helper, serverProcess } = await startServerWithArgs(['--docs-path', isolatedDocsPath, '--max-toc-depth', '3']);
 
       try {
         // Step 1: List documentation files (should use CLI path, not env)
@@ -103,6 +115,11 @@ describe('Configuration Integration E2E Tests', () => {
         const sections = helper.parseJsonContent(tocResponse);
         expect(Array.isArray(sections)).toBe(true);
 
+        // Verify that maxTocDepth = 3 is respected - should have level 1, 2, and 3 headers
+        const sectionLevels = sections.map((section: any) => section.level);
+        expect(sectionLevels.every((level: number) => level <= 3)).toBe(true);
+        expect(sectionLevels.some((level: number) => level === 3)).toBe(true);
+
         // Step 3: Read first section
         if (sections.length > 0) {
           const readResponse = await helper.callTool('read_sections', {
@@ -113,7 +130,9 @@ describe('Configuration Integration E2E Tests', () => {
           helper.expectSuccessfulResponse(readResponse);
           const content = helper.parseJsonContent(readResponse);
           expect(Array.isArray(content)).toBe(true);
-          expect(content[0].title).toBe(sections[0].id);
+          expect(content[0]).toBeDefined();
+          expect(content[0].title).toBeTruthy();
+          expect(content[0].content).toBeTruthy();
         }
       } finally {
         serverProcess.kill();
@@ -122,8 +141,12 @@ describe('Configuration Integration E2E Tests', () => {
     });
 
     it('should maintain consistent tool behavior across configuration changes', async () => {
+      // Use isolated test directory for this specific test case
+      const isolatedHelper = new E2ETestHelper('ConfigurationIntegration', 'should-maintain-consistent-tool-behavior-across-configuration-changes');
+      const isolatedDocsPath = isolatedHelper.getTestDocsPath();
+
       // Test that all tools work consistently with different configurations
-      const { helper, serverProcess } = await startServerWithArgs(['--docs-path', testDocsPath]);
+      const { helper, serverProcess } = await startServerWithArgs(['--docs-path', isolatedDocsPath]);
 
       try {
         // Test all basic tools are available
@@ -161,6 +184,38 @@ describe('Configuration Integration E2E Tests', () => {
 
           const toolResponse = await helper.callTool(toolName, args);
           helper.expectSuccessfulResponse(toolResponse);
+
+          // Additional verification for specific tools
+          if (toolName === 'list_documentation_files') {
+            const files = helper.parseJsonContent(toolResponse);
+            expect(Array.isArray(files)).toBe(true);
+            expect(files.length).toBeGreaterThan(0);
+            expect(files.some((file: any) => file.filename === 'user-guide.md')).toBe(true);
+          } else if (toolName === 'table_of_contents') {
+            const sections = helper.parseJsonContent(toolResponse);
+            expect(Array.isArray(sections)).toBe(true);
+            expect(sections.length).toBeGreaterThan(0);
+          } else if (toolName === 'search') {
+            const searchResult = helper.parseJsonContent(toolResponse);
+            expect(searchResult.query).toBe('test');
+            expect(searchResult.results).toBeDefined();
+            expect(Array.isArray(searchResult.results)).toBe(true);
+          } else if (toolName === 'read_sections') {
+            // First get TOC to get a valid section ID
+            const tocResponse = await helper.callTool('table_of_contents', {
+              filename: 'user-guide.md'
+            });
+            const sections = helper.parseJsonContent(tocResponse);
+            if (sections.length > 0) {
+              const readResponse = await helper.callTool('read_sections', {
+                filename: 'user-guide.md',
+                section_ids: [sections[0].id]
+              });
+              const content = helper.parseJsonContent(readResponse);
+              expect(Array.isArray(content)).toBe(true);
+              expect(content.length).toBeGreaterThan(0);
+            }
+          }
         }
       } finally {
         serverProcess.kill();

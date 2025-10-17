@@ -10,41 +10,6 @@ import { E2ETestHelper, JSONRPCRequest } from './lib/E2ETestHelper';
 
 describe('CLI Configuration E2E Tests', () => {
   let helper: E2ETestHelper;
-  let tempDocsPath: string;
-
-  beforeAll(() => {
-    // Create a temporary documentation directory for testing
-    tempDocsPath = join(__dirname, 'fixtures', 'e2e', 'temp-cli-config');
-    if (!existsSync(tempDocsPath)) {
-      mkdirSync(tempDocsPath, { recursive: true });
-    }
-
-    // Create test documentation files
-    writeFileSync(join(tempDocsPath, 'test.md'), `# Test Document
-
-## Introduction
-This is a test introduction.
-
-## Configuration Test
-This section tests configuration.
-
-## Deep Section
-### Subsection 1
-Content here.
-### Subsection 2
-More content.
-#### Very Deep Section
-Very deep content.`);
-
-    writeFileSync(join(tempDocsPath, 'simple.md'), `# Simple Document
-
-Just a simple document with basic content.`);
-  });
-
-  afterAll(() => {
-    // Clean up temporary files
-    // Note: In a real scenario, you might want to clean up temp files
-  });
 
   afterEach(async () => {
     if (helper) {
@@ -59,21 +24,62 @@ Just a simple document with basic content.`);
     }
   });
 
-  async function startServerWithArgs(args: string[] = [], env: Record<string, string> = {}): Promise<E2ETestHelper> {
-    // Use the new helper method for cleaner server initialization
-    return await E2ETestHelper.createWithArgs('temp-cli-config', args, env);
+  async function startServerWithArgs(testCaseName: string, args: string[] = [], env: Record<string, string> = {}): Promise<E2ETestHelper> {
+    // Create isolated helper for the specific test case
+    helper = new E2ETestHelper('CLIConfiguration', testCaseName);
+    const testDocsPath = helper.getTestDocsPath();
+
+    // Process args to replace placeholder paths with actual test path
+    const finalArgs = args.map(arg => {
+      if (arg === '--docs-path' || arg === '-d') {
+        return arg;
+      }
+      return arg;
+    });
+
+    // Find docs-path argument and ensure it has the correct path
+    for (let i = 0; i < finalArgs.length; i++) {
+      if ((finalArgs[i] === '--docs-path' || finalArgs[i] === '-d') &&
+          (i + 1 >= finalArgs.length || finalArgs[i + 1].startsWith('--'))) {
+        finalArgs.splice(i + 1, 0, testDocsPath);
+        break;
+      }
+    }
+
+    // Spawn server with custom arguments and environment
+    const serverProcess = await helper.spawnServerWithArgsAndEnv(finalArgs, env);
+
+    // Initialize the server
+    const initRequest: JSONRPCRequest = {
+      jsonrpc: '2.0',
+      id: 0,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2024-11-05',
+        capabilities: {},
+        clientInfo: { name: 'test-client', version: '1.0.0' }
+      }
+    };
+
+    const initResponse = await helper.sendRequestToServer(serverProcess, initRequest);
+    helper.expectNoError(initResponse);
+
+    // Store the server process for cleanup
+    (helper as any).serverProcess = serverProcess;
+
+    return helper;
   }
 
   describe('--docs-path CLI argument', () => {
     it('should use custom documentation path from --docs-path argument', async () => {
-      helper = await startServerWithArgs(['--docs-path', tempDocsPath]);
+      helper = await startServerWithArgs('should-use-custom-documentation-path-from-docs-path-argument', ['--docs-path']);
 
       const response = await helper.callTool('list_documentation_files', {});
       helper.expectFileList(response, ['test.md', 'simple.md']);
     });
 
     it('should use short form -d argument', async () => {
-      helper = await startServerWithArgs(['-d', tempDocsPath]);
+      helper = await startServerWithArgs('should-use-short-form-d-argument', ['-d']);
 
       const response = await helper.callTool('list_documentation_files', {});
       helper.expectSuccessfulResponse(response);
@@ -85,7 +91,7 @@ Just a simple document with basic content.`);
       // Set environment variable to a different path
       const envPath = join(__dirname, 'fixtures', 'e2e', 'search');
 
-      helper = await startServerWithArgs(['--docs-path', tempDocsPath]);
+      helper = await startServerWithArgs('should-prioritize-cli-docs-path-over-docs-path-environment-variable', ['--docs-path'], { DOCS_PATH: envPath });
 
       const response = await helper.callTool('list_documentation_files', {});
       helper.expectSuccessfulResponse(response);
@@ -95,13 +101,13 @@ Just a simple document with basic content.`);
 
       // Should use CLI path, not environment variable path
       const fileNames = files.map((file: any) => file.filename);
-      expect(fileNames).toContain('test.md'); // From tempDocsPath, not envPath
+      expect(fileNames).toContain('test.md'); // From CLI path, not envPath
     });
   });
 
   describe('--max-toc-depth CLI argument', () => {
     it('should respect --max-toc-depth argument for table_of_contents tool', async () => {
-      helper = await startServerWithArgs(['--docs-path', tempDocsPath, '--max-toc-depth', '2']);
+      helper = await startServerWithArgs('should-respect-max-toc-depth-argument-for-table-of-contents-tool', ['--docs-path', '--max-toc-depth', '2']);
 
       const response = await helper.callTool('table_of_contents', {
         filename: 'test.md'
@@ -122,7 +128,7 @@ Just a simple document with basic content.`);
     });
 
     it('should handle invalid --max-toc-depth values gracefully', async () => {
-      helper = await startServerWithArgs(['--docs-path', tempDocsPath, '--max-toc-depth', 'invalid']);
+      helper = await startServerWithArgs('should-handle-invalid-max-toc-depth-values-gracefully', ['--docs-path', '--max-toc-depth', 'invalid']);
 
       const response = await helper.callTool('table_of_contents', {
         filename: 'test.md'
@@ -136,7 +142,7 @@ Just a simple document with basic content.`);
     });
 
     it('should handle zero and negative --max-toc-depth values', async () => {
-      helper = await startServerWithArgs(['--docs-path', tempDocsPath, '--max-toc-depth', '0']);
+      helper = await startServerWithArgs('should-handle-zero-and-negative-max-toc-depth-values', ['--docs-path', '--max-toc-depth', '0']);
 
       const response = await helper.callTool('table_of_contents', {
         filename: 'test.md'
@@ -152,8 +158,8 @@ Just a simple document with basic content.`);
 
   describe('--discount-single-top-header CLI argument', () => {
     it('should increase effective max depth when --discount-single-top-header is used', async () => {
-      helper = await startServerWithArgs([
-        '--docs-path', tempDocsPath,
+      helper = await startServerWithArgs('should-increase-effective-max-depth-when-discount-single-top-header-is-used', [
+        '--docs-path',
         '--max-toc-depth', '2',
         '--discount-single-top-header'
       ]);
@@ -178,7 +184,7 @@ Just a simple document with basic content.`);
 
   describe('DOCS_PATH environment variable', () => {
     it('should use DOCS_PATH environment variable when no CLI argument provided', async () => {
-      helper = E2ETestHelper.create('temp-cli-config');
+      helper = new E2ETestHelper('CLIConfiguration', 'should-use-docs-path-environment-variable-when-no-cli-argument-provided');
       await helper.startServer();
 
       const response = await helper.callTool('list_documentation_files', {});
@@ -195,8 +201,8 @@ Just a simple document with basic content.`);
 
   describe('Multiple CLI arguments', () => {
     it('should handle multiple CLI arguments correctly', async () => {
-      helper = await startServerWithArgs([
-        '--docs-path', tempDocsPath,
+      helper = await startServerWithArgs('should-handle-multiple-cli-arguments-correctly', [
+        '--docs-path',
         '--max-toc-depth', '1',
         '--discount-single-top-header'
       ]);
@@ -229,20 +235,20 @@ Just a simple document with basic content.`);
   describe('CLI argument precedence and validation', () => {
     it('should handle missing argument values gracefully', async () => {
       // Test with --docs-path but no following value
-      helper = await startServerWithArgs(['--docs-path']);
+      helper = await startServerWithArgs('should-handle-missing-argument-values-gracefully', ['--docs-path']);
 
       const response = await helper.callTool('list_documentation_files', {});
       helper.expectSuccessfulResponse(response);
 
-      // Should default to './docs' and handle gracefully
+      // Should default to the isolated test path and handle gracefully
       const content = helper.parseContentArray(response);
       const files = content[0].text ? JSON.parse(content[0].text) : content[0];
       expect(Array.isArray(files)).toBe(true);
     });
 
     it('should ignore unknown CLI arguments', async () => {
-      helper = await startServerWithArgs([
-        '--docs-path', tempDocsPath,
+      helper = await startServerWithArgs('should-ignore-unknown-cli-arguments', [
+        '--docs-path',
         '--unknown-argument', 'some-value',
         '--another-unknown'
       ]);

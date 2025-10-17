@@ -1,174 +1,155 @@
 ---
-title: Special Characters and Unicode Testing
-description: Document containing various special characters and Unicode symbols
+title: Special Characters and Unicode
+description: Document containing special characters and international content
 keywords:
-  - special characters
   - unicode
+  - special characters
+  - international
   - symbols
-  - internationalization
 ---
 
-# Special Characters and Unicode Testing
+# Special Characters and Unicode
 
-This document contains various special characters and Unicode symbols for testing search functionality.
+This document contains various special characters and international content for testing search functionality.
 
-## Punctuation and Symbols
+## Mathematical Symbols
 
-### Common Punctuation
+Common mathematical symbols used in technical documentation:
 
-Standard punctuation marks: . , ; : ! ? ' " ( ) [ ] { } < >
-
-### Mathematical Symbols
-
-Basic math operators: + - × ÷ = ≠ ≈ < > ≤ ≥
-
-Advanced symbols: ∑ ∏ ∫ √ ∞ ∈ ∉ ∀ ∃ ∅ ∪ ∩ ⊆ ⊇
-
-### Currency Symbols
-
-World currencies: $ £ € ¥ ₹ ₽ ₩ ₪ ₫ ₡ ₦ ₱ ₲ ₴ ₸
-
-### Special Characters
-
-Brackets and braces: [test] {content} (parentheses) ⟨angle⟩
-
-Other symbols: @ # % ^ & * _ | \ / ~ `
+- Summation: ∑
+- Product: ∏
+- Integral: ∫
+- Square root: √
+- Infinity: ∞
+- Pi: π
+- Alpha: α, Beta: β, Gamma: γ
+- Less than or equal: ≤
+- Greater than or equal: ≥
+- Not equal: ≠
+- Approximately: ≈
 
 ## International Characters
 
-### European Languages
+### French Words
 
-#### German
-Übergrößenträger, Müller, Schön, ä ö ü ß
+- café (coffee)
+- naïve (naive)
+- résumé (resume)
+- décor (decor)
+- cliché (cliché)
 
-#### French
-Café, naïve, château, résumé, é à è ê ë î ï ô ù û ç œ
+### Spanish Words
 
-#### Spanish
-Niño, piñata, ¿Cómo está?, ¡Hola!, á é í ó ú ñ ü
+- español (Spanish)
+- niño (child)
+- mañana (tomorrow)
+- año (year)
 
-#### Italian
-Perché, pizza,caffè, à è é ì ò ù
+### German Words
 
-#### Scandinavian
-Ångström, København, Skagen, å ä ö ø
+- Müller (common surname)
+- Universität (university)
+- Kindergarten (kindergarten)
 
-### Eastern European
+### Other Languages
 
-#### Russian
-Привет мир, тестирование поиска, Москва, Санкт-Петербург
+- Москва (Moscow - Russian)
+- 北京 (Beijing - Chinese)
+- 東京 (Tokyo - Japanese)
+- स्वागत (welcome - Hindi)
 
-#### Polish
-Wałęsa, zażółć gęślą jaźń, ą ć ę ł ń ó ś ź ż
+## Programming Symbols
 
-#### Czech
-Český Krumlov, Říp, ščřžýáíé
+Common symbols used in programming:
 
-### Asian Languages
+- Brackets: [ ] { } ( )
+- Operators: + - * / % ^ & | ~ !
+- Comparison: < > == != <= >=
+- Assignment: = += -= *= /= %=
 
-#### Japanese (Hiragana/Katakana/Kanji)
-こんにちは世界, テスト, 東京, 大阪, 検索機能
+## Currency Symbols
 
-#### Korean (Hangul)
-안녕하세요, 검색, 서울, 부산
+- Dollar: $
+- Euro: €
+- Pound: £
+- Yen: ¥
+- Rupee: ₹
 
-#### Chinese (Simplified)
-你好世界，测试功能，北京，上海
+## Punctuation and Typographic Symbols
 
-#### Arabic
-مرحبا بالعالم، اختبار البحث، القاهرة
-
-#### Hebrew
-שלום עולם, בדיקת חיפוש, תל אביב
-
-#### Hindi
-नमस्ते दुनिया, खोज परीक्षण, दिल्ली
-
-## Technical Symbols
-
-### Programming Symbols
-
-Common programming symbols: && || != == ++ -- += -= *= /= %=
-
-Regular expression patterns: \d+ \w+ [a-zA-Z] \s+ ^$ \b
-
-URL encoding: %20 %2F %3F %3D %26
-
-### File Paths
-
-Windows paths: C:\Users\Username\Documents\file.txt
-
-Unix paths: /home/user/documents/file.txt
-
-UNC paths: \\server\share\folder\file.txt
-
-### Markup and Code
-
-HTML entities: &lt; &gt; &amp; &quot; &apos; &nbsp;
-
-Markdown: **bold** *italic* `code` [link](url)
-
-## Special Whitespace
-
-Various whitespace characters for testing:
-
-Regular space: " "
-Tab character: "	"
-Non-breaking space: " "
-En space: " "
-Em space: " "
-Thin space: " "
-Hair space: " "
+- Quotes: " " ' ' ' ' « »
+- Dashes: – — …
+- Bullets: • ◦ ‣
+- Miscellaneous: @ # % & * ? ! ; : , .
 
 ## Emoji and Modern Symbols
 
-### Common Emojis
-😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😗 😙 😚 😋 😛 😝 😜 🤪 🤨 🧐 🤓 😎 🤩 🥳 😏 😒 😞 😔 😟 😕 🙁 ☹️ 😣 😖 😫 😩 🥺 😢 😭 😤 😠 😡 🤬 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🤭 🤫 🤥 😶 😐 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕 🤑 🤠 😈 👿 👹 👺 🤡 💩 👻 💀 ☠️ 👽 👾 🤖 🎃 😺 😸 😹 😻 😼 😽 🙀 😿 😾
+- Smiley: 😊 😂 🎉
+- Objects: 📱 💻 🚗
+- Symbols: ✅ ❌ ⚠️ ℹ️
 
-### Hand Symbols
-👋 🤚 🖐 ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 🖕 👇 ☝️ 👍 👎 ✊ 👊 🤛 🤜 👏 🙌 👐 🤲 🤝 🙏
+## Technical Documentation
+
+### Code with Unicode
+
+```javascript
+const greeting = "¡Hola! ¿Cómo estás?";
+const temperature = "22°C";
+const copyright = "© 2024 Company";
+const trademark = "Product™";
+```
+
+### Regular Expressions with Unicode
+
+```javascript
+// Match international characters
+const internationalRegex = /[à-žÀ-Ž]/g;
+const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+```
 
 ## Mixed Content Examples
 
-### Code with International Comments
-```javascript
-// 这是一个中文注释 - This is a Chinese comment
-function calcularTotal(productos) { // Spanish function name
-    // German variable names
-    const gesamtpreis = produkten.reduce((summe, produkt) => {
-        return summe + produkt.preis; // French variable name
-    }, 0);
+This section contains mixed language and symbol content:
 
-    return gesamtpreis; // Return total in German
-}
-```
+The café serves espresso at 22°C. The naïve customer paid €5.50 for his résumé printing service. The company ©2024 uses React™ for their frontend development.
 
-### Mathematical Expressions with Unicode
-The formula E = mc² represents mass-energy equivalence.
+## Special Cases
 
-Greek letters: α (alpha), β (beta), γ (gamma), δ (delta), θ (theta), λ (lambda), μ (mu), π (pi), σ (sigma), φ (phi), ω (omega)
+### Zero-Width Characters
 
-### Multilingual Text
-English: "Search functionality works well"
-German: "Suchfunktionalität funktioniert gut"
-French: "La fonctionnalité de recherche fonctionne bien"
-Spanish: "La funcionalidad de búsqueda funciona bien"
-Japanese: "検索機能は正常に動作します"
-Russian: "Функциональность поиска работает хорошо"
+- Zero-width space: ​
+- Zero-width non-joiner: ‌
 
-## Edge Cases for Search
+### Combining Characters
 
-### Regex Special Characters
-Characters that need escaping in regex: . ^ $ * + ? ( ) [ ] { } \ |
+- a + ́ = á
+- o + ˆ = ô
+- e + ¨ = ë
 
-### Quote Variations
-Different quote styles: "double quotes" 'single quotes' „German quotes" «French quotes» 「Japanese quotes」
+## HTML Entities
 
-### Dash Types
-Various dash characters: - (hyphen) – (en dash) — (em dash) ― (horizontal bar)
+Common HTML entities used in web content:
 
-### Number Formats
-Different number representations: 1,000 1.000 1 000 ١٬٠٠٠ (Arabic numerals)
+- &lt; (<)
+- &gt; (>)
+- &amp; (&)
+- &quot; (")
+- &apos; (')
+- &nbsp; (non-breaking space)
 
-### Date Formats
-Various date formats: 12/31/2023 31.12.2023 31-12-2023 2023年12月31日
+## File Paths and URLs
+
+Examples of paths with special characters:
+
+- Windows: C:\Users\Oscar\AppData\Local
+- Unix: /home/user/café/documents
+- URLs: https://example.com/search?q=café naïve
+
+## Phone Numbers and Addresses
+
+International formats:
+
+- US: +1 (555) 123-4567
+- UK: +44 20 7123 4567
+- German: +49 30 12345678
+- French: +33 1 23 45 67 89

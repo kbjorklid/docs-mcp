@@ -10,82 +10,6 @@ import { E2ETestHelper, JSONRPCRequest } from './lib/E2ETestHelper';
 
 describe('Tool Integration E2E Tests', () => {
   let helper: E2ETestHelper;
-  let tempDocsPath: string;
-
-  beforeAll(() => {
-    // Create a temporary documentation directory for integration testing
-    tempDocsPath = join(__dirname, 'fixtures', 'e2e', 'temp-integration');
-    if (!existsSync(tempDocsPath)) {
-      mkdirSync(tempDocsPath, { recursive: true });
-    }
-
-    // Create simple test documentation files
-    writeFileSync(join(tempDocsPath, 'simple-guide.md'), `# Simple Guide
-
-## Getting Started
-This is a simple getting started section with basic information.
-
-### Installation
-Install the software with this command:
-\`\`\`bash
-npm install
-\`\`\`
-
-### Configuration
-Configure the application by editing the config file.
-
-## Usage
-Basic usage instructions go here.
-
-### Commands
-Common commands include:
-- npm start
-- npm test
-
-## Advanced Topics
-Advanced configuration and usage patterns.`);
-
-    writeFileSync(join(tempDocsPath, 'api-docs.md'), `# API Documentation
-
-## Overview
-This API provides endpoints for managing resources.
-
-## Authentication
-All requests require authentication using Bearer tokens.
-
-### API Key Authentication
-Include your API key in the Authorization header:
-\`\`\`
-Authorization: Bearer YOUR_API_KEY
-\`\`\`
-
-## Endpoints
-
-### Users Endpoint
-\`\`\`
-GET /api/users
-Authorization: Bearer YOUR_API_KEY
-\`\`\`
-
-Returns a list of users.
-
-### Projects Endpoint
-\`\`\`
-POST /api/projects
-Authorization: Bearer YOUR_API_KEY
-Content-Type: application/json
-\`\`\`
-
-Creates a new project.
-
-## Error Handling
-The API returns standard HTTP status codes and error messages.`);
-  });
-
-  afterAll(() => {
-    // Clean up temporary files
-    // Note: In a real scenario, you might want to clean up temp files
-  });
 
   afterEach(async () => {
     if (helper) {
@@ -100,12 +24,12 @@ The API returns standard HTTP status codes and error messages.`);
     }
   });
 
-  async function startServer(args: string[] = []): Promise<E2ETestHelper> {
-      // Create a custom helper that spawns server with specific args
-      const customHelper = new E2ETestHelper('temp-integration');
+  async function startServerWithCustomArgs(testCaseName: string, args: string[] = []): Promise<E2ETestHelper> {
+      // Create a custom helper with isolated test directory
+      const customHelper = new E2ETestHelper('ToolIntegration', testCaseName);
 
       // Spawn server with custom arguments
-      const serverProcess = await customHelper.spawnServerWithArgs(['--docs-path', tempDocsPath, ...args]);
+      const serverProcess = await customHelper.spawnServerWithArgs(['--docs-path', customHelper.getTestDocsPath(), ...args]);
 
       // Initialize the server
       const initRequest: JSONRPCRequest = {
@@ -129,11 +53,9 @@ The API returns standard HTTP status codes and error messages.`);
     }
 
   describe('Basic Tool Integration Workflow', () => {
-    beforeEach(async () => {
-      helper = await startServer();
-    });
-
     it('should handle complete documentation discovery workflow', async () => {
+      helper = await startServerWithCustomArgs('should-handle-complete-documentation-discovery-workflow');
+
       // Step 1: List all available documentation files
       const listResponse = await helper.callTool('list_documentation_files', {});
       helper.expectSuccessfulResponse(listResponse);
@@ -165,7 +87,7 @@ The API returns standard HTTP status codes and error messages.`);
       helper.expectSuccessfulResponse(readResponse);
       const readSections = helper.parseJsonContent(readResponse);
       expect(readSections.length).toBe(1);
-      expect(readSections[0].title).toBe(firstSection.id);
+      expect(readSections[0].title).toBe(firstSection.title);
       expect(readSections[0].content).toBeDefined();
 
       // Step 4: Search for specific content
@@ -180,6 +102,8 @@ The API returns standard HTTP status codes and error messages.`);
     });
 
     it('should handle API documentation exploration workflow', async () => {
+      helper = await startServerWithCustomArgs('should-handle-api-documentation-exploration-workflow');
+
       // Step 1: Get table of contents for API documentation
       const tocResponse = await helper.callTool('table_of_contents', {
         filename: 'api-docs.md'
@@ -219,11 +143,9 @@ The API returns standard HTTP status codes and error messages.`);
   });
 
   describe('Error Handling Integration', () => {
-    beforeEach(async () => {
-      helper = await startServer();
-    });
-
     it('should handle errors gracefully across all tools', async () => {
+      helper = await startServerWithCustomArgs('should-handle-errors-gracefully-across-all-tools');
+
       // Test 1: List files (should work)
       const listResponse = await helper.callTool('list_documentation_files', {});
       helper.expectSuccessfulResponse(listResponse);
@@ -261,7 +183,7 @@ The API returns standard HTTP status codes and error messages.`);
 
   describe('Configuration Integration', () => {
     it('should respect max-depth configuration across all tools', async () => {
-      helper = await startServer(['--max-toc-depth', '2']);
+      helper = await startServerWithCustomArgs('should-respect-max-depth-configuration-across-all-tools', ['--max-toc-depth', '2']);
 
       // Test that table_of_contents respects max depth
       const tocResponse = await helper.callTool('table_of_contents', {

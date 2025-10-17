@@ -8,19 +8,10 @@ import { join } from 'path';
 import { E2ETestHelper, JSONRPCRequest } from './lib/E2ETestHelper';
 
 describe('list_documentations E2E Tests', () => {
-  let helper: E2ETestHelper;
-
-  beforeAll(async () => {
-    helper = E2ETestHelper.create('list-documentations');
-    await helper.startServer();
-  }, 10000);
-
-  afterAll(async () => {
-    await helper.stopServer();
-  });
-
   describe('list_documentations tool', () => {
     it('should list all available documentation files with metadata', async () => {
+      const helper = new E2ETestHelper('ListDocumentationFiles', 'should-list-all-available-documentation-files-with-metadata');
+      await helper.startServer();
       const response = await helper.callTool('list_documentation_files', {});
 
       helper.expectFileList(response, ['user-guide.md', 'api-reference.md', 'README.md']);
@@ -36,13 +27,21 @@ describe('list_documentations E2E Tests', () => {
       expect(apiReferenceFile.size).toBeDefined();
       expect(typeof apiReferenceFile.size).toBe('string');
       expect(apiReferenceFile.size).toMatch(/\d+(kb|b)$/);
+
+      await helper.stopServer();
     });
 
     it('should handle tools/list request to verify the tool is available', async () => {
+      const helper = new E2ETestHelper('ListDocumentationFiles', 'should-handle-tools-list-request-to-verify-the-tool-is-available');
+      await helper.startServer();
+
       await helper.verifyToolAvailable('list_documentation_files');
+
+      await helper.stopServer();
     });
 
     it('should handle non-existent documentation paths gracefully', async () => {
+      const helper = new E2ETestHelper('ListDocumentationFiles', 'should-handle-non-existent-documentation-paths-gracefully');
       const invalidServerProcess = await helper.spawnServerWithArgs(['--docs-path', '/non/existent/path']);
 
       try {
@@ -74,6 +73,9 @@ describe('list_documentations E2E Tests', () => {
     });
 
     it('should handle configuration compatibility correctly', async () => {
+      const helper = new E2ETestHelper('ListDocumentationFiles', 'should-handle-configuration-compatibility-correctly');
+      await helper.startServer();
+
       const response = await helper.callTool('list_documentation_files', {});
 
       helper.expectSuccessfulResponse(response);
@@ -91,6 +93,8 @@ describe('list_documentations E2E Tests', () => {
         expect(file.size).toBeDefined();
         expect(typeof file.size).toBe('string');
       });
+
+      await helper.stopServer();
     });
   });
 });

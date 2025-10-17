@@ -32,8 +32,21 @@ export class E2ETestHelper {
   private serverProcess: ChildProcess | null = null;
   private testDocsPath: string;
 
-  constructor(testFixtureDir: string) {
-    this.testDocsPath = join(__dirname, '..', 'fixtures', 'e2e', testFixtureDir);
+  constructor(testFixtureDir: string);
+  constructor(testClassName: string, testCaseName: string);
+  constructor(testFixtureDirOrClassName: string, testCaseName?: string) {
+    if (testCaseName !== undefined) {
+      // New isolated test directory structure: className/testCaseName
+      this.testDocsPath = join(__dirname, '..', 'fixtures', 'e2e', testFixtureDirOrClassName, testCaseName);
+    } else {
+      // Legacy structure: single directory name
+      this.testDocsPath = join(__dirname, '..', 'fixtures', 'e2e', testFixtureDirOrClassName);
+    }
+  }
+
+  // Method to get the test docs path (useful for external spawn calls)
+  getTestDocsPath(): string {
+    return this.testDocsPath;
   }
 
   async startServer(): Promise<void> {
@@ -154,9 +167,14 @@ export class E2ETestHelper {
   }
 
   async spawnServerWithArgs(args: string[]): Promise<ChildProcess> {
+    return this.spawnServerWithArgsAndEnv(args, {});
+  }
+
+  async spawnServerWithArgsAndEnv(args: string[], env: Record<string, string> = {}): Promise<ChildProcess> {
     const serverPath = resolve(__dirname, '..', '..', '..', 'dist', 'index.js');
     const serverProcess = spawn('node', [serverPath, ...args], {
       stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, ...env }
     });
 
     await sleep(100);
