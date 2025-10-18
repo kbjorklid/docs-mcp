@@ -58,13 +58,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'table_of_contents': {
         const filename = request.params.arguments?.filename as string;
         const maxDepth = request.params.arguments?.max_depth as number | undefined;
-        return tableOfContents.execute(filename, maxDepth);
+        return await tableOfContents.execute(filename, maxDepth);
       }
 
       case 'read_sections': {
         const filename = request.params.arguments?.filename as string;
         const sectionIds = request.params.arguments?.section_ids as string[];
-        return readSections.execute(filename, sectionIds);
+        return await readSections.execute(filename, sectionIds);
       }
 
       case 'search': {

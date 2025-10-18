@@ -1,12 +1,15 @@
 import * as path from 'path';
 import { Section, Configuration, ErrorResponse } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
+import { FileDiscoveryService } from '../services';
 
 export class TableOfContents {
   private config: Configuration;
+  private fileDiscovery: FileDiscoveryService;
 
   constructor(config: Configuration) {
     this.config = config;
+    this.fileDiscovery = new FileDiscoveryService(config);
   }
 
   /**
@@ -43,7 +46,7 @@ export class TableOfContents {
   /**
    * Execute the table_of_contents tool
    */
-  execute(filename: string, maxDepth?: number) {
+  async execute(filename: string, maxDepth?: number) {
     // Validate filename parameter
     if (!filename) {
       const errorResponse: ErrorResponse = {
@@ -64,7 +67,7 @@ export class TableOfContents {
     }
 
     try {
-      const sections = this.getTableOfContents(filename, maxDepth);
+      const sections = await this.getTableOfContents(filename, maxDepth);
       return {
         content: [
           {
@@ -92,32 +95,32 @@ export class TableOfContents {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(errorResponse, null, 2),
-            },
-          ],
-        };
-      }
-
-      const errorResponse: ErrorResponse = {
-        error: {
-          code: 'PARSE_ERROR',
-          message: 'Error parsing markdown file',
-          details: {
-            filename,
-            error,
-          },
-        },
-      };
-      return {
-        content: [
-          {
-            type: 'text',
             text: JSON.stringify(errorResponse, null, 2),
           },
         ],
       };
     }
+
+    const errorResponse: ErrorResponse = {
+      error: {
+        code: 'PARSE_ERROR',
+        message: 'Error parsing markdown file',
+        details: {
+          filename,
+          error,
+        },
+      },
+    };
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(errorResponse, null, 2),
+        },
+      ],
+    };
   }
+}
 
   /**
    * Count the number of top-level (#) headers in the content
@@ -169,15 +172,21 @@ export class TableOfContents {
   /**
    * Get table of contents for a markdown file
    */
-  private getTableOfContents(filename: string, maxDepth?: number): Section[] {
-    const fullPath = path.resolve(this.config.documentationPath, filename);
+  private async getTableOfContents(filename: string, maxDepth?: number): Promise<Section[]> {
+    const fullPath = await this.fileDiscovery.resolveFilePath(filename);
+
+    if (!fullPath) {
+      throw new Error(
+        `FILE_NOT_FOUND: File '${filename}' not found in any documentation directory. Use the list_documentation_files tool to see available files.`
+      );
+    }
 
     // Check if file exists
     const validation = MarkdownParser.validateFile(fullPath);
     if (!validation.valid) {
       if (validation.error === 'File not found') {
         throw new Error(
-          `FILE_NOT_FOUND: File '${filename}' not found. Use the list_documentation_files tool to see available files.`
+          `FILE_NOT_FOUND: File '${filename}' not found in any documentation directory. Use the list_documentation_files tool to see available files.`
         );
       } else {
         throw new Error(validation.error);

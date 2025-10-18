@@ -19,7 +19,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('./docs');
+      expect(config.documentationPaths).toEqual(['./docs']);
       expect(config.maxTocDepth).toBeUndefined();
     });
 
@@ -30,7 +30,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('/custom/path');
+      expect(config.documentationPaths).toEqual(['/custom/path']);
       expect(config.maxTocDepth).toBeUndefined();
     });
 
@@ -41,7 +41,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('/another/path');
+      expect(config.documentationPaths).toEqual(['/another/path']);
       expect(config.maxTocDepth).toBeUndefined();
     });
 
@@ -52,7 +52,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('./docs');
+      expect(config.documentationPaths).toEqual(['./docs']);
       expect(config.maxTocDepth).toBe(3);
     });
 
@@ -63,7 +63,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('/custom/docs');
+      expect(config.documentationPaths).toEqual(['/custom/docs']);
       expect(config.maxTocDepth).toBe(2);
     });
 
@@ -74,7 +74,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('/ordered/path');
+      expect(config.documentationPaths).toEqual(['/ordered/path']);
       expect(config.maxTocDepth).toBe(4);
     });
 
@@ -85,7 +85,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('./docs');
+      expect(config.documentationPaths).toEqual(['./docs']);
       expect(config.maxTocDepth).toBeUndefined();
     });
 
@@ -96,7 +96,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('./docs');
+      expect(config.documentationPaths).toEqual(['./docs']);
       expect(config.maxTocDepth).toBeUndefined();
     });
 
@@ -107,7 +107,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('./docs');
+      expect(config.documentationPaths).toEqual(['./docs']);
       expect(config.maxTocDepth).toBeUndefined();
     });
 
@@ -118,7 +118,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('./docs');
+      expect(config.documentationPaths).toEqual(['./docs']);
       expect(config.maxTocDepth).toBeUndefined();
     });
 
@@ -129,7 +129,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('./docs');
+      expect(config.documentationPaths).toEqual(['./docs']);
       expect(config.maxTocDepth).toBeUndefined();
     });
 
@@ -140,7 +140,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('/valid/path');
+      expect(config.documentationPaths).toEqual(['/valid/path']);
       expect(config.maxTocDepth).toBe(3); // Should use the valid one
     });
 
@@ -151,7 +151,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('./docs');
+      expect(config.documentationPaths).toEqual(['./docs']);
       expect(config.maxTocDepth).toBe(2); // parseInt should convert to 2
     });
   });
@@ -176,7 +176,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('/env/docs/path');
+      expect(config.documentationPaths).toEqual(['/env/docs/path']);
       expect(config.maxTocDepth).toBeUndefined();
     });
 
@@ -188,7 +188,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('/cli/docs/path'); // CLI should take precedence
+      expect(config.documentationPaths).toEqual(['/cli/docs/path']); // CLI should take precedence
       expect(config.maxTocDepth).toBeUndefined();
     });
 
@@ -200,7 +200,7 @@ describe('Command Line Arguments', () => {
       const { createConfig } = await import('../config/ConfigManager');
       const config = createConfig();
 
-      expect(config.documentationPath).toBe('/env/docs/path');
+      expect(config.documentationPaths).toEqual(['/env/docs/path']);
       expect(config.maxTocDepth).toBe(2);
     });
   });

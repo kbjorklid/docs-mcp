@@ -1,0 +1,434 @@
+/**
+ * Unit tests for FileDiscoveryService
+ * Tests multi-directory file discovery, conflict resolution, and path handling
+ */
+
+import { FileDiscoveryService, DiscoveredFile } from '../services/FileDiscoveryService';
+import { Configuration } from '../types';
+import { MarkdownParser } from '../MarkdownParser';
+import * as glob from 'glob';
+import * as path from 'path';
+
+// Mock dependencies
+jest.mock('glob', () => jest.fn());
+jest.mock('../MarkdownParser');
+
+const mockGlob = jest.mocked(glob);
+const mockMarkdownParser = MarkdownParser as jest.Mocked<typeof MarkdownParser>;
+
+describe('FileDiscoveryService', () => {
+  let service: FileDiscoveryService;
+  let mockConfig: Configuration;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    mockConfig = {
+      documentationPaths: ['/docs/dir1', '/docs/dir2'],
+      discountSingleTopHeader: false,
+    };
+
+    service = new FileDiscoveryService(mockConfig);
+
+    // Default mocks for MarkdownParser
+    mockMarkdownParser.validateFile.mockReturnValue({
+      valid: true,
+      stats: { size: 1024 } as any,
+    });
+    mockMarkdownParser.readMarkdownFile.mockReturnValue({
+      content: 'Test content',
+      metadata: { title: 'Test Document' },
+    });
+    mockMarkdownParser.formatFileSize.mockReturnValue('1.0kb');
+  });
+
+  describe('Constructor', () => {
+    it('should initialize with provided configuration', () => {
+      expect(service).toBeInstanceOf(FileDiscoveryService);
+    });
+
+    it('should start with empty cache', () => {
+      // Access private cache property through reflection for testing
+      const serviceAny = service as any;
+      expect(serviceAny.fileCache).toBeNull();
+    });
+  });
+
+  describe('getAllFiles', () => {
+    it('should discover files from multiple directories', async () => {
+      // Mock glob responses for different directories
+      mockGlob
+        .mockResolvedValueOnce(['file1.md', 'subdir/file2.md'])
+        .mockResolvedValueOnce(['file3.md']);
+
+      // Mock file validation
+      mockMarkdownParser.validateFile.mockReturnValue({
+        valid: true,
+        stats: { size: 1024 } as any,
+      });
+
+      const result = await service.getAllFiles();
+
+      expect(result).toHaveLength(3);
+      expect(mockGlob).toHaveBeenCalledTimes(2);
+      expect(mockGlob).toHaveBeenCalledWith('**/*.md', {
+        cwd: '/docs/dir1',
+        absolute: false,
+      });
+      expect(mockGlob).toHaveBeenCalledWith('**/*.md', {
+        cwd: '/docs/dir2',
+        absolute: false,
+      });
+    });
+
+    it('should handle conflict resolution - earlier directory takes precedence', async () => {
+      // Both directories have a file with the same name
+      mockGlob
+        .mockResolvedValueOnce(['conflict.md'])
+        .mockResolvedValueOnce(['conflict.md']);
+
+      const result = await service.getAllFiles();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].filename).toBe('conflict.md');
+      expect(result[0].sourceDirectory).toBe('/docs/dir1'); // Earlier directory wins
+    });
+
+    it('should preserve unique files from all directories', async () => {
+      mockGlob
+        .mockResolvedValueOnce(['unique1.md', 'common.md'])
+        .mockResolvedValueOnce(['unique2.md', 'common.md']);
+
+      const result = await service.getAllFiles();
+
+      expect(result).toHaveLength(3);
+      const filenames = result.map(f => f.filename);
+      expect(filenames).toContain('unique1.md');
+      expect(filenames).toContain('unique2.md');
+      expect(filenames).toContain('common.md');
+      // common.md should come from the first directory only
+      expect(result.find(f => f.filename === 'common.md')?.sourceDirectory).toBe('/docs/dir1');
+    });
+
+    it('should handle empty directories', async () => {
+      mockGlob
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+
+      const result = await service.getAllFiles();
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle mixed empty and non-empty directories', async () => {
+      mockGlob
+        .mockResolvedValueOnce(['file1.md'])
+        .mockResolvedValueOnce([]);
+
+      const result = await service.getAllFiles();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].filename).toBe('file1.md');
+    });
+
+    it('should cache results for subsequent calls', async () => {
+      mockGlob.mockResolvedValue(['file1.md']);
+
+      const result1 = await service.getAllFiles();
+      const result2 = await service.getAllFiles();
+
+      expect(result1).toBe(result2); // Same object reference (cached)
+      expect(mockGlob).toHaveBeenCalledTimes(1); // Only called once
+    });
+
+    it('should handle directory discovery errors gracefully', async () => {
+      mockGlob.mockRejectedValue(new Error('Permission denied'));
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      const result = await service.getAllFiles();
+
+      expect(result).toHaveLength(0); // Should return empty array, not throw
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Error discovering files in directory /docs/dir1:',
+        expect.any(Error)
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should normalize path separators in filenames', async () => {
+      mockGlob.mockResolvedValue(['subdir\\file.md']); // Windows-style path
+
+      const result = await service.getAllFiles();
+
+      expect(result[0].filename).toBe('subdir/file.md'); // Normalized to forward slashes
+    });
+
+    it('should handle invalid files gracefully', async () => {
+      mockGlob.mockResolvedValue(['invalid.md', 'valid.md']);
+
+      mockMarkdownParser.validateFile
+        .mockReturnValueOnce({ valid: false, error: 'Invalid file' })
+        .mockReturnValueOnce({ valid: true, stats: { size: 1024 } as any });
+
+      const result = await service.getAllFiles();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].filename).toBe('valid.md');
+    });
+  });
+
+  describe('resolveFilePath', () => {
+    beforeEach(() => {
+      mockGlob.mockResolvedValue(['test.md']);
+      mockMarkdownParser.validateFile.mockReturnValue({
+        valid: true,
+        stats: { size: 1024 } as any,
+      });
+    });
+
+    it('should resolve existing filename to full path', async () => {
+      const result = await service.resolveFilePath('test.md');
+
+      expect(result).toBe(path.resolve('/docs/dir1/test.md'));
+    });
+
+    it('should return null for non-existent filename', async () => {
+      const result = await service.resolveFilePath('nonexistent.md');
+
+      expect(result).toBeNull();
+    });
+
+    it('should use cached results when available', async () => {
+      // First call to populate cache
+      await service.getAllFiles();
+
+      const result = await service.resolveFilePath('test.md');
+
+      expect(result).toBe(path.resolve('/docs/dir1/test.md'));
+      expect(mockGlob).toHaveBeenCalledTimes(1); // Only called for initial cache population
+    });
+  });
+
+  describe('getFileMetadata', () => {
+    beforeEach(() => {
+      mockGlob.mockResolvedValue(['test.md']);
+      mockMarkdownParser.validateFile.mockReturnValue({
+        valid: true,
+        stats: { size: 1024 } as any,
+      });
+      mockMarkdownParser.readMarkdownFile.mockReturnValue({
+        content: 'Test content',
+        metadata: { title: 'Test Document', description: 'Test description' },
+      });
+    });
+
+    it('should return metadata for existing filename', async () => {
+      const result = await service.getFileMetadata('test.md');
+
+      expect(result).toEqual({
+        filename: 'test.md',
+        fullPath: path.resolve('/docs/dir1/test.md'),
+        sourceDirectory: '/docs/dir1',
+        metadata: { title: 'Test Document', description: 'Test description' },
+        size: '1.0kb',
+      });
+    });
+
+    it('should return null for non-existent filename', async () => {
+      const result = await service.getFileMetadata('nonexistent.md');
+
+      expect(result).toBeNull();
+    });
+
+    it('should return DiscoveredFile object with all required properties', async () => {
+      const result = await service.getFileMetadata('test.md');
+
+      expect(result).toHaveProperty('filename');
+      expect(result).toHaveProperty('fullPath');
+      expect(result).toHaveProperty('sourceDirectory');
+      expect(result).toHaveProperty('metadata');
+      expect(result).toHaveProperty('size');
+      expect(typeof result?.fullPath).toBe('string');
+      expect(typeof result?.size).toBe('string');
+    });
+  });
+
+  describe('getFileInfoList', () => {
+    it('should convert discovered files to FileInfo format', async () => {
+      mockGlob.mockResolvedValue(['test.md']);
+      mockMarkdownParser.validateFile.mockReturnValue({
+        valid: true,
+        stats: { size: 1024 } as any,
+      });
+      mockMarkdownParser.readMarkdownFile.mockReturnValue({
+        content: 'Test content',
+        metadata: {
+          title: 'Test Document',
+          description: 'Test description',
+          keywords: ['test', 'doc']
+        },
+      });
+
+      const result = await service.getFileInfoList();
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        filename: 'test.md',
+        title: 'Test Document',
+        description: 'Test description',
+        keywords: ['test', 'doc'],
+        size: '1.0kb',
+      });
+    });
+
+    it('should use filename as title when metadata title is missing', async () => {
+      mockGlob.mockResolvedValue(['document.md']);
+      mockMarkdownParser.validateFile.mockReturnValue({
+        valid: true,
+        stats: { size: 1024 } as any,
+      });
+      mockMarkdownParser.readMarkdownFile.mockReturnValue({
+        content: 'Test content',
+        metadata: {},
+      });
+
+      const result = await service.getFileInfoList();
+
+      expect(result[0].title).toBe('document'); // basename without .md
+    });
+
+    it('should handle empty keywords array', async () => {
+      mockGlob.mockResolvedValue(['test.md']);
+      mockMarkdownParser.validateFile.mockReturnValue({
+        valid: true,
+        stats: { size: 1024 } as any,
+      });
+      mockMarkdownParser.readMarkdownFile.mockReturnValue({
+        content: 'Test content',
+        metadata: { title: 'Test' },
+      });
+
+      const result = await service.getFileInfoList();
+
+      expect(result[0].keywords).toEqual([]);
+    });
+  });
+
+  describe('clearCache', () => {
+    it('should clear the internal cache', async () => {
+      mockGlob.mockResolvedValue(['test.md']);
+
+      // Populate cache
+      await service.getAllFiles();
+
+      // Clear cache
+      service.clearCache();
+
+      // Should call glob again on next call
+      await service.getAllFiles();
+
+      expect(mockGlob).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('Private method behavior (through integration)', () => {
+    it('should handle file processing errors gracefully', async () => {
+      mockGlob.mockResolvedValue(['error.md']);
+
+      mockMarkdownParser.validateFile.mockImplementation(() => {
+        throw new Error('File read error');
+      });
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      const result = await service.getAllFiles();
+
+      expect(result).toHaveLength(0); // Should skip the problematic file
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Error processing file error.md in directory /docs/dir1:',
+        expect.any(Error)
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle deeply nested file paths', async () => {
+      mockGlob.mockResolvedValue(['deep/nested/path/file.md']);
+
+      mockMarkdownParser.validateFile.mockReturnValue({
+        valid: true,
+        stats: { size: 1024 } as any,
+      });
+
+      const result = await service.getAllFiles();
+
+      expect(result[0].filename).toBe('deep/nested/path/file.md');
+      expect(result[0].fullPath).toBe(path.resolve('/docs/dir1/deep/nested/path/file.md'));
+    });
+
+    it('should handle files with special characters in names', async () => {
+      mockGlob.mockResolvedValue(['file-with-special_chars.md']);
+
+      mockMarkdownParser.validateFile.mockReturnValue({
+        valid: true,
+        stats: { size: 1024 } as any,
+      });
+
+      const result = await service.getAllFiles();
+
+      expect(result[0].filename).toBe('file-with-special_chars.md');
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle single directory configuration', async () => {
+      const singleDirConfig: Configuration = {
+        documentationPaths: ['/docs/only'],
+        discountSingleTopHeader: false,
+      };
+      const singleDirService = new FileDiscoveryService(singleDirConfig);
+
+      mockGlob.mockResolvedValue(['single.md']);
+
+      const result = await singleDirService.getAllFiles();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].sourceDirectory).toBe('/docs/only');
+    });
+
+    it('should handle many directories', async () => {
+      const manyDirsConfig: Configuration = {
+        documentationPaths: ['/dir1', '/dir2', '/dir3', '/dir4', '/dir5'],
+        discountSingleTopHeader: false,
+      };
+      const manyDirsService = new FileDiscoveryService(manyDirsConfig);
+
+      mockGlob
+        .mockResolvedValueOnce(['file1.md'])
+        .mockResolvedValueOnce(['file2.md'])
+        .mockResolvedValueOnce(['file3.md'])
+        .mockResolvedValueOnce(['file4.md'])
+        .mockResolvedValueOnce(['file5.md']);
+
+      const result = await manyDirsService.getAllFiles();
+
+      expect(result).toHaveLength(5);
+      expect(mockGlob).toHaveBeenCalledTimes(5);
+    });
+
+    it('should handle configuration with empty paths array', async () => {
+      const emptyConfig: Configuration = {
+        documentationPaths: [],
+        discountSingleTopHeader: false,
+      };
+      const emptyService = new FileDiscoveryService(emptyConfig);
+
+      const result = await emptyService.getAllFiles();
+
+      expect(result).toHaveLength(0);
+      expect(mockGlob).not.toHaveBeenCalled();
+    });
+  });
+});

@@ -1,6 +1,6 @@
 // Configuration interface
 export interface Configuration {
-  documentationPath: string;
+  documentationPaths: string[];
   maxTocDepth?: number;
   discountSingleTopHeader?: boolean;
 }
@@ -10,7 +10,7 @@ export interface DocumentationConfig extends Configuration {}
 
 // Interface for parsed command line arguments
 export interface ParsedCommandLineArgs {
-  docsPath?: string;
+  docsPaths?: string[];
   maxTocDepth?: number;
   discountSingleTopHeader?: boolean;
 }
@@ -76,6 +76,6 @@ export interface ErrorResponse {
 
 // Default configuration
 export const DEFAULT_CONFIG: Configuration = {
-  documentationPath: process.env.DOCS_PATH || './docs',
+  documentationPaths: [process.env.DOCS_PATH || './docs'],
   discountSingleTopHeader: false,
 };

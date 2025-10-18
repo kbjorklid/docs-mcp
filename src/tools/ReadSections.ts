@@ -1,12 +1,15 @@
 import * as path from 'path';
 import { SectionContent, Configuration, ErrorResponse } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
+import { FileDiscoveryService } from '../services';
 
 export class ReadSections {
   private config: Configuration;
+  private fileDiscovery: FileDiscoveryService;
 
   constructor(config: Configuration) {
     this.config = config;
+    this.fileDiscovery = new FileDiscoveryService(config);
   }
 
   /**
@@ -41,7 +44,7 @@ export class ReadSections {
   /**
    * Execute the read_sections tool
    */
-  execute(filename: string, sectionIds: string[]) {
+  async execute(filename: string, sectionIds: string[]) {
     // Validate filename parameter
     if (!filename) {
       const errorResponse: ErrorResponse = {
@@ -79,7 +82,7 @@ export class ReadSections {
     }
 
     try {
-      const sections = this.readSections(filename, sectionIds);
+      const sections = await this.readSections(filename, sectionIds);
       return {
         content: [
           {
@@ -96,10 +99,10 @@ export class ReadSections {
           const errorResponse: ErrorResponse = {
             error: {
               code: 'FILE_NOT_FOUND',
-              message: 'The specified file was not found',
+              message: 'The specified file was not found in any documentation directory',
               details: {
                 filename,
-                search_path: this.config.documentationPath,
+                search_paths: this.config.documentationPaths,
               },
             },
           };
@@ -161,16 +164,20 @@ export class ReadSections {
   /**
    * Read specific sections from a markdown file
    */
-  private readSections(
+  private async readSections(
     filename: string,
     sectionIds: string[]
-  ): SectionContent[] {
+  ): Promise<SectionContent[]> {
     // Handle empty section_ids array - return empty result
     if (sectionIds.length === 0) {
       return [];
     }
 
-    const fullPath = path.resolve(this.config.documentationPath, filename);
+    const fullPath = await this.fileDiscovery.resolveFilePath(filename);
+
+    if (!fullPath) {
+      throw new Error(`FILE_NOT_FOUND: ${filename}`);
+    }
 
     // Check if file exists
     const validation = MarkdownParser.validateFile(fullPath);

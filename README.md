@@ -8,8 +8,9 @@ A Model Context Protocol (MCP) server that provides tools for reading and naviga
 - **Table of Contents**: Generate structured table of contents with configurable depth control
 - **Read Sections**: Read specific sections of documentation by their IDs
 - **Search**: Find text patterns using regular expressions across documentation files with multiline matching support
+- **Multi-Directory Support**: Configure multiple documentation directories with conflict resolution
 - **Configurable Max Depth**: Limit table of contents depth for better navigation
-- **Multiple Path Configuration**: Support for command line, environment variables, and default paths
+- **Flexible Configuration**: Support for command line, environment variables, and default paths
 - **Comprehensive Error Handling**: Clear error messages and validation
 
 ## Requirements
@@ -25,12 +26,13 @@ npm install
 
 ## Configuration
 
-The server needs to know where your documentation files are located. You can configure the documentation path in several ways:
+The server needs to know where your documentation files are located. You can configure the documentation path in several ways. The server now supports **multiple documentation directories** for managing distributed documentation.
 
 ### Command Line Arguments (Recommended)
 
-Use the `--docs-path` or `-d` flag to specify your documentation directory:
+Use the `--docs-path` or `-d` flag to specify your documentation directory or directories:
 
+#### Single Directory
 ```bash
 # Using long form
 npm start -- --docs-path /path/to/your/docs
@@ -45,10 +47,26 @@ npm start -- --docs-path "C:\Users\YourName\Documents\docs"
 npm start -- --docs-path ./my-documentation
 ```
 
+#### Multiple Directories
+```bash
+# Specify multiple directories (each with its own flag)
+npm start -- -d /path/to/docs1 -d /path/to/docs2 -d /path/to/docs3
+
+# Mix long and short forms
+npm start -- --docs-path /path/to/api-docs -d /path/to/user-docs -d /path/to/dev-docs
+
+# Windows example with multiple paths
+npm start -- --docs-path "C:\docs\api" --docs-path "C:\docs\guides"
+
+# Relative paths for multiple directories
+npm start -- -d ./docs -d ../shared-docs -d ./vendor-docs
+```
+
 ### Environment Variables
 
 Set the `DOCS_PATH` environment variable:
 
+#### Single Directory
 ```bash
 # Linux/macOS
 DOCS_PATH=/path/to/your/docs npm start
@@ -60,9 +78,40 @@ set DOCS_PATH=C:\path\to\your\docs && npm start
 $env:DOCS_PATH="C:\path\to\your\docs"; npm start
 ```
 
+#### Multiple Directories
+Use comma-separated paths to specify multiple directories:
+
+```bash
+# Linux/macOS - comma-separated paths
+DOCS_PATH="/path/to/docs1,/path/to/docs2,/path/to/docs3" npm start
+
+# Windows (Command Prompt) - comma-separated paths
+set DOCS_PATH=C:\docs\api,C:\docs\guides,C:\docs\examples && npm start
+
+# Windows (PowerShell) - comma-separated paths
+$env:DOCS_PATH="C:\docs\api,C:\docs\guides,C:\docs\examples"; npm start
+
+# Mix absolute and relative paths
+DOCS_PATH="./docs,../shared-docs,/opt/documentation" npm start
+```
+
 ### Default Path
 
 If no path is specified, the server will look for documentation in a `docs` folder in the same directory as the project.
+
+### Conflict Resolution
+
+When multiple directories contain files with the same name:
+
+- **Directory Order Matters**: Directories are processed in the order specified
+- **First Match Wins**: The file from the first directory containing the filename takes precedence
+- **Example**: With `-d /dir1 -d /dir2`, if both contain `guide.md`, only `/dir1/guide.md` is available
+
+```bash
+# Example: /api-docs contains reference.md, /user-docs also contains reference.md
+npm start -- -d /api-docs -d /user-docs
+# Result: Only /api-docs/reference.md is available (first directory takes precedence)
+```
 
 ## Running the Server
 
@@ -99,7 +148,7 @@ Note: You may need to edit `run.ps1` to specify your documentation path.
 
 ### Options
 
-- `--docs-path <path>` or `-d <path>` - Specify documentation directory
+- `--docs-path <path>` or `-d <path>` - Specify documentation directory (can be used multiple times for multiple directories)
 - `--max-toc-depth <number>` - Set maximum depth for table of contents (default: unlimited)
 - `--discount-single-top-header` - Increase max depth by 1 for documents with single/no top-level headers
 - `--help` or `-h` - Show help information
@@ -108,34 +157,57 @@ Note: You may need to edit `run.ps1` to specify your documentation path.
 
 The server uses documentation paths in this order of priority:
 
-1. Command line `--docs-path` argument (highest)
-2. `DOCS_PATH` environment variable
+1. Command line `--docs-path` arguments (highest) - All specified directories are used in order
+2. `DOCS_PATH` environment variable - Comma-separated paths are processed in order
 3. Default `./docs` folder (lowest)
 
 ### Examples
 
+#### Single Directory Examples
 ```bash
 # Use custom documentation path
 npm start -- --docs-path /home/user/project-docs
-
-# Limit table of contents to top 2 levels
-npm start -- --max-toc-depth 2
-
-# Enable discount for single top-level headers
-npm start -- --discount-single-top-header
-
-# Combine multiple options
-npm start -- --docs-path /home/user/project-docs --max-toc-depth 2 --discount-single-top-header
-
-# Use environment variable for multiple commands
-export DOCS_PATH=/home/user/project-docs
-npm start
 
 # Run with relative path
 npm start -- -d ../documentation
 
 # Development mode with custom path
 npm run dev -- --docs-path /path/to/docs
+```
+
+#### Multiple Directory Examples
+```bash
+# Use multiple documentation directories
+npm start -- -d /home/user/api-docs -d /home/user/guides -d /home/user/examples
+
+# Mix API documentation and user guides
+npm start -- --docs-path ./api-docs --docs-path ./user-guides
+
+# Combine multiple directories with other options
+npm start -- -d /docs/api -d /docs/guides --max-toc-depth 2 --discount-single-top-header
+
+# Windows with multiple directories
+npm start -- --docs-path "C:\Project\docs" --docs-path "C:\Shared\documentation"
+```
+
+#### Combining with Other Options
+```bash
+# Limit table of contents to top 2 levels
+npm start -- --max-toc-depth 2
+
+# Enable discount for single top-level headers
+npm start -- --discount-single-top-header
+
+# Combine multiple options with single directory
+npm start -- --docs-path /home/user/project-docs --max-toc-depth 2 --discount-single-top-header
+
+# Use environment variable for multiple commands
+export DOCS_PATH=/home/user/project-docs
+npm start
+
+# Use environment variable with multiple directories
+export DOCS_PATH="/home/user/api-docs,/home/user/guides,/home/user/examples"
+npm start
 ```
 
 ### Table of Contents Max Depth
@@ -270,10 +342,15 @@ Invalid regular expressions will return an `INVALID_PARAMETER` error with a desc
 
 ## Configuration Precedence
 
-Settings are applied in this order (highest to lowest priority):
-1. Command line arguments
-2. Environment variables
-3. Default values
+Documentation paths are resolved in this order (highest to lowest priority):
+
+1. **Command Line Arguments**: All `--docs-path` or `-d` arguments are processed in the order specified
+2. **Environment Variables**: The `DOCS_PATH` environment variable (comma-separated paths are processed in order)
+3. **Default Values**: The `./docs` folder in the project root
+
+**Multi-Directory Resolution**: When multiple paths are specified at the same precedence level (e.g., multiple command line arguments), they are processed in the order they appear. The first directory containing a file with a given name takes precedence over later directories.
+
+**Example**: If both `/docs/api` and `/docs/user-guide` contain `reference.md`, using `-d /docs/api -d /docs/user-guide` will make only `/docs/api/reference.md` available to the tools.
 
 ## Error Handling
 
@@ -284,3 +361,46 @@ The server provides structured error responses with these error codes:
 - `PARSE_ERROR` - Error parsing markdown or metadata
 - `UNKNOWN_TOOL` - Tool name not recognized
 - `INTERNAL_ERROR` - General server errors
+
+## Troubleshooting
+
+### Multi-Directory Configuration Issues
+
+**Files Not Found**: If files are not showing up in `list_documentation_files`:
+1. Verify all directory paths exist and are accessible
+2. Check directory order - files in earlier directories override files with the same name in later directories
+3. Ensure paths are correctly escaped, especially on Windows (use quotes for paths with spaces)
+
+**Unexpected File Content**: If you're seeing content from the wrong file:
+1. Check if multiple directories contain files with the same name
+2. Reorder your directory arguments to prioritize the correct source
+3. Use unique filenames across directories when possible
+
+**Permission Errors**:
+1. Ensure the server process has read access to all specified directories
+2. On Unix systems, check directory permissions with `ls -la`
+3. On Windows, verify file/folder permissions in Properties → Security
+
+**Common Command Line Mistakes**:
+```bash
+# ❌ Wrong - missing flags for additional directories
+npm start -- --docs-path /docs1 /docs2  # /docs2 will be ignored
+
+# ✅ Correct - each directory needs its own flag
+npm start -- --docs-path /docs1 --docs-path /docs2
+
+# ❌ Wrong - spaces in comma-separated env var
+export DOCS_PATH="/docs1, /docs2"  # Will treat as part of path
+
+# ✅ Correct - no spaces around commas
+export DOCS_PATH="/docs1,/docs2"
+```
+
+### Getting Help
+
+Use the help command to see all available options:
+```bash
+npm start -- --help
+```
+
+The help command will display all configuration options including multi-directory support examples.

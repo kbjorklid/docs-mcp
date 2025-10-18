@@ -12,15 +12,15 @@ export class CommandLineProvider extends ConfigurationProvider {
 
   public isAvailable(): boolean {
     const args = this.parseCommandLineArgs();
-    return !!(args.docsPath || args.maxTocDepth !== undefined || args.discountSingleTopHeader);
+    return !!(args.docsPaths || args.maxTocDepth !== undefined || args.discountSingleTopHeader);
   }
 
   public load(): Partial<Configuration> {
     const args = this.parseCommandLineArgs();
     const config: Partial<Configuration> = {};
 
-    if (args.docsPath) {
-      config.documentationPath = args.docsPath;
+    if (args.docsPaths) {
+      config.documentationPaths = args.docsPaths;
     }
 
     if (args.maxTocDepth !== undefined) {
@@ -51,7 +51,9 @@ export class CommandLineProvider extends ConfigurationProvider {
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--docs-path' || args[i] === '-d') {
         if (i + 1 < args.length) {
-          result.docsPath = args[i + 1];
+          // Initialize array if needed and append path
+          result.docsPaths = result.docsPaths || [];
+          result.docsPaths.push(args[i + 1]);
           i++; // Skip the next argument
         }
       } else if (args[i] === '--max-toc-depth') {

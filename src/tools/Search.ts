@@ -1,6 +1,7 @@
 import * as path from 'path';
 import { Section, Configuration, ErrorResponse, SearchResult, FileSearchResult } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
+import { FileDiscoveryService } from '../services';
 
 // Type aliases for better readability
 type ToolResponse =
@@ -31,9 +32,11 @@ const REGEX_FLAGS = 'is'; // i = case-insensitive, s = dotAll (multiline matchin
 
 export class Search {
   private config: Configuration;
+  private fileDiscovery: FileDiscoveryService;
 
   constructor(config: Configuration) {
     this.config = config;
+    this.fileDiscovery = new FileDiscoveryService(config);
   }
 
   /**
@@ -258,7 +261,7 @@ export class Search {
    * @throws Error if file validation fails or file cannot be processed
    */
   private async searchInSpecificFile(regex: RegExp, filename: string): Promise<SearchResult> {
-    const matches = this.findMatchesInFile(regex, filename);
+    const matches = await this.findMatchesInFile(regex, filename);
 
     return {
       query: regex.source,
@@ -273,8 +276,12 @@ export class Search {
    * @returns Section[] - Array of sections that match the search pattern
    * @throws Error if file validation fails or content cannot be parsed
    */
-  private findMatchesInFile(regex: RegExp, filename: string): Section[] {
-    const fullPath = path.resolve(this.config.documentationPath, filename);
+  private async findMatchesInFile(regex: RegExp, filename: string): Promise<Section[]> {
+    const fullPath = await this.fileDiscovery.resolveFilePath(filename);
+
+    if (!fullPath) {
+      throw new Error(`FILE_NOT_FOUND: ${ERROR_MESSAGES.FILE_NOT_FOUND(filename)}`);
+    }
 
     // Validate file exists and is accessible
     this.validateFile(fullPath, filename);

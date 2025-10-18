@@ -82,9 +82,25 @@ export class ConfigurationManager {
    * Ensures all required fields are present and valid.
    */
   private validateAndNormalize(config: Partial<Configuration>): Configuration {
-    // Ensure documentationPath is always present
-    if (!config.documentationPath) {
-      config.documentationPath = './docs';
+    // Convert single documentationPath to array if present (backward compatibility)
+    if ((config as any).documentationPath && !config.documentationPaths) {
+      config.documentationPaths = [(config as any).documentationPath];
+      delete (config as any).documentationPath; // Remove old property
+    }
+
+    // Ensure documentationPaths is always present and is an array
+    if (!config.documentationPaths || !Array.isArray(config.documentationPaths)) {
+      config.documentationPaths = ['./docs'];
+    }
+
+    // Filter out empty/invalid paths and trim whitespace
+    config.documentationPaths = config.documentationPaths
+      .map(path => path.trim())
+      .filter(path => path && path.length > 0);
+
+    // Ensure at least one valid path
+    if (config.documentationPaths.length === 0) {
+      config.documentationPaths = ['./docs'];
     }
 
     // Validate maxTocDepth if present
@@ -147,14 +163,14 @@ class CommandLineProviderWithArgs extends CommandLineProvider {
   }
 
   public isAvailable(): boolean {
-    return !!(this.args.docsPath || this.args.maxTocDepth !== undefined || this.args.discountSingleTopHeader);
+    return !!(this.args.docsPaths || this.args.maxTocDepth !== undefined || this.args.discountSingleTopHeader);
   }
 
   public load(): Partial<Configuration> {
     const config: Partial<Configuration> = {};
 
-    if (this.args.docsPath) {
-      config.documentationPath = this.args.docsPath;
+    if (this.args.docsPaths) {
+      config.documentationPaths = this.args.docsPaths;
     }
 
     if (this.args.maxTocDepth !== undefined) {

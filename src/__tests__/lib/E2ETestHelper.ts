@@ -119,8 +119,10 @@ export class E2ETestHelper {
       this.serverProcess.stdin.write(JSON.stringify(request) + '\n');
 
       // Timeout after 5 seconds
-      setTimeout(() => {
-        this.serverProcess!.stdout?.removeListener('data', onData);
+      const timeoutId = setTimeout(() => {
+        if (this.serverProcess && this.serverProcess.stdout) {
+          this.serverProcess.stdout.removeListener('data', onData);
+        }
         reject(new Error('Request timeout'));
       }, 5000);
     });
@@ -159,8 +161,10 @@ export class E2ETestHelper {
       serverProcess.stdin.write(JSON.stringify(request) + '\n');
 
       // Timeout after 5 seconds
-      setTimeout(() => {
-        serverProcess.stdout?.removeListener('data', onData);
+      const timeoutId = setTimeout(() => {
+        if (serverProcess && serverProcess.stdout) {
+          serverProcess.stdout.removeListener('data', onData);
+        }
         reject(new Error('Request timeout'));
       }, 5000);
     });
