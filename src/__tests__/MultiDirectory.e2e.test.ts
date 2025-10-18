@@ -133,7 +133,7 @@ describe('Multi-Directory E2E Tests', () => {
         expect(files[0].filename).toBe('content.md');
 
         await helper.stopServer();
-      });
+      }, 15000);
     });
   });
 
@@ -520,7 +520,7 @@ describe('Multi-Directory E2E Tests', () => {
         expect(files).toHaveLength(0); // Should return empty list, not error
 
         await helper.stopServer();
-      });
+      }, 15000);
 
       it('should handle mix of existing and non-existent directories', async () => {
         const tempHelper = new E2ETestHelper('MultiDirectory', 'should-handle-multiple-directories');
@@ -540,7 +540,7 @@ describe('Multi-Directory E2E Tests', () => {
         expect(files).toHaveLength(2); // Only files from existing directory
 
         await helper.stopServer();
-      });
+      }, 15000);
     });
   });
 

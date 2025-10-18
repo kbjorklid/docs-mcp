@@ -1,31 +1,9 @@
 import * as path from 'path';
-import { Section, Configuration, ErrorResponse, SearchResult, FileSearchResult } from '../types';
+import { Section, Configuration, SearchResult, FileSearchResult } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-
-// Type aliases for better readability
-type ToolResponse =
-  | { content: Array<{ type: 'text'; text: string }> }
-  | never;
-
-type SearchExecutionResult = SearchResult | ToolResponse;
-
-// Constants for error codes and messages
-const ERROR_CODES = {
-  INVALID_PARAMETER: 'INVALID_PARAMETER',
-  FILE_NOT_FOUND: 'FILE_NOT_FOUND',
-  PARSE_ERROR: 'PARSE_ERROR',
-} as const;
-
-const ERROR_MESSAGES = {
-  QUERY_REQUIRED: 'query parameter is required and cannot be empty.',
-  FILENAME_REQUIRED: 'filename parameter is required and cannot be empty.',
-  INVALID_REGEX: (error: string) =>
-    `Invalid regular expression: ${error}. Please check your regex syntax.`,
-  FILE_NOT_FOUND: (filename: string) =>
-    `File '${filename}' not found. Use the list_documentation_files tool to see available files.`,
-  SEARCH_ERROR: 'Error searching documentation files',
-} as const;
+import { createSuccessResponse, createErrorResponse, validateAndResolveFile, type ToolResponse } from '../utils';
+import { ERROR_CODES, ERROR_MESSAGES } from '../constants';
 
 // Regular expression flags
 const REGEX_FLAGS = 'is'; // i = case-insensitive, s = dotAll (multiline matching)
@@ -107,7 +85,7 @@ export class Search {
 
     try {
       const searchResults = await this.searchInSpecificFile(regexResult.regex!, filename as string);
-      return this.formatSuccessResponse(searchResults);
+      return createSuccessResponse(searchResults);
     } catch (error) {
       return this.handleSearchError(error, filename as string);
     }
@@ -124,16 +102,16 @@ export class Search {
     filename: unknown
   ): ToolResponse | null {
     if (!this.isNonEmptyString(query)) {
-      return this.createErrorResponse(
+      return createErrorResponse(
         ERROR_CODES.INVALID_PARAMETER,
-        ERROR_MESSAGES.QUERY_REQUIRED
+        ERROR_MESSAGES.INVALID_PARAMETER('query')
       );
     }
 
     if (!this.isNonEmptyString(filename)) {
-      return this.createErrorResponse(
+      return createErrorResponse(
         ERROR_CODES.INVALID_PARAMETER,
-        ERROR_MESSAGES.FILENAME_REQUIRED
+        ERROR_MESSAGES.INVALID_PARAMETER('filename')
       );
     }
 
@@ -149,60 +127,21 @@ export class Search {
     const trimmedQuery = query.trim();
 
     try {
+      // Try to compile the regex - this may throw if the pattern is invalid
       const regex = new RegExp(trimmedQuery, REGEX_FLAGS);
       return { regex };
-    } catch (error) {
-      const errorMessage = this.isError(error) ? error.message : 'Unknown error';
+    } catch (caughtError: unknown) {
+      // Handle the error - could be a SyntaxError or other exception
+      const errorMessage = caughtError instanceof Error ? caughtError.message : String(caughtError);
       return {
-        error: this.createErrorResponse(
+        error: createErrorResponse(
           ERROR_CODES.INVALID_PARAMETER,
-          ERROR_MESSAGES.INVALID_REGEX(errorMessage),
-          { error: this.isError(error) ? error : new Error(String(error)) }
+          ERROR_MESSAGES.INVALID_REGEX(errorMessage)
         ),
       };
     }
   }
 
-  /**
-   * Format successful search result into MCP response format
-   * @param searchResults - The search results to format
-   * @returns Formatted tool response
-   */
-  private formatSuccessResponse(searchResults: SearchResult): ToolResponse {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(searchResults, null, 2),
-        },
-      ],
-    };
-  }
-
-  /**
-   * Create a standardized error response with improved type safety
-   * @param code - Error code from the error handling strategy
-   * @param message - Human-readable error message
-   * @param details - Optional additional error details
-   * @returns Formatted error response matching MCP protocol
-   */
-  private createErrorResponse(
-    code: string,
-    message: string,
-    details?: Record<string, unknown>
-  ): ToolResponse {
-    const errorResponse: ErrorResponse = {
-      error: { code, message, ...(details && { details }) },
-    };
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(errorResponse, null, 2),
-        },
-      ],
-    };
-  }
 
   /**
    * Handle search errors with comprehensive error type coverage and context
@@ -213,7 +152,7 @@ export class Search {
   private handleSearchError(error: unknown, filename: string): ToolResponse {
     // Handle specific file not found errors from our validateFile method
     if (this.isError(error) && error.message.startsWith('FILE_NOT_FOUND:')) {
-      return this.createErrorResponse(
+      return createErrorResponse(
         ERROR_CODES.FILE_NOT_FOUND,
         error.message.replace('FILE_NOT_FOUND: ', ''),
         { filename }
@@ -232,7 +171,7 @@ export class Search {
         },
       };
 
-      return this.createErrorResponse(
+      return createErrorResponse(
         ERROR_CODES.PARSE_ERROR,
         ERROR_MESSAGES.SEARCH_ERROR,
         errorDetails
@@ -245,7 +184,7 @@ export class Search {
       error: error ? String(error) : 'Unknown error occurred',
     };
 
-    return this.createErrorResponse(
+    return createErrorResponse(
       ERROR_CODES.PARSE_ERROR,
       ERROR_MESSAGES.SEARCH_ERROR,
       errorDetails
@@ -277,44 +216,22 @@ export class Search {
    * @throws Error if file validation fails or content cannot be parsed
    */
   private async findMatchesInFile(regex: RegExp, filename: string): Promise<Section[]> {
-    const fullPath = await this.fileDiscovery.resolveFilePath(filename);
+    // Validate and resolve the file path
+    const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
 
-    if (!fullPath) {
-      throw new Error(`FILE_NOT_FOUND: ${ERROR_MESSAGES.FILE_NOT_FOUND(filename)}`);
+    if (!fileValidation.valid) {
+      const errorMessage = fileValidation.error?.message || ERROR_MESSAGES.FILE_NOT_FOUND(filename);
+      throw new Error(`FILE_NOT_FOUND: ${errorMessage}`);
     }
 
-    // Validate file exists and is accessible
-    this.validateFile(fullPath, filename);
-
     // Read and parse the markdown file
-    const { content } = MarkdownParser.readMarkdownFile(fullPath);
+    const { content } = MarkdownParser.readMarkdownFile(fileValidation.fullPath!);
     const { sections, sectionMap } = MarkdownParser.parseMarkdownSections(content);
 
     // Filter sections that contain the search pattern in header or content
     return sections.filter(section =>
       this.doesSectionContainQuery(section, content, sectionMap, regex)
     );
-  }
-
-  /**
-   * Validate file exists and is accessible, throwing appropriate errors
-   * @param fullPath - Absolute path to the file
-   * @param filename - Name of the file for error reporting
-   * @throws Error with FILE_NOT_FOUND prefix if file not found, or other validation errors
-   */
-  private validateFile(fullPath: string, filename: string): void {
-    const validation = MarkdownParser.validateFile(fullPath);
-
-    if (!validation.valid) {
-      if (validation.error === 'File not found') {
-        throw new Error(
-          `FILE_NOT_FOUND: ${ERROR_MESSAGES.FILE_NOT_FOUND(filename)}`
-        );
-      }
-
-      // Handle all other file validation errors (permissions, size limits, etc.)
-      throw new Error(validation.error);
-    }
   }
 
   /**

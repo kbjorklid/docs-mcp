@@ -1,6 +1,7 @@
 import * as path from 'path';
-import { FileInfo, Configuration, ErrorResponse } from '../types';
+import { FileInfo, Configuration } from '../types';
 import { FileDiscoveryService } from '../services';
+import { createSuccessResponse, createErrorResponse } from '../utils';
 
 export class ListDocumentationFiles {
   private config: Configuration;
@@ -33,30 +34,13 @@ export class ListDocumentationFiles {
   async execute() {
     try {
       const files = await this.getDocumentationFiles();
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(files, null, 2),
-          },
-        ],
-      };
+      return createSuccessResponse(files);
     } catch (error) {
-      const errorResponse: ErrorResponse = {
-        error: {
-          code: 'FILE_SYSTEM_ERROR',
-          message: 'Error accessing documentation files',
-          details: error,
-        },
-      };
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(errorResponse, null, 2),
-          },
-        ],
-      };
+      return createErrorResponse(
+        'FILE_SYSTEM_ERROR',
+        'Error accessing documentation files',
+        { error }
+      );
     }
   }
 

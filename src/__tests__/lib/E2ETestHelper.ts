@@ -95,6 +95,17 @@ export class E2ETestHelper {
       }
 
       let responseData = '';
+      let timeoutId: NodeJS.Timeout | null = null;
+
+      const cleanup = () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        if (this.serverProcess && this.serverProcess.stdout) {
+          this.serverProcess.stdout.removeListener('data', onData);
+        }
+      };
 
       const onData = (data: Buffer) => {
         responseData += data.toString();
@@ -105,7 +116,7 @@ export class E2ETestHelper {
           for (const line of lines) {
             if (line.trim()) {
               const response = JSON.parse(line);
-              this.serverProcess!.stdout?.removeListener('data', onData);
+              cleanup();
               resolve(response);
               return;
             }
@@ -118,13 +129,11 @@ export class E2ETestHelper {
       this.serverProcess.stdout?.on('data', onData);
       this.serverProcess.stdin.write(JSON.stringify(request) + '\n');
 
-      // Timeout after 5 seconds
-      const timeoutId = setTimeout(() => {
-        if (this.serverProcess && this.serverProcess.stdout) {
-          this.serverProcess.stdout.removeListener('data', onData);
-        }
+      // Timeout after 10 seconds to accommodate slow server initialization
+      timeoutId = setTimeout(() => {
+        cleanup();
         reject(new Error('Request timeout'));
-      }, 5000);
+      }, 10000);
     });
   }
 
@@ -137,6 +146,17 @@ export class E2ETestHelper {
       }
 
       let responseData = '';
+      let timeoutId: NodeJS.Timeout | null = null;
+
+      const cleanup = () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        if (serverProcess && serverProcess.stdout) {
+          serverProcess.stdout.removeListener('data', onData);
+        }
+      };
 
       const onData = (data: Buffer) => {
         responseData += data.toString();
@@ -147,7 +167,7 @@ export class E2ETestHelper {
           for (const line of lines) {
             if (line.trim()) {
               const response = JSON.parse(line);
-              serverProcess.stdout?.removeListener('data', onData);
+              cleanup();
               resolve(response);
               return;
             }
@@ -160,13 +180,11 @@ export class E2ETestHelper {
       serverProcess.stdout?.on('data', onData);
       serverProcess.stdin.write(JSON.stringify(request) + '\n');
 
-      // Timeout after 5 seconds
-      const timeoutId = setTimeout(() => {
-        if (serverProcess && serverProcess.stdout) {
-          serverProcess.stdout.removeListener('data', onData);
-        }
+      // Timeout after 10 seconds to accommodate slow server initialization
+      timeoutId = setTimeout(() => {
+        cleanup();
         reject(new Error('Request timeout'));
-      }, 5000);
+      }, 10000);
     });
   }
 

@@ -1,7 +1,8 @@
 import * as path from 'path';
-import { Section, Configuration, ErrorResponse } from '../types';
+import { Section, Configuration } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
+import { createSuccessResponse, createErrorResponse, validateAndResolveFile } from '../utils';
 
 export class TableOfContents {
   private config: Configuration;
@@ -49,78 +50,35 @@ export class TableOfContents {
   async execute(filename: string, maxDepth?: number) {
     // Validate filename parameter
     if (!filename) {
-      const errorResponse: ErrorResponse = {
-        error: {
-          code: 'INVALID_PARAMETER',
-          message:
-            'filename parameter is required. Use the list_documentation_files tool to see available files.',
-        },
-      };
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(errorResponse, null, 2),
-          },
-        ],
-      };
+      return createErrorResponse(
+        'INVALID_PARAMETER',
+        'filename parameter is required. Use the list_documentation_files tool to see available files.'
+      );
     }
 
     try {
       const sections = await this.getTableOfContents(filename, maxDepth);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(sections, null, 2),
-          },
-        ],
-      };
+      return createSuccessResponse(sections);
     } catch (error) {
       // Check if it's a FILE_NOT_FOUND error
       if (
         error instanceof Error &&
         error.message.startsWith('FILE_NOT_FOUND:')
       ) {
-        const errorResponse: ErrorResponse = {
-          error: {
-            code: 'FILE_NOT_FOUND',
-            message: error.message.replace('FILE_NOT_FOUND: ', ''),
-            details: {
-              filename,
-            },
-          },
-        };
-        return {
-          content: [
-            {
-              type: 'text',
-            text: JSON.stringify(errorResponse, null, 2),
-          },
-        ],
-      };
-    }
+        return createErrorResponse(
+          'FILE_NOT_FOUND',
+          error.message.replace('FILE_NOT_FOUND: ', ''),
+          { filename }
+        );
+      }
 
-    const errorResponse: ErrorResponse = {
-      error: {
-        code: 'PARSE_ERROR',
-        message: 'Error parsing markdown file',
-        details: {
-          filename,
-          error,
-        },
-      },
-    };
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(errorResponse, null, 2),
-        },
-      ],
-    };
+      return createErrorResponse(
+        'PARSE_ERROR',
+        'Error parsing markdown file',
+        { filename, error }
+      );
+    }
   }
-}
 
   /**
    * Count the number of top-level (#) headers in the content
@@ -173,28 +131,15 @@ export class TableOfContents {
    * Get table of contents for a markdown file
    */
   private async getTableOfContents(filename: string, maxDepth?: number): Promise<Section[]> {
-    const fullPath = await this.fileDiscovery.resolveFilePath(filename);
+    // Validate and resolve the file path
+    const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
 
-    if (!fullPath) {
-      throw new Error(
-        `FILE_NOT_FOUND: File '${filename}' not found in any documentation directory. Use the list_documentation_files tool to see available files.`
-      );
-    }
-
-    // Check if file exists
-    const validation = MarkdownParser.validateFile(fullPath);
-    if (!validation.valid) {
-      if (validation.error === 'File not found') {
-        throw new Error(
-          `FILE_NOT_FOUND: File '${filename}' not found in any documentation directory. Use the list_documentation_files tool to see available files.`
-        );
-      } else {
-        throw new Error(validation.error);
-      }
+    if (!fileValidation.valid) {
+      throw new Error(`FILE_NOT_FOUND: ${fileValidation.error?.message}`);
     }
 
     // Read and parse the file
-    const { content } = MarkdownParser.readMarkdownFile(fullPath);
+    const { content } = MarkdownParser.readMarkdownFile(fileValidation.fullPath!);
     const { sections } = MarkdownParser.parseMarkdownSections(content);
 
     // Determine the effective max depth (parameter > config > unlimited)

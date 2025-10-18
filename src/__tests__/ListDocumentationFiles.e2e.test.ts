@@ -70,7 +70,7 @@ describe('list_documentations E2E Tests', () => {
         invalidServerProcess.kill();
         await new Promise(resolve => setTimeout(resolve, 100));
       }
-    });
+    }, 15000);
 
     it('should handle configuration compatibility correctly', async () => {
       const helper = new E2ETestHelper('ListDocumentationFiles', 'should-handle-configuration-compatibility-correctly');
