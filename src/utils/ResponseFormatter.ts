@@ -8,16 +8,68 @@ export type ToolResponse = {
 };
 
 /**
+ * Fields that should be filtered when empty (truly optional metadata fields)
+ * These fields provide no value when empty and can be safely omitted.
+ */
+const FILTERABLE_FIELDS = new Set([
+  'description',  // Optional file/document description
+  'keywords',     // Optional metadata keywords
+]);
+
+/**
+ * Recursively remove empty optional fields from objects
+ * Only removes: null, undefined, empty strings, empty arrays for specific optional fields
+ * @param obj - Object to filter
+ * @returns Filtered object without empty fields
+ */
+function filterEmptyFields(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(item => filterEmptyFields(item));
+  }
+
+  if (obj !== null && typeof obj === 'object') {
+    const filtered: Record<string, any> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const filtered_value = filterEmptyFields(value);
+
+      // Only filter empty values for known optional fields
+      if (FILTERABLE_FIELDS.has(key)) {
+        // Skip null, undefined, empty string, empty array for these fields
+        if (
+          filtered_value === null ||
+          filtered_value === undefined ||
+          (typeof filtered_value === 'string' && filtered_value === '') ||
+          (Array.isArray(filtered_value) && filtered_value.length === 0)
+        ) {
+          continue;
+        }
+      } else {
+        // For all other fields, only skip null/undefined
+        if (filtered_value === null || filtered_value === undefined) {
+          continue;
+        }
+      }
+
+      filtered[key] = filtered_value;
+    }
+    return filtered;
+  }
+
+  return obj;
+}
+
+/**
  * Create a successful response with data
  * @param data - The data to return
  * @returns Formatted tool response
  */
 export function createSuccessResponse(data: any): ToolResponse {
+  const filteredData = filterEmptyFields(data);
   return {
     content: [
       {
         type: 'text',
-        text: JSON.stringify(data, null, 2),
+        text: JSON.stringify(filteredData, null, 2),
       },
     ],
   };
