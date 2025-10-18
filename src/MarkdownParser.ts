@@ -95,7 +95,7 @@ export class MarkdownParser {
           id = `${parent.id}/${id}`;
         }
 
-        currentSection = { id, title, level, startLine: i + 1 };
+        currentSection = { id, title, level, startLine: i };
         sectionStack.push(currentSection);
 
         sections.push({

@@ -61,11 +61,11 @@ export class ReadSections {
     }
 
     // Validate section_ids parameter
-    if (!sectionIds || !Array.isArray(sectionIds) || sectionIds.length === 0) {
+    if (!sectionIds || !Array.isArray(sectionIds)) {
       const errorResponse: ErrorResponse = {
         error: {
           code: 'INVALID_PARAMETER',
-          message: 'section_ids parameter must be a non-empty array',
+          message: 'section_ids parameter must be an array',
         },
       };
       return {
@@ -165,6 +165,11 @@ export class ReadSections {
     filename: string,
     sectionIds: string[]
   ): SectionContent[] {
+    // Handle empty section_ids array - return empty result
+    if (sectionIds.length === 0) {
+      return [];
+    }
+
     const fullPath = path.resolve(this.config.documentationPath, filename);
 
     // Check if file exists

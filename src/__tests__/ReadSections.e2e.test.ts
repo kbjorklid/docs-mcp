@@ -507,7 +507,7 @@ describe('read_sections E2E Tests', () => {
         const content = response.result.content[0];
         const errorData = JSON.parse(content.text);
         expect(errorData.error.code).toBe('INVALID_PARAMETER');
-        expect(errorData.error.message).toContain('section_ids parameter must be a non-empty array');
+        expect(errorData.error.message).toContain('section_ids parameter must be an array');
       } finally {
         await helper.stopServer();
       }

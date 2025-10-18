@@ -258,9 +258,9 @@ Content 3`;
       );
 
       expect(result).toHaveLength(2);
-      expect(result[0].title).toBe('title-1');
+      expect(result[0].title).toBe('Title 1');
       expect(result[0].content).toContain('Content 1');
-      expect(result[1].title).toBe('title-1/title-2');
+      expect(result[1].title).toBe('Title 2');
       expect(result[1].content).toContain('Content 2');
     });
 
@@ -469,8 +469,8 @@ Advanced content here.`;
         sectionMap
       );
       expect(sectionContents).toHaveLength(2);
-      expect(sectionContents[0].title).toBe('introduction');
-      expect(sectionContents[1].title).toBe('advanced-topics');
+      expect(sectionContents[0].title).toBe('Introduction');
+      expect(sectionContents[1].title).toBe('Advanced Topics');
     });
   });
 });
