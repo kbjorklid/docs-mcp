@@ -224,7 +224,7 @@ describe('Multi-Directory E2E Tests', () => {
         const toc = helper.parseJsonContent(response);
 
         // Verify hierarchical structure
-        const mainSection = toc.find((section: any) => section.id === 'documentation-guide');
+        const mainSection = toc.find((section: any) => section.id === '1');
         expect(mainSection).toBeDefined();
 
         // Look for any subsection under the main section
@@ -251,7 +251,7 @@ describe('Multi-Directory E2E Tests', () => {
         // Read from first directory
         const response1 = await helper.callTool('read_sections', {
           filename: 'guide.md',
-          section_ids: ['documentation-guide/installation']
+          section_ids: ['1/1']
         });
         helper.expectSuccessfulResponse(response1);
 
@@ -263,7 +263,7 @@ describe('Multi-Directory E2E Tests', () => {
         // Read from second directory
         const response2 = await helper.callTool('read_sections', {
           filename: 'tutorial.md',
-          section_ids: ['tutorial/step-by-step']
+          section_ids: ['1/2']
         });
         helper.expectSuccessfulResponse(response2);
 
@@ -288,9 +288,9 @@ describe('Multi-Directory E2E Tests', () => {
         const response = await helper.callTool('read_sections', {
           filename: 'examples.md',
           section_ids: [
-            'code-examples/basic-examples',
-            'code-examples/advanced-examples/data-processing',
-            'code-examples/troubleshooting'
+            '1/1',
+            '1/2/1',
+            '1/3'
           ]
         });
         helper.expectSuccessfulResponse(response);
@@ -645,7 +645,7 @@ describe('Multi-Directory E2E Tests', () => {
       // Verify read sections uses primary version
       const readResponse = await helper.callTool('read_sections', {
         filename: 'README.md',
-        section_ids: ['primary-readme/overview']
+        section_ids: ['1/1']
       });
       helper.expectSuccessfulResponse(readResponse);
       const sections = helper.parseJsonContent(readResponse);

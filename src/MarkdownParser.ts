@@ -41,6 +41,7 @@ export class MarkdownParser {
 
   /**
    * Parse markdown sections and generate table of contents
+   * Uses numeric IDs in format "1/2/3" where numbers represent header positions at each level
    */
   static parseMarkdownSections(content: string): {
     sections: Section[];
@@ -59,6 +60,9 @@ export class MarkdownParser {
       startLine: number;
     }[] = [];
 
+    // Track position counters for each header level (1-6)
+    const levelCounters: number[] = [0, 0, 0, 0, 0, 0];
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
@@ -66,7 +70,17 @@ export class MarkdownParser {
       if (headerMatch) {
         const level = headerMatch[1].length;
         const title = headerMatch[2].trim();
-        let id = this.generateSectionId(title);
+
+        // Increment counter for current level
+        levelCounters[level - 1]++;
+
+        // Reset all deeper level counters
+        for (let j = level; j < 6; j++) {
+          levelCounters[j] = 0;
+        }
+
+        // Build numeric ID from active counters
+        const id = levelCounters.slice(0, level).join('/');
 
         // Close all sections at the same or higher level (when a new header of same/higher level is encountered)
         // A section should only close when we encounter a header of the same or higher level (shallower nesting)
@@ -81,11 +95,6 @@ export class MarkdownParser {
               end: i - 1,
             });
           }
-        }
-
-        if (sectionStack.length > 0) {
-          const parent = sectionStack[sectionStack.length - 1];
-          id = `${parent.id}/${id}`;
         }
 
         sectionStack.push({ id, title, level, startLine: i });

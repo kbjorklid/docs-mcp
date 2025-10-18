@@ -150,19 +150,19 @@ Content 3`;
 
       expect(result.sections).toHaveLength(3);
       expect(result.sections[0]).toEqual({
-        id: 'title-1',
+        id: '1',
         title: 'Title 1',
         level: 1,
         character_count: expect.any(Number),
       });
       expect(result.sections[1]).toEqual({
-        id: 'title-1/title-2',
+        id: '1/1',
         title: 'Title 2',
         level: 2,
         character_count: expect.any(Number),
       });
       expect(result.sections[2]).toEqual({
-        id: 'title-1/title-2/title-3',
+        id: '1/1/1',
         title: 'Title 3',
         level: 3,
         character_count: expect.any(Number),
@@ -179,11 +179,11 @@ Content 3`;
       const result = MarkdownParser.parseMarkdownSections(content);
 
       expect(result.sections.map((s) => s.id)).toEqual([
-        'root',
-        'root/child-1',
-        'root/child-1/grandchild-1',
-        'root/child-2',
-        'another-root',
+        '1',
+        '1/1',
+        '1/1/1',
+        '1/2',
+        '2',
       ]);
     });
 
@@ -207,9 +207,9 @@ More content.`;
 
       const result = MarkdownParser.parseMarkdownSections(content);
 
-      const titleSection = result.sections.find((s) => s.id === 'title');
+      const titleSection = result.sections.find((s) => s.id === '1');
       const subtitleSection = result.sections.find(
-        (s) => s.id === 'title/subtitle'
+        (s) => s.id === '1/1'
       );
 
       expect(titleSection?.character_count).toBeGreaterThan(0);
@@ -237,10 +237,10 @@ Content for other section.`;
 
       const result = MarkdownParser.parseMarkdownSections(content);
 
-      const mainSection = result.sections.find((s) => s.id === 'main-section');
-      const subA = result.sections.find((s) => s.id === 'main-section/subsection-a');
-      const subB = result.sections.find((s) => s.id === 'main-section/subsection-b');
-      const otherSection = result.sections.find((s) => s.id === 'other-section');
+      const mainSection = result.sections.find((s) => s.id === '1');
+      const subA = result.sections.find((s) => s.id === '1/1');
+      const subB = result.sections.find((s) => s.id === '1/2');
+      const otherSection = result.sections.find((s) => s.id === '2');
 
       // Parent section should include all subsection content
       // It should span from "# Main Section" to just before "# Other Section"
@@ -279,10 +279,10 @@ Another content`;
 
       const result = MarkdownParser.parseMarkdownSections(content);
 
-      const level1 = result.sections.find((s) => s.id === 'level-1');
-      const level2 = result.sections.find((s) => s.id === 'level-1/level-2');
-      const level3 = result.sections.find((s) => s.id === 'level-1/level-2/level-3');
-      const level4 = result.sections.find((s) => s.id === 'level-1/level-2/level-3/level-4');
+      const level1 = result.sections.find((s) => s.id === '1');
+      const level2 = result.sections.find((s) => s.id === '1/1');
+      const level3 = result.sections.find((s) => s.id === '1/1/1');
+      const level4 = result.sections.find((s) => s.id === '1/1/1/1');
 
       // Each parent should be larger than or equal to its children combined
       expect(level1?.character_count).toBeGreaterThan(0);
@@ -336,7 +336,7 @@ Content 3`;
       // to avoid duplication (the child is already included in the parent)
       const result = MarkdownParser.readSectionsFromContent(
         content,
-        ['title-1', 'title-1/title-2'],
+        ['1', '1/1'],
         sectionMap
       );
 
@@ -364,7 +364,7 @@ Content 5`;
       // Sibling sections should both be returned (not filtered)
       const result = MarkdownParser.readSectionsFromContent(
         content,
-        ['title-1/title-2', 'title-1/title-4'],
+        ['1/1', '1/2'],
         sectionMap
       );
 
@@ -417,14 +417,14 @@ Advanced content`;
 
       // Manually create the section map to ensure proper line ranges
       const customSectionMap = new Map([
-        ['introduction', { start: 0, end: 7 }], // Includes all subsections
-        ['introduction/getting-started', { start: 3, end: 4 }],
-        ['introduction/advanced-topics', { start: 6, end: 7 }],
+        ['1', { start: 0, end: 7 }], // Includes all subsections
+        ['1/1', { start: 3, end: 4 }],
+        ['1/2', { start: 6, end: 7 }],
       ]);
 
       const result = MarkdownParser.readSectionsFromContent(
         content,
-        ['introduction', 'introduction/getting-started'],
+        ['1', '1/1'],
         customSectionMap
       );
 
@@ -576,7 +576,7 @@ Advanced content here.`;
       // Read specific sections
       const sectionContents = MarkdownParser.readSectionsFromContent(
         content,
-        ['introduction', 'advanced-topics'],
+        ['1', '2'],
         sectionMap
       );
       expect(sectionContents).toHaveLength(2);

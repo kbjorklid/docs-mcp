@@ -20,7 +20,8 @@ export class ReadSections {
     return {
       name: 'read_sections',
       description:
-        'Reads specific sections from a markdown file. Use the table_of_contents tool to see available sections.',
+        'Reads specific sections from a markdown file using numeric section IDs (e.g., "1/2/3" where each number represents the position of a header at each level). ' +
+        'Use the table_of_contents tool to see available sections and their IDs.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -34,7 +35,7 @@ export class ReadSections {
             items: {
               type: 'string',
             },
-            description: 'Array of section identifiers to read',
+            description: 'Array of numeric section identifiers to read (e.g., ["1/1", "1/2"])',
           },
         },
         required: ['filename', 'section_ids'],

@@ -44,7 +44,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'complex-guide.md',
-              section_ids: ['developer-guide/getting-started']
+              section_ids: ['1/1']
             }
           }
         };
@@ -89,7 +89,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'complex-guide.md',
-              section_ids: ['developer-guide/getting-started/prerequisites', 'developer-guide/getting-started/installation']
+              section_ids: ['1/1/1', '1/1/2']
             }
           }
         };
@@ -136,7 +136,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'complex-guide.md',
-              section_ids: ['developer-guide/core-concepts/architecture-overview/frontend-components', 'developer-guide/core-concepts/architecture-overview/backend-services']
+              section_ids: ['1/2/1/1', '1/2/1/2']
             }
           }
         };
@@ -177,7 +177,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'edge-cases.md',
-              section_ids: ['edge-cases-special-characters/special-characters-encoding/unicode-characters']
+              section_ids: ['1/2/1']
             }
           }
         };
@@ -213,7 +213,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'edge-cases.md',
-              section_ids: ['header-with-asterisks-and-_underscores_/code-blocks-inline-code/fenced-code-blocks']
+              section_ids: ['2/2/2']
             }
           }
         };
@@ -247,7 +247,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'edge-cases.md',
-              section_ids: ['edge-cases-special-characters/empty-section-test']
+              section_ids: ['1/1']
             }
           }
         };
@@ -284,7 +284,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'api-docs.md',
-              section_ids: ['api-documentation/authentication/api-key-authentication']
+              section_ids: ['1/2/1']
             }
           }
         };
@@ -318,7 +318,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'api-docs.md',
-              section_ids: ['api-documentation/endpoints/user-management/get-current-user', 'api-documentation/error-handling/error-response-format']
+              section_ids: ['1/3/1/1', '1/4/2']
             }
           }
         };
@@ -357,7 +357,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'api-docs.md',
-              section_ids: ['api-documentation/sdk-libraries/javascripttypescript']
+              section_ids: ['1/7/1']
             }
           }
         };
@@ -582,7 +582,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'complex-guide.md',
-              section_ids: ['developer-guide/advanced-features/custom-plugins/plugin-development']
+              section_ids: ['1/3/1/1']
             }
           }
         };
@@ -616,7 +616,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'complex-guide.md',
-              section_ids: ['developer-guide']
+              section_ids: ['1']
             }
           }
         };
@@ -629,7 +629,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'api-docs.md',
-              section_ids: ['api-documentation']
+              section_ids: ['1']
             }
           }
         };
@@ -667,7 +667,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               filename: 'edge-cases.md',
-              section_ids: ['script-with-special-characters/section-with-very-long-content']
+              section_ids: ['3/4']
             }
           }
         };

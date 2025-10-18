@@ -20,9 +20,10 @@ export class TableOfContents {
     return {
       name: 'table_of_contents',
       description:
-        'Provides a structured table of contents for a documentation file. Use the list_documentation_files tool to see available files. ' +
+        'Provides a structured table of contents for a documentation file with numeric section IDs (e.g., "1/2/3"). ' +
+        'Use the list_documentation_files tool to see available files. ' +
         'ALWAYS use this tool first before resorting to the \'search\' tool. ' +
-        'After using this tool, use the read_sections tool to read specific sections.',
+        'After using this tool, use the read_sections tool with the section IDs to read specific sections.',
       inputSchema: {
         type: 'object',
         properties: {
