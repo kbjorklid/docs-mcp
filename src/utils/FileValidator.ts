@@ -5,6 +5,7 @@
 
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
+import { ERROR_MESSAGES } from '../constants';
 
 /**
  * Result of file validation and resolution
@@ -12,17 +13,14 @@ import { FileDiscoveryService } from '../services';
 export interface FileValidationResult {
   valid: boolean;
   fullPath?: string;
-  error?: {
-    code: string;
-    message: string;
-  };
+  errorMessage?: string;
 }
 
 /**
  * Validate and resolve a file path, handling all common error cases
  * @param filename - The filename to validate
  * @param fileDiscovery - The file discovery service
- * @returns Validation result with resolved path or error details
+ * @returns Validation result with resolved path or error message
  */
 export async function validateAndResolveFile(
   filename: string,
@@ -34,10 +32,7 @@ export async function validateAndResolveFile(
   if (!fullPath) {
     return {
       valid: false,
-      error: {
-        code: 'FILE_NOT_FOUND',
-        message: `File '${filename}' not found in any documentation directory. Use the list_documentation_files tool to see available files.`,
-      },
+      errorMessage: ERROR_MESSAGES.FILE_NOT_FOUND(filename),
     };
   }
 
@@ -48,19 +43,13 @@ export async function validateAndResolveFile(
     if (validation.error === 'File not found') {
       return {
         valid: false,
-        error: {
-          code: 'FILE_NOT_FOUND',
-          message: `File '${filename}' not found in any documentation directory. Use the list_documentation_files tool to see available files.`,
-        },
+        errorMessage: ERROR_MESSAGES.FILE_NOT_FOUND(filename),
       };
     }
 
     return {
       valid: false,
-      error: {
-        code: 'FILE_SYSTEM_ERROR',
-        message: validation.error || 'Error accessing file',
-      },
+      errorMessage: ERROR_MESSAGES.FILE_SYSTEM_ERROR,
     };
   }
 

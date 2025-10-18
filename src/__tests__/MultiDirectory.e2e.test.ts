@@ -436,6 +436,8 @@ describe('Multi-Directory E2E Tests', () => {
         });
 
         helper.expectErrorWithCode(response, 'FILE_NOT_FOUND');
+        const errorData = helper.parseErrorContent(response);
+        expect(errorData.error.message).toContain('not found');
 
         await helper.stopServer();
       });
@@ -457,6 +459,8 @@ describe('Multi-Directory E2E Tests', () => {
         });
 
         helper.expectErrorWithCode(response, 'FILE_NOT_FOUND');
+        const searchErrorData = helper.parseErrorContent(response);
+        expect(searchErrorData.error.message).toContain('not found');
 
         await helper.stopServer();
       });
@@ -480,6 +484,8 @@ describe('Multi-Directory E2E Tests', () => {
         });
 
         helper.expectErrorWithCode(response, 'SECTION_NOT_FOUND');
+        const errorData = helper.parseErrorContent(response);
+        expect(errorData.error.message).toContain('not found');
 
         await helper.stopServer();
       });
@@ -501,6 +507,8 @@ describe('Multi-Directory E2E Tests', () => {
         });
 
         helper.expectErrorWithCode(response, 'SECTION_NOT_FOUND');
+        const malformedErrorData = helper.parseErrorContent(response);
+        expect(malformedErrorData.error.message).toContain('not found');
 
         await helper.stopServer();
       });

@@ -158,7 +158,7 @@ describe('Tool Integration E2E Tests', () => {
 
       helper.expectSuccessfulResponse(readResponse);
       const readError = helper.parseErrorContent(readResponse);
-      expect(readError.error.code).toBe('FILE_NOT_FOUND');
+      expect(readError.error.message).toContain('not found');
 
       // Test 3: Try to search in non-existent file
       const searchResponse = await helper.callTool('search', {
@@ -168,7 +168,7 @@ describe('Tool Integration E2E Tests', () => {
 
       helper.expectSuccessfulResponse(searchResponse);
       const searchError = helper.parseErrorContent(searchResponse);
-      expect(searchError.error.code).toBe('FILE_NOT_FOUND');
+      expect(searchError.error.message).toContain('not found');
 
       // Test 4: Try TOC for non-existent file
       const tocResponse = await helper.callTool('table_of_contents', {
@@ -177,7 +177,7 @@ describe('Tool Integration E2E Tests', () => {
 
       helper.expectSuccessfulResponse(tocResponse);
       const tocError = helper.parseErrorContent(tocResponse);
-      expect(tocError.error.code).toBe('FILE_NOT_FOUND');
+      expect(tocError.error.message).toContain('not found');
     });
   });
 

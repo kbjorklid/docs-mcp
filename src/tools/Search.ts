@@ -3,7 +3,7 @@ import { Section, Configuration, SearchResult, FileSearchResult } from '../types
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
 import { createSuccessResponse, createErrorResponse, validateAndResolveFile, type ToolResponse } from '../utils';
-import { ERROR_CODES, ERROR_MESSAGES } from '../constants';
+import { ERROR_MESSAGES } from '../constants';
 
 // Regular expression flags
 const REGEX_FLAGS = 'is'; // i = case-insensitive, s = dotAll (multiline matching)
@@ -102,17 +102,11 @@ export class Search {
     filename: unknown
   ): ToolResponse | null {
     if (!this.isNonEmptyString(query)) {
-      return createErrorResponse(
-        ERROR_CODES.INVALID_PARAMETER,
-        ERROR_MESSAGES.INVALID_PARAMETER('query')
-      );
+      return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('query'));
     }
 
     if (!this.isNonEmptyString(filename)) {
-      return createErrorResponse(
-        ERROR_CODES.INVALID_PARAMETER,
-        ERROR_MESSAGES.INVALID_PARAMETER('filename')
-      );
+      return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('filename'));
     }
 
     return null;
@@ -134,61 +128,34 @@ export class Search {
       // Handle the error - could be a SyntaxError or other exception
       const errorMessage = caughtError instanceof Error ? caughtError.message : String(caughtError);
       return {
-        error: createErrorResponse(
-          ERROR_CODES.INVALID_PARAMETER,
-          ERROR_MESSAGES.INVALID_REGEX(errorMessage)
-        ),
+        error: createErrorResponse(ERROR_MESSAGES.INVALID_REGEX(errorMessage)),
       };
     }
   }
 
 
   /**
-   * Handle search errors with comprehensive error type coverage and context
+   * Handle search errors with comprehensive error type coverage
    * @param error - The error that occurred during search (can be any type)
    * @param filename - Filename where the error occurred
-   * @returns Formatted error response with appropriate error codes and context
+   * @returns Formatted error response with helpful guidance
    */
   private handleSearchError(error: unknown, filename: string): ToolResponse {
     // Handle specific file not found errors from our validateFile method
     if (this.isError(error) && error.message.startsWith('FILE_NOT_FOUND:')) {
-      return createErrorResponse(
-        ERROR_CODES.FILE_NOT_FOUND,
-        error.message.replace('FILE_NOT_FOUND: ', ''),
-        { filename }
-      );
+      // Format: FILE_NOT_FOUND: filename|error message
+      const parts = error.message.split('|');
+      const errorMsg = parts[1] || ERROR_MESSAGES.SEARCH_ERROR;
+      return createErrorResponse(errorMsg);
     }
 
-    // Handle Error instances with proper serialization and development context
+    // Handle Error instances - return the error message or a generic search error message
     if (this.isError(error)) {
-      const errorDetails = {
-        filename,
-        error: {
-          name: error.name,
-          message: error.message,
-          // Include stack trace in development/error context only
-          ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
-        },
-      };
-
-      return createErrorResponse(
-        ERROR_CODES.PARSE_ERROR,
-        ERROR_MESSAGES.SEARCH_ERROR,
-        errorDetails
-      );
+      return createErrorResponse(ERROR_MESSAGES.SEARCH_ERROR);
     }
 
-    // Handle non-Error objects (string, number, null, undefined, etc.)
-    const errorDetails = {
-      filename,
-      error: error ? String(error) : 'Unknown error occurred',
-    };
-
-    return createErrorResponse(
-      ERROR_CODES.PARSE_ERROR,
-      ERROR_MESSAGES.SEARCH_ERROR,
-      errorDetails
-    );
+    // Handle non-Error objects - return a generic search error message
+    return createErrorResponse(ERROR_MESSAGES.SEARCH_ERROR);
   }
 
   
@@ -220,8 +187,8 @@ export class Search {
     const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
 
     if (!fileValidation.valid) {
-      const errorMessage = fileValidation.error?.message || ERROR_MESSAGES.FILE_NOT_FOUND(filename);
-      throw new Error(`FILE_NOT_FOUND: ${errorMessage}`);
+      const errorMsg = fileValidation.errorMessage || ERROR_MESSAGES.FILE_NOT_FOUND(filename);
+      throw new Error(`FILE_NOT_FOUND: ${filename}|${errorMsg}`);
     }
 
     // Read and parse the markdown file

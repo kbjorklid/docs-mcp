@@ -3,6 +3,7 @@ import { Section, Configuration } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
 import { createSuccessResponse, createErrorResponse, validateAndResolveFile } from '../utils';
+import { ERROR_MESSAGES } from '../constants';
 
 export class TableOfContents {
   private config: Configuration;
@@ -50,10 +51,7 @@ export class TableOfContents {
   async execute(filename: string, maxDepth?: number) {
     // Validate filename parameter
     if (!filename) {
-      return createErrorResponse(
-        'INVALID_PARAMETER',
-        'filename parameter is required. Use the list_documentation_files tool to see available files.'
-      );
+      return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
     }
 
     try {
@@ -65,18 +63,13 @@ export class TableOfContents {
         error instanceof Error &&
         error.message.startsWith('FILE_NOT_FOUND:')
       ) {
-        return createErrorResponse(
-          'FILE_NOT_FOUND',
-          error.message.replace('FILE_NOT_FOUND: ', ''),
-          { filename }
-        );
+        // Format: FILE_NOT_FOUND: filename|error message
+        const parts = error.message.split('|');
+        const errorMsg = parts[1] || ERROR_MESSAGES.PARSE_ERROR;
+        return createErrorResponse(errorMsg);
       }
 
-      return createErrorResponse(
-        'PARSE_ERROR',
-        'Error parsing markdown file',
-        { filename, error }
-      );
+      return createErrorResponse(ERROR_MESSAGES.PARSE_ERROR);
     }
   }
 
@@ -135,7 +128,8 @@ export class TableOfContents {
     const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
 
     if (!fileValidation.valid) {
-      throw new Error(`FILE_NOT_FOUND: ${fileValidation.error?.message}`);
+      const errorMsg = fileValidation.errorMessage || `File '${filename}' not found`;
+      throw new Error(`FILE_NOT_FOUND: ${filename}|${errorMsg}`);
     }
 
     // Read and parse the file

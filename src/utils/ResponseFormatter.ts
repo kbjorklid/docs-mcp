@@ -3,8 +3,6 @@
  * Provides consistent response formatting across all tools.
  */
 
-import { ErrorResponse } from '../types';
-
 export type ToolResponse = {
   content: Array<{ type: 'text'; text: string }>;
 };
@@ -26,30 +24,16 @@ export function createSuccessResponse(data: any): ToolResponse {
 }
 
 /**
- * Create an error response
- * @param code - Error code
- * @param message - Human-readable error message
- * @param details - Optional additional error details
- * @returns Formatted error response
+ * Create an error response with a simple, conversational error message
+ * @param message - Human-readable error message explaining what went wrong and how to fix it
+ * @returns Formatted error response as plain text
  */
-export function createErrorResponse(
-  code: string,
-  message: string,
-  details?: Record<string, unknown>
-): ToolResponse {
-  const errorResponse: ErrorResponse = {
-    error: {
-      code,
-      message,
-      ...(details && { details }),
-    },
-  };
-
+export function createErrorResponse(message: string): ToolResponse {
   return {
     content: [
       {
         type: 'text',
-        text: JSON.stringify(errorResponse, null, 2),
+        text: message || 'An error occurred',
       },
     ],
   };

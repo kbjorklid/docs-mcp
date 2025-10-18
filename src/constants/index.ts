@@ -2,4 +2,4 @@
  * Constants exports
  */
 
-export { ERROR_CODES, ERROR_MESSAGES } from './ErrorCodes';
+export { ERROR_MESSAGES } from './ErrorCodes';

@@ -65,14 +65,8 @@ export interface FileListItem {
   size: string;
 }
 
-// Error response interface
-export interface ErrorResponse {
-  error: {
-    code: string;
-    message: string;
-    details?: any;
-  };
-}
+// Note: ErrorResponse interface is no longer used
+// Errors are now returned as simple text messages for better AI agent guidance
 
 // Default configuration
 export const DEFAULT_CONFIG: Configuration = {

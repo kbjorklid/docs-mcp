@@ -378,12 +378,9 @@ describe('table_of_contents E2E Tests', () => {
         expect(response.result).toBeDefined();
         expect(response.result.content).toBeDefined();
 
-        const content = response.result.content[0];
-        expect(content.type).toBe('text');
-
-        const errorResponse = JSON.parse(content.text);
+        const errorResponse = helper.parseErrorContent(response);
         expect(errorResponse.error).toBeDefined();
-        expect(errorResponse.error.code).toBeDefined();
+        expect(errorResponse.error.message).toBeDefined();
       } finally {
         await helper.stopServer();
       }

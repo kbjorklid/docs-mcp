@@ -3,6 +3,7 @@ import { SectionContent, Configuration } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
 import { createSuccessResponse, createErrorResponse, validateAndResolveFile } from '../utils';
+import { ERROR_MESSAGES } from '../constants';
 
 export class ReadSections {
   private config: Configuration;
@@ -48,18 +49,12 @@ export class ReadSections {
   async execute(filename: string, sectionIds: string[]) {
     // Validate filename parameter
     if (!filename) {
-      return createErrorResponse(
-        'INVALID_PARAMETER',
-        'filename parameter is required'
-      );
+      return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
     }
 
     // Validate section_ids parameter
     if (!sectionIds || !Array.isArray(sectionIds)) {
-      return createErrorResponse(
-        'INVALID_PARAMETER',
-        'section_ids parameter must be an array'
-      );
+      return createErrorResponse(ERROR_MESSAGES.SECTION_IDS_REQUIRED);
     }
 
     try {
@@ -69,36 +64,22 @@ export class ReadSections {
       // Handle specific error types
       if (error instanceof Error) {
         if (error.message.startsWith('FILE_NOT_FOUND')) {
-          const extractedFilename = error.message.split(': ')[1];
-          return createErrorResponse(
-            'FILE_NOT_FOUND',
-            'The specified file was not found in any documentation directory',
-            {
-              filename: extractedFilename,
-              search_paths: this.config.documentationPaths,
-            }
-          );
+          // Format: FILE_NOT_FOUND: filename|error message
+          const parts = error.message.split('|');
+          const errorMsg = parts[1] || ERROR_MESSAGES.PARSE_ERROR;
+          return createErrorResponse(errorMsg);
         } else if (error.message.startsWith('SECTION_NOT_FOUND')) {
           const parts = error.message.split(': ');
           const extractedFilename = parts[1];
           const missingSections = JSON.parse(parts[2]);
           return createErrorResponse(
-            'SECTION_NOT_FOUND',
-            `Sections [${missingSections.join(', ')}] not found in '${extractedFilename}'. Use the table_of_contents tool to see available sections.`,
-            {
-              filename: extractedFilename,
-              missing_sections: missingSections,
-            }
+            ERROR_MESSAGES.SECTION_NOT_FOUND(missingSections, extractedFilename)
           );
         }
       }
 
       // Generic error handling
-      return createErrorResponse(
-        'PARSE_ERROR',
-        'Error parsing markdown file',
-        { filename, error }
-      );
+      return createErrorResponse(ERROR_MESSAGES.PARSE_ERROR);
     }
   }
 
@@ -118,7 +99,9 @@ export class ReadSections {
     const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
 
     if (!fileValidation.valid) {
-      throw new Error(`FILE_NOT_FOUND: ${filename}`);
+      // Return the FILE_NOT_FOUND error message directly by throwing with the error message
+      const errorMsg = fileValidation.errorMessage || `File '${filename}' not found`;
+      throw new Error(`FILE_NOT_FOUND: ${filename}|${errorMsg}`);
     }
 
     // Read and parse the file

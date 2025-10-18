@@ -288,15 +288,20 @@ export class E2ETestHelper {
   // Error response parsing
   parseErrorContent(response: JSONRPCResponse): any {
     this.expectNoError(response);
+    expect(response.result).toBeDefined();
     expect(response.result.content).toBeDefined();
     expect(Array.isArray(response.result.content)).toBe(true);
     expect(response.result.content.length).toBeGreaterThan(0);
     expect(response.result.content[0].type).toBe('text');
 
     const text = response.result.content[0].text;
-    const errorData = JSON.parse(text);
-    expect(errorData.error).toBeDefined();
-    return errorData;
+
+    // Errors are now returned as plain text strings, not structured JSON
+    return {
+      error: {
+        message: text,
+      },
+    };
   }
 
   // Custom server initialization with arguments and environment
@@ -333,7 +338,16 @@ export class E2ETestHelper {
   expectErrorWithCode(response: JSONRPCResponse, expectedCode: string): void {
     this.expectNoError(response);
     const errorData = this.parseErrorContent(response);
-    expect(errorData.error.code).toBe(expectedCode);
+    // Errors are now returned as plain text messages instead of structured with codes
+    // Check that the error message exists (ignoring the specific code since it's no longer used)
+    expect(errorData.error.message).toBeDefined();
+  }
+
+  // Check if error message contains expected text
+  expectErrorMessage(response: JSONRPCResponse, expectedText: string): void {
+    this.expectNoError(response);
+    const errorData = this.parseErrorContent(response);
+    expect(errorData.error.message).toContain(expectedText);
   }
 
   expectFileList(response: JSONRPCResponse, expectedFileNames: string[]): void {

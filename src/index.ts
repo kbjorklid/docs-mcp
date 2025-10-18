@@ -15,6 +15,7 @@ import { ReadSections } from './tools/ReadSections';
 import { Search } from './tools/Search';
 import { createConfig } from './config/ConfigManager';
 import { createErrorResponse } from './utils';
+import { ERROR_MESSAGES } from './constants';
 
 const config = createConfig();
 
@@ -53,7 +54,7 @@ const toolRegistry: Record<string, ToolHandler> = {
 
       // Validate parameters using type guards
       if (!isNonEmptyString(filename)) {
-        return createErrorResponse('INVALID_PARAMETER', 'filename parameter is required');
+        return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
       }
 
       // maxDepth is optional but if provided must be a number
@@ -78,11 +79,11 @@ const toolRegistry: Record<string, ToolHandler> = {
 
       // Validate parameters using type guards
       if (!isNonEmptyString(filename)) {
-        return createErrorResponse('INVALID_PARAMETER', 'filename parameter is required');
+        return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
       }
 
       if (!isStringArray(sectionIds)) {
-        return createErrorResponse('INVALID_PARAMETER', 'section_ids parameter must be an array of strings');
+        return createErrorResponse(ERROR_MESSAGES.SECTION_IDS_REQUIRED);
       }
 
       return await readSections.execute(filename, sectionIds);
@@ -96,11 +97,11 @@ const toolRegistry: Record<string, ToolHandler> = {
 
       // Validate parameters using type guards
       if (!isNonEmptyString(query)) {
-        return createErrorResponse('INVALID_PARAMETER', 'query parameter is required');
+        return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('query'));
       }
 
       if (!isNonEmptyString(filename)) {
-        return createErrorResponse('INVALID_PARAMETER', 'filename parameter is required');
+        return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('filename'));
       }
 
       return await search.execute(query, filename);
@@ -135,19 +136,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const toolHandler = toolRegistry[toolName];
 
     if (!toolHandler) {
-      return createErrorResponse(
-        'UNKNOWN_TOOL',
-        `Unknown tool: ${toolName}`
-      );
+      return createErrorResponse(ERROR_MESSAGES.UNKNOWN_TOOL(toolName));
     }
 
     return await toolHandler.execute(request.params.arguments || {});
   } catch (error) {
-    return createErrorResponse(
-      'INTERNAL_ERROR',
-      'An internal error occurred',
-      { error }
-    );
+    return createErrorResponse(ERROR_MESSAGES.INTERNAL_ERROR);
   }
 });
 

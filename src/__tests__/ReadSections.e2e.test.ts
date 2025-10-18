@@ -405,15 +405,9 @@ describe('read_sections E2E Tests', () => {
         expect(response.result).toBeDefined();
         expect(response.result.content).toBeDefined();
 
-        const content = response.result.content[0];
-        expect(content.type).toBe('text');
-        expect(content.text).toBeDefined();
-
-        // Parse the error response from content
-        const errorData = JSON.parse(content.text);
+        const errorData = helper.parseErrorContent(response);
         expect(errorData.error).toBeDefined();
-        expect(errorData.error.code).toBe('FILE_NOT_FOUND');
-        expect(errorData.error.message).toContain('The specified file was not found');
+        expect(errorData.error.message).toContain('not found');
       } finally {
         await helper.stopServer();
       }
@@ -442,9 +436,7 @@ describe('read_sections E2E Tests', () => {
         expect(response.error).toBeUndefined();
         expect(response.result).toBeDefined();
 
-        const content = response.result.content[0];
-        const errorData = JSON.parse(content.text);
-        expect(errorData.error.code).toBe('SECTION_NOT_FOUND');
+        const errorData = helper.parseErrorContent(response);
         expect(errorData.error.message).toContain('not found');
       } finally {
         await helper.stopServer();
@@ -473,9 +465,7 @@ describe('read_sections E2E Tests', () => {
         expect(response.error).toBeUndefined();
         expect(response.result).toBeDefined();
 
-        const content = response.result.content[0];
-        const errorData = JSON.parse(content.text);
-        expect(errorData.error.code).toBe('INVALID_PARAMETER');
+        const errorData = helper.parseErrorContent(response);
         expect(errorData.error.message).toContain('filename parameter is required');
       } finally {
         await helper.stopServer();
@@ -504,9 +494,7 @@ describe('read_sections E2E Tests', () => {
         expect(response.error).toBeUndefined();
         expect(response.result).toBeDefined();
 
-        const content = response.result.content[0];
-        const errorData = JSON.parse(content.text);
-        expect(errorData.error.code).toBe('INVALID_PARAMETER');
+        const errorData = helper.parseErrorContent(response);
         expect(errorData.error.message).toContain('section_ids parameter must be an array');
       } finally {
         await helper.stopServer();
@@ -572,9 +560,7 @@ describe('read_sections E2E Tests', () => {
         expect(response.error).toBeUndefined();
         expect(response.result).toBeDefined();
 
-        const content = response.result.content[0];
-        const errorData = JSON.parse(content.text);
-        expect(errorData.error.code).toBe('SECTION_NOT_FOUND');
+        const errorData = helper.parseErrorContent(response);
         expect(errorData.error.message).toContain('not found');
       } finally {
         await helper.stopServer();
