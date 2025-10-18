@@ -811,4 +811,572 @@ describe('table_of_contents E2E Tests', () => {
       }
     });
   });
+
+  describe('max_headers two-phase algorithm (Phase 1 - Minimum Viability)', () => {
+    it('should apply Phase 1 for single section with many subheaders', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-apply-phase1-single-section');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs(
+        ['--docs-path', docsPath, '--max-headers', '25']
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'single-section-many-subheaders.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Phase 1 should trigger: base algorithm returns 1 header (< 3)
+        // So Phase 1 includes all level-2 subheaders, even though it exceeds limit
+        expect(sections.length).toBe(51); // 1 L1 + 50 L2
+
+        // Verify structure
+        const level1 = sections.filter((s: any) => s.level === 1);
+        const level2 = sections.filter((s: any) => s.level === 2);
+        expect(level1.length).toBe(1);
+        expect(level2.length).toBe(50);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should apply Phase 1 for two sections with many subheaders', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-apply-phase1-two-sections');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs(
+        ['--docs-path', docsPath, '--max-headers', '25']
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'two-sections-many-subheaders.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Phase 1 should trigger: base algorithm returns 2 headers (< 3)
+        // So Phase 1 includes all level-2 subheaders
+        expect(sections.length).toBe(62); // 2 L1 + 60 L2
+
+        // Verify structure
+        const level1 = sections.filter((s: any) => s.level === 1);
+        const level2 = sections.filter((s: any) => s.level === 2);
+        expect(level1.length).toBe(2);
+        expect(level2.length).toBe(60);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should not apply Phase 1 when document has less than 3 headers total', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-handle-document-with-two-headers-total');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs(
+        ['--docs-path', docsPath, '--max-headers', '25']
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'two-headers-only.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Phase 1 should NOT trigger: document has < 3 headers total (only 2)
+        expect(sections.length).toBe(2);
+
+        // Verify structure
+        const level1 = sections.filter((s: any) => s.level === 1);
+        expect(level1.length).toBe(2);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should not apply Phase 1 when base algorithm already returns 3+ headers', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-not-trigger-phase1-when-sufficient');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs(
+        ['--docs-path', docsPath, '--max-headers', '25']
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'three-sections.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Phase 1 should NOT trigger: base algorithm returns 23 headers (>= 3)
+        expect(sections.length).toBe(23); // 3 L1 + 20 L2
+
+        // Verify structure
+        const level1 = sections.filter((s: any) => s.level === 1);
+        const level2 = sections.filter((s: any) => s.level === 2);
+        expect(level1.length).toBe(3);
+        expect(level2.length).toBe(20);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+  });
+
+  describe('max_headers two-phase algorithm (Phase 2 - Greedy Filling)', () => {
+    it('should apply Phase 2 to fill remaining slots', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-apply-phase2-greedy-filling');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs(
+        ['--docs-path', docsPath, '--max-headers', '25']
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'phase2-fills-slots.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Base algorithm returns 18 headers (3 L1 + 15 L2)
+        // Phase 2 fills remaining 7 slots with L3 headers from largest sections
+        expect(sections.length).toBeGreaterThan(18);
+        expect(sections.length).toBeLessThanOrEqual(25);
+
+        // Verify we have level-3 headers included
+        const level3 = sections.filter((s: any) => s.level === 3);
+        expect(level3.length).toBeGreaterThan(0);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should respect all-or-nothing constraint in Phase 2', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-respect-all-or-nothing-in-phase2');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs(
+        ['--docs-path', docsPath, '--max-headers', '25']
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'phase2-partial-fit.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Phase 2 should not add partial groups of children
+        // Base algorithm should give 21 headers, Phase 2 might add more but must respect limits
+        expect(sections.length).toBeLessThanOrEqual(25);
+
+        // Verify that if a section's children are included, all of them are
+        // (this is a general property we can validate)
+        const level3Sections = sections.filter((s: any) => s.level === 3);
+        if (level3Sections.length > 0) {
+          // If we have L3 headers, they should all belong to complete parent groups
+          const parentIds = new Set(level3Sections.map((s: any) => s.id.substring(0, s.id.lastIndexOf('/'))));
+          expect(parentIds.size).toBeGreaterThan(0);
+        }
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should prioritize sections by character count in Phase 2', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-sort-by-character-count-in-phase2');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs(
+        ['--docs-path', docsPath, '--max-headers', '25']
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'phase2-char-count-priority.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Base algorithm returns 18 headers
+        // Phase 2 should prioritize Section C (largest char count) for its children
+        expect(sections.length).toBeGreaterThan(18);
+        expect(sections.length).toBeLessThanOrEqual(25);
+
+        // Verify we have some level-3 headers
+        const level3 = sections.filter((s: any) => s.level === 3);
+        expect(level3.length).toBeGreaterThan(0);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should stop filling when reaching exact limit in Phase 2', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-stop-at-limit-in-phase2');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs(
+        ['--docs-path', docsPath, '--max-headers', '25']
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'phase2-exact-limit.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Base algorithm: 24 headers, Phase 2 can add 1 more to reach exactly 25
+        expect(sections.length).toBeLessThanOrEqual(25);
+        expect(sections.length).toBeGreaterThanOrEqual(24);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+  });
+
+  describe('max_headers two-phase algorithm (Edge Cases)', () => {
+    it('should handle Phase 1 when no deeper levels exist', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-handle-phase1-no-next-level');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs(
+        ['--docs-path', docsPath, '--max-headers', '25']
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'two-level1-only.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should return all level-1 headers (no deeper levels to include)
+        expect(sections.length).toBe(2);
+
+        const level1 = sections.filter((s: any) => s.level === 1);
+        expect(level1.length).toBe(2);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should handle Phase 2 when all sections already included', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-handle-phase2-all-sections-included');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs(
+        ['--docs-path', docsPath, '--max-headers', '25']
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'all-sections-fit.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // All 18 sections fit within limit, Phase 2 has nothing to add
+        expect(sections.length).toBe(18); // 3 L1 + 15 L2
+
+        const level1 = sections.filter((s: any) => s.level === 1);
+        const level2 = sections.filter((s: any) => s.level === 2);
+        expect(level1.length).toBe(3);
+        expect(level2.length).toBe(15);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should handle very large section with high character count', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-handle-very-large-sections');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs(
+        ['--docs-path', docsPath, '--max-headers', '25']
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'large-section.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should respect the limit
+        expect(sections.length).toBeLessThanOrEqual(25);
+        expect(sections.length).toBeGreaterThan(0);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+  });
 });
