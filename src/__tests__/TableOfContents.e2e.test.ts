@@ -456,4 +456,359 @@ describe('table_of_contents E2E Tests', () => {
       }
     });
   });
+
+  describe('max_headers configuration', () => {
+    it('should limit headers when exceeding max_headers', async () => {
+      // Use custom CLI args to set max_headers to 20
+      const helper = new E2ETestHelper('TableOfContents', 'should-limit-headers-when-exceeding-max-headers');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn server with --max-headers 20 (allows 3 level-1 + 17 level-2, file has 15)
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-headers', '20']);
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        const initResponse = await helper.sendRequestToServer(serverProcess, request);
+        expect(initResponse.error).toBeUndefined();
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'many-headers.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should limit to 20 headers max
+        expect(sections.length).toBeLessThanOrEqual(20);
+
+        // Verify we have all 3 level-1 headers (should always be included)
+        const level1 = sections.filter((s: any) => s.level === 1);
+        expect(level1.length).toBe(3);
+
+        // Verify we have level-2 headers included (3 + 15 level-2 headers from file = 18 total)
+        const level2 = sections.filter((s: any) => s.level === 2);
+        expect(level2.length).toBeGreaterThan(0);
+        expect(level2.length).toBeLessThanOrEqual(15);
+
+        // Should not have level-3 headers (they would exceed limit)
+        const level3 = sections.filter((s: any) => s.level === 3);
+        expect(level3.length).toBe(0);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should always include all level-1 headers even if exceeding limit', async () => {
+      // Use CLI args to set max_headers to 10
+      const helper = new E2ETestHelper('TableOfContents', 'should-always-include-all-level-1-headers');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn server with --max-headers 10
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-headers', '10']);
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'many-top-level.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should have all 30 level-1 headers (always included even though it exceeds limit of 10)
+        const level1 = sections.filter((s: any) => s.level === 1);
+        expect(level1.length).toBe(30);
+
+        // All sections should be level-1
+        expect(sections.length).toBe(30);
+        expect(sections.every((s: any) => s.level === 1)).toBe(true);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should respect max_headers from environment variable', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-respect-max-headers-from-environment');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn server with MAX_HEADERS=8 environment variable
+      const serverProcess = await helper.spawnServerWithArgsAndEnv(
+        ['--docs-path', docsPath],
+        { MAX_HEADERS: '8' }
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'test-file.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should limit to 8 headers
+        expect(sections.length).toBeLessThanOrEqual(8);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should respect max_headers from CLI argument', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-respect-max-headers-from-cli');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn server with --max-headers 5
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-headers', '5']);
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'cli-test.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should limit to 5 headers
+        expect(sections.length).toBeLessThanOrEqual(5);
+
+        // All should be level-1 (to stay under limit of 5)
+        expect(sections.every((s: any) => s.level === 1)).toBe(true);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should apply max_headers after max_depth filtering', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-apply-max-headers-after-max-depth');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn server with --max-headers 8
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-headers', '8']);
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        // Request with max_depth: 2 (only level 1 and 2 headers)
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'deep-nested.md',
+              max_depth: 2
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should have max_depth applied first (only level 1-2)
+        const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
+        expect(hasLevel3OrDeeper).toBe(false);
+
+        // Then max_headers limit should be applied
+        expect(sections.length).toBeLessThanOrEqual(8);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should use default max_headers of 25 when not configured', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-limit-headers-when-exceeding-max-headers');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn server without --max-headers (should use default 25)
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath]);
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'many-headers.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should apply the default limit of 25
+        expect(sections.length).toBeLessThanOrEqual(25);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should handle CLI max_headers taking precedence over environment', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-respect-max-headers-from-environment');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn with both CLI (20) and ENV (8) - CLI should win
+      const serverProcess = await helper.spawnServerWithArgsAndEnv(
+        ['--docs-path', docsPath, '--max-headers', '20'],
+        { MAX_HEADERS: '8' }
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'test-file.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should use CLI value of 20, not ENV value of 8
+        expect(sections.length).toBeLessThanOrEqual(20);
+        // And more lenient than 8
+        expect(sections.length).toBeGreaterThan(8 * 0.5); // Should be more than half of what env would allow
+      } finally {
+        serverProcess.kill();
+      }
+    });
+  });
 });

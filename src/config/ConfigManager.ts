@@ -103,6 +103,14 @@ export class ConfigurationManager {
       config.documentationPaths = ['./docs'];
     }
 
+    // Validate maxHeaders if present
+    if (config.maxHeaders !== undefined) {
+      if (typeof config.maxHeaders !== 'number' || isNaN(config.maxHeaders) || config.maxHeaders < 1) {
+        // Remove invalid maxHeaders, fall back to default
+        delete config.maxHeaders;
+      }
+    }
+
     return config as Configuration;
   }
 
@@ -151,7 +159,7 @@ class CommandLineProviderWithArgs extends CommandLineProvider {
   }
 
   public isAvailable(): boolean {
-    return !!this.args.docsPaths;
+    return !!this.args.docsPaths || this.args.maxHeaders !== undefined;
   }
 
   public load(): Partial<Configuration> {
@@ -159,6 +167,10 @@ class CommandLineProviderWithArgs extends CommandLineProvider {
 
     if (this.args.docsPaths) {
       config.documentationPaths = this.args.docsPaths;
+    }
+
+    if (this.args.maxHeaders !== undefined) {
+      config.maxHeaders = this.args.maxHeaders;
     }
 
     return config;

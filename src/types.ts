@@ -1,6 +1,7 @@
 // Configuration interface
 export interface Configuration {
   documentationPaths: string[];
+  maxHeaders?: number;
 }
 
 // Alias for backward compatibility
@@ -9,6 +10,7 @@ export interface DocumentationConfig extends Configuration {}
 // Interface for parsed command line arguments
 export interface ParsedCommandLineArgs {
   docsPaths?: string[];
+  maxHeaders?: number;
 }
 
 // File metadata interface
@@ -67,4 +69,5 @@ export interface FileListItem {
 // Default configuration
 export const DEFAULT_CONFIG: Configuration = {
   documentationPaths: [process.env.DOCS_PATH || './docs'],
+  maxHeaders: 25,
 };

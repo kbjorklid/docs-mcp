@@ -5,11 +5,12 @@ A Model Context Protocol (MCP) server that provides tools for reading and naviga
 ## Features
 
 - **List Documentation Files**: Discover and browse available documentation files with metadata
-- **Table of Contents**: Generate structured table of contents with configurable depth control
+- **Table of Contents**: Generate structured table of contents with configurable depth and header limit control
 - **Read Sections**: Read specific sections of documentation by their IDs
 - **Search**: Find text patterns using regular expressions across documentation files with multiline matching support
 - **Multi-Directory Support**: Configure multiple documentation directories with conflict resolution
 - **Configurable Max Depth**: Limit table of contents depth for better navigation
+- **Configurable Max Headers**: Limit total number of headers returned by table of contents (default: 25)
 - **Flexible Configuration**: Support for command line, environment variables, and default paths
 - **Comprehensive Error Handling**: Clear error messages and validation
 
@@ -64,7 +65,11 @@ npm start -- -d ./docs -d ../shared-docs -d ./vendor-docs
 
 ### Environment Variables
 
-Set the `DOCS_PATH` environment variable:
+The server supports the following environment variables:
+
+#### DOCS_PATH
+
+Set the `DOCS_PATH` environment variable to specify documentation directory/directories:
 
 #### Single Directory
 ```bash
@@ -94,6 +99,25 @@ $env:DOCS_PATH="C:\docs\api,C:\docs\guides,C:\docs\examples"; npm start
 # Mix absolute and relative paths
 DOCS_PATH="./docs,../shared-docs,/opt/documentation" npm start
 ```
+
+#### MAX_HEADERS
+
+Set the `MAX_HEADERS` environment variable to limit the number of headers returned by the `table_of_contents` tool:
+
+```bash
+# Linux/macOS - set max headers to 20
+MAX_HEADERS=20 npm start
+
+# Windows (Command Prompt) - set max headers to 20
+set MAX_HEADERS=20 && npm start
+
+# Windows (PowerShell) - set max headers to 20
+$env:MAX_HEADERS="20"; npm start
+```
+
+**Default value**: 25 headers
+
+**Behavior**: When a document has more headers than the limit, the tool progressively includes header levels starting from level-1 (top-level) until adding another level would exceed the limit. Level-1 headers are always included to preserve document structure, even if they exceed the limit.
 
 ### Default Path
 
@@ -149,6 +173,7 @@ Note: You may need to edit `run.ps1` to specify your documentation path.
 ### Options
 
 - `--docs-path <path>` or `-d <path>` - Specify documentation directory (can be used multiple times for multiple directories)
+- `--max-headers <number>` - Maximum number of headers to include in table of contents (default: 25)
 - `--help` or `-h` - Show help information
 
 ### Path Configuration Precedence
@@ -194,6 +219,24 @@ npm start
 # Use environment variable with multiple directories
 export DOCS_PATH="/home/user/api-docs,/home/user/guides,/home/user/examples"
 npm start
+
+# Limit table of contents headers to 20 headers maximum
+MAX_HEADERS=20 npm start
+```
+
+#### Max Headers Examples
+```bash
+# Limit table of contents to 15 headers
+npm start -- --max-headers 15
+
+# Combine with documentation path
+npm start -- --docs-path ./docs --max-headers 20
+
+# Use environment variable for max headers
+MAX_HEADERS=30 npm start
+
+# Use both CLI and environment variables (CLI takes precedence)
+MAX_HEADERS=10 npm start -- --max-headers 25  # Uses 25 from CLI
 ```
 
 ## Available Tools
@@ -217,6 +260,21 @@ Provides a structured table of contents for a markdown file, showing section hie
 - `3` - `#`, `##`, and `###` headers
 - `0` - Disabled (returns all sections)
 - Not specified - Returns all sections (unlimited)
+
+**Configuration:**
+- `--max-headers <number>` (CLI) or `MAX_HEADERS` (environment) - Limits the total number of headers returned
+- **Default**: 25 headers
+- **Behavior**: When enabled, progressively includes header levels (starting with level-1) until adding another level would exceed the limit
+- **Level-1 preservation**: Top-level headers (`#`) are always included to preserve document structure, even if they exceed the limit
+
+**Example with max_headers:**
+```bash
+# Set server limit to 20 total headers
+npm start -- --max-headers 20
+
+# Now when querying a 50-header document, only up to 20 headers are returned
+# (all level-1 headers + as many deeper levels as fit within the 20-header limit)
+```
 
 ### read_sections
 Reads specific sections from a markdown file by their IDs.

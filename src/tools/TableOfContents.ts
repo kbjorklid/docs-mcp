@@ -89,10 +89,81 @@ export class TableOfContents {
     const { sections } = MarkdownParser.parseMarkdownSections(content);
 
     // Filter sections by max depth if specified (0 means disabled - return all sections)
+    let filtered = sections;
     if (maxDepth !== undefined && maxDepth > 0) {
-      return sections.filter(section => section.level <= maxDepth);
+      filtered = sections.filter(section => section.level <= maxDepth);
     }
 
-    return sections;
+    // Apply max headers limit from configuration if set
+    if (this.config.maxHeaders !== undefined) {
+      filtered = this.applyMaxHeadersLimit(filtered, this.config.maxHeaders);
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Apply maximum headers limit to sections by progressively including header levels.
+   * Always includes all level-1 headers, then level-2, etc., until adding another level would exceed the limit.
+   * Uses index-based filtering to preserve original document order.
+   */
+  private applyMaxHeadersLimit(sections: Section[], maxHeaders: number): Section[] {
+    if (maxHeaders < 1) {
+      return sections;
+    }
+
+    const levelGroups = this.groupSectionsByLevel(sections);
+    const sortedLevels = Array.from(levelGroups.keys()).sort((a, b) => a - b);
+    const includedIndices = this.selectHeaderIndicesByLevel(levelGroups, sortedLevels, maxHeaders);
+
+    // Return sections in original order, filtered by included indices
+    return sections.filter((_, index) => includedIndices.has(index));
+  }
+
+  /**
+   * Group sections by their header level, tracking original array indices.
+   * Preserves index order within each group for deterministic filtering.
+   */
+  private groupSectionsByLevel(sections: Section[]): Map<number, number[]> {
+    const levelGroups = new Map<number, number[]>();
+
+    for (let i = 0; i < sections.length; i++) {
+      const level = sections[i].level;
+      if (!levelGroups.has(level)) {
+        levelGroups.set(level, []);
+      }
+      levelGroups.get(level)!.push(i);
+    }
+
+    return levelGroups;
+  }
+
+  /**
+   * Select header indices by progressively including levels, respecting the maximum header limit.
+   * Level-1 headers are always included regardless of limit to preserve document structure.
+   */
+  private selectHeaderIndicesByLevel(
+    levelGroups: Map<number, number[]>,
+    sortedLevels: number[],
+    maxHeaders: number,
+  ): Set<number> {
+    const includedIndices = new Set<number>();
+    let totalCount = 0;
+
+    for (const level of sortedLevels) {
+      const indices = levelGroups.get(level)!;
+      const newTotal = totalCount + indices.length;
+
+      // Always include level-1 (top-level structure), or if adding this level doesn't exceed limit
+      if (level === 1 || newTotal <= maxHeaders) {
+        indices.forEach(idx => includedIndices.add(idx));
+        totalCount = newTotal;
+      } else {
+        // Stop including deeper levels once limit would be exceeded
+        break;
+      }
+    }
+
+    return includedIndices;
   }
 }

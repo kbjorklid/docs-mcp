@@ -52,12 +52,6 @@ export class MarkdownParser {
     const sections: Section[] = [];
     const sectionMap = new Map<string, { start: number; end: number }>();
 
-    let currentSection: {
-      id: string;
-      title: string;
-      level: number;
-      startLine: number;
-    } | null = null;
     const sectionStack: {
       id: string;
       title: string;
@@ -74,20 +68,19 @@ export class MarkdownParser {
         const title = headerMatch[2].trim();
         let id = this.generateSectionId(title);
 
-        // Close previous section
-        if (currentSection) {
-          sectionMap.set(currentSection.id, {
-            start: currentSection.startLine,
-            end: i - 1,
-          });
-        }
-
-        // Build hierarchical ID
+        // Close all sections at the same or higher level (when a new header of same/higher level is encountered)
+        // A section should only close when we encounter a header of the same or higher level (shallower nesting)
         while (
           sectionStack.length > 0 &&
           sectionStack[sectionStack.length - 1].level >= level
         ) {
-          sectionStack.pop();
+          const closedSection = sectionStack.pop();
+          if (closedSection) {
+            sectionMap.set(closedSection.id, {
+              start: closedSection.startLine,
+              end: i - 1,
+            });
+          }
         }
 
         if (sectionStack.length > 0) {
@@ -95,8 +88,7 @@ export class MarkdownParser {
           id = `${parent.id}/${id}`;
         }
 
-        currentSection = { id, title, level, startLine: i };
-        sectionStack.push(currentSection);
+        sectionStack.push({ id, title, level, startLine: i });
 
         sections.push({
           id,
@@ -107,12 +99,15 @@ export class MarkdownParser {
       }
     }
 
-    // Close last section
-    if (currentSection) {
-      sectionMap.set(currentSection.id, {
-        start: currentSection.startLine,
-        end: lines.length - 1,
-      });
+    // Close all remaining sections at end of file
+    while (sectionStack.length > 0) {
+      const closedSection = sectionStack.pop();
+      if (closedSection) {
+        sectionMap.set(closedSection.id, {
+          start: closedSection.startLine,
+          end: lines.length - 1,
+        });
+      }
     }
 
     // Calculate character counts

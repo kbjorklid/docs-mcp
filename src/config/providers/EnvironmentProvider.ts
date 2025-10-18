@@ -11,8 +11,8 @@ export class EnvironmentProvider extends ConfigurationProvider {
   readonly priority = 50; // Medium priority
 
   public isAvailable(): boolean {
-    // Environment provider is available if DOCS_PATH is set (even if empty)
-    return process.env.DOCS_PATH !== undefined;
+    // Environment provider is available if DOCS_PATH or MAX_HEADERS is set
+    return process.env.DOCS_PATH !== undefined || process.env.MAX_HEADERS !== undefined;
   }
 
   public load(): Partial<Configuration> {
@@ -25,6 +25,14 @@ export class EnvironmentProvider extends ConfigurationProvider {
         .split(',')
         .map(path => path.trim())
         .filter(path => path.length > 0);
+    }
+
+    // Parse MAX_HEADERS from environment if set
+    if (process.env.MAX_HEADERS !== undefined) {
+      const parsed = parseInt(process.env.MAX_HEADERS, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        config.maxHeaders = parsed;
+      }
     }
 
     return config;

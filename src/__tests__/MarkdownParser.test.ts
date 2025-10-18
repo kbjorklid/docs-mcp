@@ -216,6 +216,86 @@ More content.`;
       expect(subtitleSection?.character_count).toBeGreaterThan(0);
     });
 
+    it('should include subsection content in parent section character count', () => {
+      // This tests the bug where parent sections were not including their subsections
+      const content = `# Main Section
+
+This is content for the main section.
+It has multiple lines.
+
+## Subsection A
+
+Content for subsection A.
+
+## Subsection B
+
+Content for subsection B.
+
+# Other Section
+
+Content for other section.`;
+
+      const result = MarkdownParser.parseMarkdownSections(content);
+
+      const mainSection = result.sections.find((s) => s.id === 'main-section');
+      const subA = result.sections.find((s) => s.id === 'main-section/subsection-a');
+      const subB = result.sections.find((s) => s.id === 'main-section/subsection-b');
+      const otherSection = result.sections.find((s) => s.id === 'other-section');
+
+      // Parent section should include all subsection content
+      // It should span from "# Main Section" to just before "# Other Section"
+      expect(mainSection?.character_count).toBeGreaterThan(0);
+      expect(subA?.character_count).toBeGreaterThan(0);
+      expect(subB?.character_count).toBeGreaterThan(0);
+      expect(otherSection?.character_count).toBeGreaterThan(0);
+
+      // The parent section should be significantly larger than its subsections
+      // because it includes both subsections' content
+      expect(mainSection?.character_count).toBeGreaterThan(
+        (subA?.character_count || 0) + (subB?.character_count || 0)
+      );
+    });
+
+    it('should correctly calculate character counts with deep nesting', () => {
+      const content = `# Level 1
+
+Level 1 content
+
+## Level 2
+
+Level 2 content
+
+### Level 3
+
+Level 3 content
+
+#### Level 4
+
+Level 4 content
+
+# Another Level 1
+
+Another content`;
+
+      const result = MarkdownParser.parseMarkdownSections(content);
+
+      const level1 = result.sections.find((s) => s.id === 'level-1');
+      const level2 = result.sections.find((s) => s.id === 'level-1/level-2');
+      const level3 = result.sections.find((s) => s.id === 'level-1/level-2/level-3');
+      const level4 = result.sections.find((s) => s.id === 'level-1/level-2/level-3/level-4');
+
+      // Each parent should be larger than or equal to its children combined
+      expect(level1?.character_count).toBeGreaterThan(0);
+      expect(level2?.character_count).toBeGreaterThan(0);
+      expect(level3?.character_count).toBeGreaterThan(0);
+      expect(level4?.character_count).toBeGreaterThan(0);
+
+      // Parent should include children
+      expect(level1?.character_count).toBeGreaterThan(
+        (level2?.character_count || 0)
+      );
+    });
+
     it('should handle headers with extra spaces', () => {
       const content = `#    Title with spaces
 ##   Another title`;
@@ -251,17 +331,48 @@ Content 2
 Content 3`;
 
       const { sectionMap } = MarkdownParser.parseMarkdownSections(content);
+
+      // When requesting both parent and child, the child should be filtered out
+      // to avoid duplication (the child is already included in the parent)
       const result = MarkdownParser.readSectionsFromContent(
         content,
         ['title-1', 'title-1/title-2'],
         sectionMap
       );
 
-      expect(result).toHaveLength(2);
+      expect(result).toHaveLength(1);
       expect(result[0].title).toBe('Title 1');
       expect(result[0].content).toContain('Content 1');
-      expect(result[1].title).toBe('Title 2');
-      expect(result[1].content).toContain('Content 2');
+      expect(result[0].content).toContain('Content 2'); // subsection is included
+      expect(result[0].content).toContain('Content 3'); // nested subsection is included
+    });
+
+    it('should read sibling sections without filtering', () => {
+      const content = `# Title 1
+Content 1
+## Title 2
+Content 2
+### Title 3
+Content 3
+## Title 4
+Content 4
+# Title 5
+Content 5`;
+
+      const { sectionMap } = MarkdownParser.parseMarkdownSections(content);
+
+      // Sibling sections should both be returned (not filtered)
+      const result = MarkdownParser.readSectionsFromContent(
+        content,
+        ['title-1/title-2', 'title-1/title-4'],
+        sectionMap
+      );
+
+      expect(result).toHaveLength(2);
+      expect(result[0].title).toBe('Title 2');
+      expect(result[0].content).toContain('Content 2');
+      expect(result[1].title).toBe('Title 4');
+      expect(result[1].content).toContain('Content 4');
     });
 
     it('should handle missing section IDs', () => {

@@ -12,7 +12,7 @@ export class CommandLineProvider extends ConfigurationProvider {
 
   public isAvailable(): boolean {
     const args = this.parseCommandLineArgs();
-    return !!args.docsPaths;
+    return !!args.docsPaths || args.maxHeaders !== undefined;
   }
 
   public load(): Partial<Configuration> {
@@ -23,6 +23,10 @@ export class CommandLineProvider extends ConfigurationProvider {
       config.documentationPaths = args.docsPaths;
     }
 
+    if (args.maxHeaders !== undefined) {
+      config.maxHeaders = args.maxHeaders;
+    }
+
     return config;
   }
 
@@ -31,6 +35,7 @@ export class CommandLineProvider extends ConfigurationProvider {
    *
    * Supported arguments:
    * - --docs-path or -d: Path to documentation directory
+   * - --max-headers: Maximum number of headers to include in table of contents
    *
    * @returns Object containing parsed arguments
    */
@@ -45,6 +50,14 @@ export class CommandLineProvider extends ConfigurationProvider {
           result.docsPaths = result.docsPaths || [];
           result.docsPaths.push(args[i + 1]);
           i++; // Skip the next argument
+        }
+      } else if (args[i] === '--max-headers') {
+        if (i + 1 < args.length) {
+          const parsed = parseInt(args[i + 1], 10);
+          if (!isNaN(parsed) && parsed > 0) {
+            result.maxHeaders = parsed;
+            i++; // Skip the next argument
+          }
         }
       }
     }
