@@ -230,27 +230,24 @@ E2E tests follow a true black-box methodology:
 
 #### E2E Test Fixtures
 Located in `src/__tests__/fixtures/e2e/`:
-- **list-documentations/** - Files for testing file discovery and metadata:
-  - `user-guide.md` - Basic user documentation
-  - `api-reference.md` - Documentation with YAML front matter
-  - `README.md` - Simple documentation file
-- **table-of-contents/** - Files for testing TOC generation:
-  - `simple-headers.md` - Basic header structure
-  - `complex-nested.md` - Deep nested hierarchy
-  - `with-front-matter.md` - Document with metadata
-  - `no-headers.md` - Edge case with no headers
-  - `single-header.md` - Minimal content
-  - `special-characters.md` - Headers with symbols
-- **read-sections/** - Files for testing section content extraction:
-  - `complex-guide.md` - Comprehensive nested documentation
-  - `api-docs.md` - Technical API documentation
-  - `edge-cases.md` - Unicode and special characters
-- **search/** - Files for testing search functionality:
-  - `api-documentation.md` - REST API content
-  - `user-guide.md` - General user documentation
-  - `technical-specs.md` - Technical specifications
-  - `code-examples.md` - Multi-language code snippets
-  - `special-characters.md` - International and special content
+
+**Isolated Test Directory Structure**: Each test case has its own isolated fixture directory organized by test class name and test description. This prevents test interference and ensures clean test environments.
+
+- **TestClassDirectory/** - Each tool has a directory containing subdirectories for each test case:
+  - `should-test-specific-functionality/` - Contains markdown files specific to that test case
+  - `should-handle-edge-case/` - Contains files for testing specific edge cases
+  - `should-validate-parameter/` - Contains files for parameter validation tests
+
+**Directory Pattern**: `src/__tests__/fixtures/e2e/{TestClassName}/{should-test-description}/`
+
+**Usage in Tests**: The `E2ETestHelper` class automatically constructs the correct path using:
+```typescript
+const helper = new E2ETestHelper('TestClassName', 'should-test-specific-functionality');
+```
+This creates the path: `src/__tests__/fixtures/e2e/TestClassName/should-test-specific-functionality`
+
+
+**File Organization**: Each isolated directory contains only the markdown files needed for that specific test case, making it easy to understand the test setup and expected inputs/outputs.
 
 #### E2E Test Coverage
 Each tool's e2e tests cover:
@@ -288,45 +285,51 @@ Each tool's e2e tests cover:
 - **E2E Tests**: Use `.e2e.test.ts` extension (e.g., `ToolName.e2e.test.ts`)
 - **Unit Tests**: Use `.test.ts` extension (e.g., `ToolName.test.ts`)
 - Place all tests in `src/__tests__/` directory
-- E2E fixtures go in `src/__tests__/fixtures/e2e/tool-name/`
+- E2E fixtures go in `src/__tests__/fixtures/e2e/{TestClassName}/{should-test-description}/` (isolated per test case)
 
 ### E2E Test Pattern
 
 ```typescript
-// Standard e2e test structure
+// Standard e2e test structure with isolated directories
 describe('ToolName E2E Tests', () => {
-  let serverProcess: ChildProcess;
-  const testDocsPath = join(__dirname, 'fixtures', 'e2e', 'tool-name');
-
-  beforeAll(async () => {
-    // Spawn actual MCP server
-    serverProcess = spawn('node', [join(__dirname, '..', '..', 'dist', 'index.js'), '--docs-path', testDocsPath]);
-    // Initialize server
-  });
-
-  afterAll(async () => {
-    // Clean up server process
-    if (serverProcess) serverProcess.kill();
-  });
-
-  async function sendRequest(request: JSONRPCRequest): Promise<JSONRPCResponse> {
-    // JSON-RPC communication logic
-  }
-
   describe('tool_name tool', () => {
     it('should test functionality via real MCP server', async () => {
-      const request = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: { name: 'tool_name', arguments: { /* params */ } }
-      };
-      const response = await sendRequest(request);
-      // Validate real server response
+      // Each test creates its own isolated fixture directory
+      const helper = new E2ETestHelper('ToolName', 'should-test-functionality');
+      await helper.startServer();
+
+      // Test the tool functionality
+      const response = await helper.callTool('tool_name', { /* params */ });
+
+      // Validate response using helper methods
+      helper.expectSuccessfulResponse(response);
+      // ... additional assertions
+
+      await helper.stopServer();
+    });
+
+    it('should handle edge case', async () => {
+      // Different test uses different isolated directory
+      const helper = new E2ETestHelper('ToolName', 'should-handle-edge-case');
+      await helper.startServer();
+
+      const response = await helper.callTool('tool_name', { /* edge case params */ });
+
+      // Validate edge case behavior
+      helper.expectError(response, 'EXPECTED_ERROR_CODE');
+
+      await helper.stopServer();
     });
   });
 });
 ```
+
+**Helper Class Usage**: The `E2ETestHelper` class handles:
+- Server process spawning with isolated fixture paths
+- JSON-RPC communication
+- Common assertion patterns
+- Server initialization and cleanup
+- Path construction to isolated test directories
 
 ### Unit Test Pattern (When Needed)
 
