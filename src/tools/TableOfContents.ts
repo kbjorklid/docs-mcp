@@ -1,4 +1,3 @@
-import * as path from 'path';
 import { Section, Configuration } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
@@ -35,8 +34,7 @@ export class TableOfContents {
           max_depth: {
             type: 'number',
             description:
-              'Optional maximum depth for table of contents entries. If provided, only headers up to this level will be included (e.g., 2 for # and ## headers only). Use 0 to disable depth limiting and return all sections.' +
-              'When the discount_single_top_header feature is enabled and the document has only one or no top-level (#) headers, the effective max depth will be increased by 1.',
+              'Optional maximum depth for table of contents entries. If provided, only headers up to this level will be included (e.g., 2 for # and ## headers only). Use 0 to disable depth limiting and return all sections.',
             minimum: 0,
           },
         },
@@ -73,52 +71,6 @@ export class TableOfContents {
     }
   }
 
-  /**
-   * Count the number of top-level (#) headers in the content
-   */
-  private countTopLevelHeaders(content: string): number {
-    const lines = content.split('\n');
-    let count = 0;
-
-    for (const line of lines) {
-      // Match headers that start with exactly one # followed by space
-      const match = line.match(/^#\s+(.+)$/);
-      if (match) {
-        count++;
-      }
-    }
-
-    return count;
-  }
-
-  /**
-   * Calculate the effective max depth based on the discount_single_top_header setting
-   */
-  private calculateEffectiveMaxDepth(
-    maxDepth: number | undefined,
-    content: string
-  ): number | undefined {
-    // If discountSingleTopHeader is not enabled, return the original max depth
-    if (!this.config.discountSingleTopHeader) {
-      return maxDepth;
-    }
-
-    // If max depth is not set or is disabled (0), no adjustment needed
-    if (maxDepth === undefined || maxDepth === 0) {
-      return maxDepth;
-    }
-
-    // Count top-level headers
-    const topLevelHeaderCount = this.countTopLevelHeaders(content);
-
-    // If there is one or zero top-level headers, discount it by increasing effective max depth by 1
-    if (topLevelHeaderCount <= 1) {
-      return maxDepth + 1;
-    }
-
-    // Otherwise, return the original max depth
-    return maxDepth;
-  }
 
   /**
    * Get table of contents for a markdown file
@@ -136,16 +88,9 @@ export class TableOfContents {
     const { content } = MarkdownParser.readMarkdownFile(fileValidation.fullPath!);
     const { sections } = MarkdownParser.parseMarkdownSections(content);
 
-    // Determine the effective max depth (parameter > config > unlimited)
-    // Note: We need to explicitly check for undefined because 0 is a valid value
-    const baseMaxDepth = maxDepth !== undefined ? maxDepth : this.config.maxTocDepth;
-
-    // Calculate effective max depth with discount_single_top_header logic
-    const effectiveMaxDepth = this.calculateEffectiveMaxDepth(baseMaxDepth, content);
-
     // Filter sections by max depth if specified (0 means disabled - return all sections)
-    if (effectiveMaxDepth !== undefined && effectiveMaxDepth > 0) {
-      return sections.filter(section => section.level <= effectiveMaxDepth);
+    if (maxDepth !== undefined && maxDepth > 0) {
+      return sections.filter(section => section.level <= maxDepth);
     }
 
     return sections;

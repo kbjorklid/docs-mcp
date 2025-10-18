@@ -149,8 +149,6 @@ Note: You may need to edit `run.ps1` to specify your documentation path.
 ### Options
 
 - `--docs-path <path>` or `-d <path>` - Specify documentation directory (can be used multiple times for multiple directories)
-- `--max-toc-depth <number>` - Set maximum depth for table of contents (default: unlimited)
-- `--discount-single-top-header` - Increase max depth by 1 for documents with single/no top-level headers
 - `--help` or `-h` - Show help information
 
 ### Path Configuration Precedence
@@ -183,25 +181,13 @@ npm start -- -d /home/user/api-docs -d /home/user/guides -d /home/user/examples
 # Mix API documentation and user guides
 npm start -- --docs-path ./api-docs --docs-path ./user-guides
 
-# Combine multiple directories with other options
-npm start -- -d /docs/api -d /docs/guides --max-toc-depth 2 --discount-single-top-header
-
 # Windows with multiple directories
 npm start -- --docs-path "C:\Project\docs" --docs-path "C:\Shared\documentation"
 ```
 
-#### Combining with Other Options
+#### Environment Variable Examples
 ```bash
-# Limit table of contents to top 2 levels
-npm start -- --max-toc-depth 2
-
-# Enable discount for single top-level headers
-npm start -- --discount-single-top-header
-
-# Combine multiple options with single directory
-npm start -- --docs-path /home/user/project-docs --max-toc-depth 2 --discount-single-top-header
-
-# Use environment variable for multiple commands
+# Use environment variable for documentation path
 export DOCS_PATH=/home/user/project-docs
 npm start
 
@@ -209,86 +195,6 @@ npm start
 export DOCS_PATH="/home/user/api-docs,/home/user/guides,/home/user/examples"
 npm start
 ```
-
-### Table of Contents Max Depth
-
-The `--max-toc-depth` option controls how many header levels are included in table of contents:
-
-- `1` - Only `#` headers (top-level sections)
-- `2` - `#` and `##` headers (top-level and second-level sections)
-- `3` - `#`, `##`, and `###` headers
-- `0` - Disabled (returns all sections, same as not specifying)
-- No value specified - Returns all sections (unlimited)
-
-**Examples:**
-```bash
-# Only show top-level sections in table of contents
-npm start -- --max-toc-depth 1
-
-# Show up to 3 levels of headers
-npm start -- --max-toc-depth 3
-
-# Disable depth limiting (show all sections)
-npm start -- --max-toc-depth 0
-```
-
-### Single Top Header Discount
-
-The `--discount-single-top-header` option enhances the max depth functionality for documents with simple structure:
-
-**When enabled, the server will:**
-- Count the number of top-level (`#`) headers in the document
-- If the document has **0 or 1** top-level headers: increase the effective max depth by 1
-- If the document has **2 or more** top-level headers: use the max depth as specified
-
-**This is useful for:**
-- Documents that start directly with `##` sections (no main title)
-- Simple documents with only one main chapter/section
-- Technical notes and articles with flat structure
-
-**Examples:**
-```bash
-# Enable discount for single top-level headers
-npm start -- --discount-single-top-header
-
-# Combine with max depth for optimal results
-npm start -- --max-toc-depth 2 --discount-single-top-header
-
-# Full example with custom path
-npm start -- --docs-path ./docs --max-toc-depth 2 --discount-single-top-header
-```
-
-**Behavior Examples:**
-
-1. **Document with single top header:**
-   ```
-   # Main Title
-   ## Section 1
-   ### Subsection 1.1
-   ## Section 2
-   ```
-   - With `--max-toc-depth 2` + `--discount-single-top-header`: Shows levels 1, 2, and 3
-   - With `--max-toc-depth 2` alone: Shows only levels 1 and 2
-
-2. **Document with no top headers:**
-   ```
-   ## Section 1
-   ### Subsection 1.1
-   ## Section 2
-   ```
-   - With `--max-toc-depth 2` + `--discount-single-top-header`: Shows levels 2 and 3
-   - With `--max-toc-depth 2` alone: Shows only level 2
-
-3. **Document with multiple top headers:**
-   ```
-   # Chapter 1
-   ## Section 1.1
-   # Chapter 2
-   ## Section 2.1
-   ```
-   - With `--max-toc-depth 2` + `--discount-single-top-header`: Shows levels 1 and 2 (no change)
-   - With `--max-toc-depth 2` alone: Shows levels 1 and 2 (no change)
-
 
 ## Available Tools
 
@@ -311,10 +217,6 @@ Provides a structured table of contents for a markdown file, showing section hie
 - `3` - `#`, `##`, and `###` headers
 - `0` - Disabled (returns all sections)
 - Not specified - Returns all sections (unlimited)
-
-**Single Top Header Discount:** When the `--discount-single-top-header` feature is enabled and the document has only one or no top-level (`#`) headers, the effective max depth will be increased by 1.
-
-**Precedence:** Tool parameter `max_depth` overrides command line `--max-toc-depth` setting.
 
 ### read_sections
 Reads specific sections from a markdown file by their IDs.

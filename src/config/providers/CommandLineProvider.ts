@@ -12,7 +12,7 @@ export class CommandLineProvider extends ConfigurationProvider {
 
   public isAvailable(): boolean {
     const args = this.parseCommandLineArgs();
-    return !!(args.docsPaths || args.maxTocDepth !== undefined || args.discountSingleTopHeader);
+    return !!args.docsPaths;
   }
 
   public load(): Partial<Configuration> {
@@ -23,14 +23,6 @@ export class CommandLineProvider extends ConfigurationProvider {
       config.documentationPaths = args.docsPaths;
     }
 
-    if (args.maxTocDepth !== undefined) {
-      config.maxTocDepth = args.maxTocDepth;
-    }
-
-    if (args.discountSingleTopHeader) {
-      config.discountSingleTopHeader = args.discountSingleTopHeader;
-    }
-
     return config;
   }
 
@@ -39,8 +31,6 @@ export class CommandLineProvider extends ConfigurationProvider {
    *
    * Supported arguments:
    * - --docs-path or -d: Path to documentation directory
-   * - --max-toc-depth: Maximum depth for table of contents
-   * - --discount-single-top-header: Discount single top-level header
    *
    * @returns Object containing parsed arguments
    */
@@ -56,16 +46,6 @@ export class CommandLineProvider extends ConfigurationProvider {
           result.docsPaths.push(args[i + 1]);
           i++; // Skip the next argument
         }
-      } else if (args[i] === '--max-toc-depth') {
-        if (i + 1 < args.length) {
-          const depth = parseInt(args[i + 1], 10);
-          if (!isNaN(depth) && depth > 0) {
-            result.maxTocDepth = depth;
-          }
-          i++; // Skip the next argument
-        }
-      } else if (args[i] === '--discount-single-top-header') {
-        result.discountSingleTopHeader = true;
       }
     }
 

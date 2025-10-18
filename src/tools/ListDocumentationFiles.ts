@@ -1,4 +1,3 @@
-import * as path from 'path';
 import { FileInfo, Configuration } from '../types';
 import { FileDiscoveryService } from '../services';
 import { createSuccessResponse, createErrorResponse } from '../utils';

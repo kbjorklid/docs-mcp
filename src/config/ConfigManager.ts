@@ -103,18 +103,6 @@ export class ConfigurationManager {
       config.documentationPaths = ['./docs'];
     }
 
-    // Validate maxTocDepth if present
-    if (config.maxTocDepth !== undefined) {
-      if (typeof config.maxTocDepth !== 'number' || config.maxTocDepth <= 0) {
-        delete config.maxTocDepth;
-      }
-    }
-
-    // Ensure discountSingleTopHeader is boolean
-    if (config.discountSingleTopHeader !== undefined) {
-      config.discountSingleTopHeader = Boolean(config.discountSingleTopHeader);
-    }
-
     return config as Configuration;
   }
 
@@ -163,7 +151,7 @@ class CommandLineProviderWithArgs extends CommandLineProvider {
   }
 
   public isAvailable(): boolean {
-    return !!(this.args.docsPaths || this.args.maxTocDepth !== undefined || this.args.discountSingleTopHeader);
+    return !!this.args.docsPaths;
   }
 
   public load(): Partial<Configuration> {
@@ -171,14 +159,6 @@ class CommandLineProviderWithArgs extends CommandLineProvider {
 
     if (this.args.docsPaths) {
       config.documentationPaths = this.args.docsPaths;
-    }
-
-    if (this.args.maxTocDepth !== undefined) {
-      config.maxTocDepth = this.args.maxTocDepth;
-    }
-
-    if (this.args.discountSingleTopHeader) {
-      config.discountSingleTopHeader = this.args.discountSingleTopHeader;
     }
 
     return config;

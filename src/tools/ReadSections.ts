@@ -1,4 +1,3 @@
-import * as path from 'path';
 import { SectionContent, Configuration } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';

@@ -27,10 +27,6 @@ export class EnvironmentProvider extends ConfigurationProvider {
         .filter(path => path.length > 0);
     }
 
-    // Note: max_toc_depth and discount_single_top_header
-    // are not currently supported via environment variables,
-    // but the structure allows for future extension
-
     return config;
   }
 }

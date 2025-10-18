@@ -72,58 +72,20 @@ describe('Multi-Directory Configuration Integration', () => {
     });
 
     describe('Other configuration options', () => {
-      it('should parse max-toc-depth', () => {
+      it('should handle multiple docs paths', () => {
         process.argv = [
           'node',
           'script.js',
           '--docs-path',
-          '/docs',
-          '--max-toc-depth',
-          '3'
-        ];
-
-        const provider = new CommandLineProvider();
-        const config = provider.load();
-
-        expect(config.documentationPaths).toEqual(['/docs']);
-        expect(config.maxTocDepth).toBe(3);
-      });
-
-      it('should parse discount-single-top-header flag', () => {
-        process.argv = [
-          'node',
-          'script.js',
-          '-d',
-          '/docs',
-          '--discount-single-top-header'
-        ];
-
-        const provider = new CommandLineProvider();
-        const config = provider.load();
-
-        expect(config.documentationPaths).toEqual(['/docs']);
-        expect(config.discountSingleTopHeader).toBe(true);
-      });
-
-      it('should handle all options together', () => {
-        process.argv = [
-          'node',
-          'script.js',
-          '-d',
           '/docs1',
-          '--docs-path',
-          '/docs2',
-          '--max-toc-depth',
-          '2',
-          '--discount-single-top-header'
+          '-d',
+          '/docs2'
         ];
 
         const provider = new CommandLineProvider();
         const config = provider.load();
 
         expect(config.documentationPaths).toEqual(['/docs1', '/docs2']);
-        expect(config.maxTocDepth).toBe(2);
-        expect(config.discountSingleTopHeader).toBe(true);
       });
     });
 
@@ -137,55 +99,20 @@ describe('Multi-Directory Configuration Integration', () => {
         expect(config.documentationPaths).toBeUndefined();
       });
 
-      it('should handle invalid max-toc-depth value', () => {
+      it('should ignore unknown arguments', () => {
         process.argv = [
           'node',
           'script.js',
           '--docs-path',
           '/docs',
-          '--max-toc-depth',
-          'invalid'
+          '--unknown-flag',
+          'value'
         ];
 
         const provider = new CommandLineProvider();
         const config = provider.load();
 
         expect(config.documentationPaths).toEqual(['/docs']);
-        expect(config.maxTocDepth).toBeUndefined();
-      });
-
-      it('should handle negative max-toc-depth value', () => {
-        process.argv = [
-          'node',
-          'script.js',
-          '--docs-path',
-          '/docs',
-          '--max-toc-depth',
-          '-1'
-        ];
-
-        const provider = new CommandLineProvider();
-        const config = provider.load();
-
-        expect(config.documentationPaths).toEqual(['/docs']);
-        expect(config.maxTocDepth).toBeUndefined();
-      });
-
-      it('should handle zero max-toc-depth value', () => {
-        process.argv = [
-          'node',
-          'script.js',
-          '--docs-path',
-          '/docs',
-          '--max-toc-depth',
-          '0'
-        ];
-
-        const provider = new CommandLineProvider();
-        const config = provider.load();
-
-        expect(config.documentationPaths).toEqual(['/docs']);
-        expect(config.maxTocDepth).toBeUndefined();
       });
     });
   });
@@ -373,34 +300,31 @@ describe('Multi-Directory Configuration Integration', () => {
         expect(config.documentationPaths).toEqual(['/cli/path1', '/cli/path2', '/cli/path3']);
       });
 
-      it('should merge other configuration options properly', () => {
+      it('should handle multiple paths with CLI override', () => {
         process.env.DOCS_PATH = '/env/path';
         process.argv = [
           'node',
           'script.js',
           '-d',
-          '/cli/path',
-          '--max-toc-depth',
-          '3'
+          '/cli/path1',
+          '-d',
+          '/cli/path2'
         ];
 
         const configManager = new ConfigurationManager();
         const config = configManager.load();
 
-        expect(config.documentationPaths).toEqual(['/cli/path']); // CLI docs path
-        expect(config.maxTocDepth).toBe(3); // CLI option
-        expect(config.discountSingleTopHeader).toBe(false); // Default value
+        expect(config.documentationPaths).toEqual(['/cli/path1', '/cli/path2']); // CLI docs paths
       });
 
       it('should handle environment variables with complex comma syntax', () => {
         process.env.DOCS_PATH = '  /path1  ,  /path2  ,/path3';
-        process.argv = ['node', 'script.js', '--max-toc-depth', '2'];
+        process.argv = ['node', 'script.js'];
 
         const configManager = new ConfigurationManager();
         const config = configManager.load();
 
         expect(config.documentationPaths).toEqual(['/path1', '/path2', '/path3']);
-        expect(config.maxTocDepth).toBe(2);
       });
     });
 
@@ -433,8 +357,6 @@ describe('Multi-Directory Configuration Integration', () => {
       it('should accept valid multi-directory configuration', () => {
         const validConfig: Configuration = {
           documentationPaths: ['/docs1', '/docs2', '/docs3'],
-          maxTocDepth: 3,
-          discountSingleTopHeader: true,
         };
 
         // This would be used by the FileDiscoveryService
@@ -445,7 +367,6 @@ describe('Multi-Directory Configuration Integration', () => {
       it('should accept empty documentation paths array', () => {
         const validConfig: Configuration = {
           documentationPaths: [],
-          maxTocDepth: 2,
         };
 
         expect(Array.isArray(validConfig.documentationPaths)).toBe(true);
@@ -493,18 +414,12 @@ describe('Multi-Directory Configuration Integration', () => {
   describe('Real-world scenarios', () => {
     it('should handle typical development setup', () => {
       process.env.DOCS_PATH = './docs,./vendor/docs,./external-docs';
-      process.argv = [
-        'node',
-        'script.js',
-        '--max-toc-depth',
-        '4'
-      ];
+      process.argv = ['node', 'script.js'];
 
       const configManager = new ConfigurationManager();
       const config = configManager.load();
 
       expect(config.documentationPaths).toEqual(['./docs', './vendor/docs', './external-docs']);
-      expect(config.maxTocDepth).toBe(4);
     });
 
     it('should handle production deployment with CLI override', () => {
@@ -515,31 +430,23 @@ describe('Multi-Directory Configuration Integration', () => {
         '-d',
         '/production/docs1',
         '-d',
-        '/production/docs2',
-        '--discount-single-top-header'
+        '/production/docs2'
       ];
 
       const configManager = new ConfigurationManager();
       const config = configManager.load();
 
       expect(config.documentationPaths).toEqual(['/production/docs1', '/production/docs2']);
-      expect(config.discountSingleTopHeader).toBe(true);
     });
 
     it('should handle testing configuration', () => {
       process.env.DOCS_PATH = './test/fixtures/docs1,./test/fixtures/docs2';
-      process.argv = [
-        'node',
-        'script.js',
-        '--max-toc-depth',
-        '1' // Shallow depth for testing
-      ];
+      process.argv = ['node', 'script.js'];
 
       const configManager = new ConfigurationManager();
       const config = configManager.load();
 
       expect(config.documentationPaths).toEqual(['./test/fixtures/docs1', './test/fixtures/docs2']);
-      expect(config.maxTocDepth).toBe(1);
     });
   });
 });

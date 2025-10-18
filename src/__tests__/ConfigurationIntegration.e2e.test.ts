@@ -3,13 +3,10 @@
  * These tests exercise the MCP server with different configuration scenarios
  */
 
-import { spawn, ChildProcess } from 'child_process';
-import { join } from 'path';
+import { ChildProcess } from 'child_process';
 import { E2ETestHelper, JSONRPCRequest } from './lib/E2ETestHelper';
 
 describe('Configuration Integration E2E Tests', () => {
-  const testDocsPath = join(__dirname, 'fixtures', 'e2e', 'list-documentations');
-
   async function startServerWithArgs(args: string[] = []): Promise<{ helper: E2ETestHelper, serverProcess: ChildProcess }> {
     const helper = new E2ETestHelper('list-documentations');
     const serverProcess = await helper.spawnServerWithArgs(args);
@@ -36,13 +33,13 @@ describe('Configuration Integration E2E Tests', () => {
   }
 
   describe('Configuration Workflow Integration', () => {
-    it('should handle end-to-end workflow with different maxTocDepth settings', async () => {
+    it('should handle end-to-end workflow with tool parameters', async () => {
       // Use isolated test directory for this specific test case
       const isolatedHelper = new E2ETestHelper('ConfigurationIntegration', 'should-handle-end-to-end-workflow-with-different-max-toc-depth-settings');
       const isolatedDocsPath = isolatedHelper.getTestDocsPath();
 
-      // Test with maxTocDepth = 2
-      const { helper, serverProcess } = await startServerWithArgs(['--docs-path', isolatedDocsPath, '--max-toc-depth', '2']);
+      // Start server with docs path
+      const { helper, serverProcess } = await startServerWithArgs(['--docs-path', isolatedDocsPath]);
 
       try {
         // Step 1: List documentation files
@@ -53,7 +50,7 @@ describe('Configuration Integration E2E Tests', () => {
         expect(Array.isArray(files)).toBe(true);
         expect(files.length).toBeGreaterThan(0);
 
-        // Step 2: Get table of contents with maxTocDepth = 2
+        // Step 2: Get table of contents with max_depth = 2
         const tocResponse = await helper.callTool('table_of_contents', {
           filename: 'user-guide.md',
           max_depth: 2
@@ -85,16 +82,16 @@ describe('Configuration Integration E2E Tests', () => {
       }
     });
 
-    it('should handle real-world usage scenario with mixed configuration sources', async () => {
+    it('should handle real-world usage scenario with CLI configuration', async () => {
       // Use isolated test directory for this specific test case
       const isolatedHelper = new E2ETestHelper('ConfigurationIntegration', 'should-handle-real-world-usage-scenario-with-mixed-configuration-sources');
       const isolatedDocsPath = isolatedHelper.getTestDocsPath();
 
-      // Test with CLI args overriding environment variables
-      const { helper, serverProcess } = await startServerWithArgs(['--docs-path', isolatedDocsPath, '--max-toc-depth', '3']);
+      // Test with CLI docs path
+      const { helper, serverProcess } = await startServerWithArgs(['--docs-path', isolatedDocsPath]);
 
       try {
-        // Step 1: List documentation files (should use CLI path, not env)
+        // Step 1: List documentation files (should use CLI path)
         const listResponse = await helper.callTool('list_documentation_files', {});
         helper.expectSuccessfulResponse(listResponse);
 
@@ -106,7 +103,7 @@ describe('Configuration Integration E2E Tests', () => {
         const testFile = files.find((f: any) => f.filename === 'user-guide.md');
         expect(testFile).toBeDefined();
 
-        // Step 2: Get table of contents (should use CLI max-toc-depth)
+        // Step 2: Get table of contents
         const tocResponse = await helper.callTool('table_of_contents', {
           filename: 'user-guide.md'
         });
@@ -114,11 +111,7 @@ describe('Configuration Integration E2E Tests', () => {
         helper.expectSuccessfulResponse(tocResponse);
         const sections = helper.parseJsonContent(tocResponse);
         expect(Array.isArray(sections)).toBe(true);
-
-        // Verify that maxTocDepth = 3 is respected - should have level 1, 2, and 3 headers
-        const sectionLevels = sections.map((section: any) => section.level);
-        expect(sectionLevels.every((level: number) => level <= 3)).toBe(true);
-        expect(sectionLevels.some((level: number) => level === 3)).toBe(true);
+        expect(sections.length).toBeGreaterThan(0);
 
         // Step 3: Read first section
         if (sections.length > 0) {

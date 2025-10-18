@@ -182,12 +182,13 @@ describe('Tool Integration E2E Tests', () => {
   });
 
   describe('Configuration Integration', () => {
-    it('should respect max-depth configuration across all tools', async () => {
-      helper = await startServerWithCustomArgs('should-respect-max-depth-configuration-across-all-tools', ['--max-toc-depth', '2']);
+    it('should respect max-depth parameter in table_of_contents tool', async () => {
+      helper = await startServerWithCustomArgs('should-respect-max-depth-configuration-across-all-tools');
 
-      // Test that table_of_contents respects max depth
+      // Test that table_of_contents respects max_depth parameter
       const tocResponse = await helper.callTool('table_of_contents', {
-        filename: 'simple-guide.md'
+        filename: 'simple-guide.md',
+        max_depth: 2
       });
 
       helper.expectSuccessfulResponse(tocResponse);
@@ -197,7 +198,7 @@ describe('Tool Integration E2E Tests', () => {
       const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
       expect(hasLevel3OrDeeper).toBe(false);
 
-      // Search should still work normally regardless of max-depth
+      // Search should still work normally regardless of max_depth
       const searchResponse = await helper.callTool('search', {
         query: 'installation',
         filename: 'simple-guide.md'

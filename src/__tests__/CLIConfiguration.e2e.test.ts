@@ -105,82 +105,6 @@ describe('CLI Configuration E2E Tests', () => {
     });
   });
 
-  describe('--max-toc-depth CLI argument', () => {
-    it('should respect --max-toc-depth argument for table_of_contents tool', async () => {
-      helper = await startServerWithArgs('should-respect-max-toc-depth-argument-for-table-of-contents-tool', ['--docs-path', '--max-toc-depth', '2']);
-
-      const response = await helper.callTool('table_of_contents', {
-        filename: 'test.md'
-      });
-
-      helper.expectSuccessfulResponse(response);
-      const sections = helper.parseJsonContent(response);
-
-      // Should only include sections up to depth 2
-      const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
-      expect(hasLevel3OrDeeper).toBe(false);
-
-      // Should include level 1 and 2 sections
-      const hasLevel1Or2 = sections.some((s: any) => s.level <= 2);
-      expect(hasLevel1Or2).toBe(true);
-
-      expect(sections.length).toBeGreaterThan(0);
-    });
-
-    it('should handle invalid --max-toc-depth values gracefully', async () => {
-      helper = await startServerWithArgs('should-handle-invalid-max-toc-depth-values-gracefully', ['--docs-path', '--max-toc-depth', 'invalid']);
-
-      const response = await helper.callTool('table_of_contents', {
-        filename: 'test.md'
-      });
-
-      helper.expectSuccessfulResponse(response);
-
-      // Should still work, defaulting to no limit
-      const sections = helper.parseJsonContent(response);
-      expect(sections.length).toBeGreaterThan(0);
-    });
-
-    it('should handle zero and negative --max-toc-depth values', async () => {
-      helper = await startServerWithArgs('should-handle-zero-and-negative-max-toc-depth-values', ['--docs-path', '--max-toc-depth', '0']);
-
-      const response = await helper.callTool('table_of_contents', {
-        filename: 'test.md'
-      });
-
-      helper.expectSuccessfulResponse(response);
-      const sections = helper.parseJsonContent(response);
-
-      // max_depth = 0 means no limit, should return all sections
-      expect(sections.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('--discount-single-top-header CLI argument', () => {
-    it('should increase effective max depth when --discount-single-top-header is used', async () => {
-      helper = await startServerWithArgs('should-increase-effective-max-depth-when-discount-single-top-header-is-used', [
-        '--docs-path',
-        '--max-toc-depth', '2',
-        '--discount-single-top-header'
-      ]);
-
-      const response = await helper.callTool('table_of_contents', {
-        filename: 'test.md'
-      });
-
-      helper.expectSuccessfulResponse(response);
-      const sections = helper.parseJsonContent(response);
-
-      // With discountSingleTopHeader, effective max depth should be 3 (2 + 1)
-      // Should include deeper sections than normal max_depth=2
-      const hasLevel3 = sections.some((s: any) => s.level === 3);
-      expect(hasLevel3).toBe(true);
-
-      // Should not include level 4 or deeper
-      const hasLevel4OrDeeper = sections.some((s: any) => s.level > 3);
-      expect(hasLevel4OrDeeper).toBe(false);
-    });
-  });
 
   describe('DOCS_PATH environment variable', () => {
     it('should use DOCS_PATH environment variable when no CLI argument provided', async () => {
@@ -200,11 +124,9 @@ describe('CLI Configuration E2E Tests', () => {
   });
 
   describe('Multiple CLI arguments', () => {
-    it('should handle multiple CLI arguments correctly', async () => {
+    it('should handle multiple --docs-path arguments correctly', async () => {
       helper = await startServerWithArgs('should-handle-multiple-cli-arguments-correctly', [
-        '--docs-path',
-        '--max-toc-depth', '1',
-        '--discount-single-top-header'
+        '--docs-path'
       ]);
 
       // Test list_documentation_files
@@ -215,20 +137,14 @@ describe('CLI Configuration E2E Tests', () => {
       const files = listContent[0].text ? JSON.parse(listContent[0].text) : listContent[0];
       expect(files.length).toBeGreaterThan(0);
 
-      // Test table_of_contents with configuration
+      // Test table_of_contents
       const tocResponse = await helper.callTool('table_of_contents', {
         filename: 'test.md'
       });
 
       helper.expectSuccessfulResponse(tocResponse);
       const sections = helper.parseJsonContent(tocResponse);
-
-      // With max_depth=1 and discountSingleTopHeader, effective max depth should be 2
-      const hasLevel2 = sections.some((s: any) => s.level === 2);
-      expect(hasLevel2).toBe(true);
-
-      const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
-      expect(hasLevel3OrDeeper).toBe(false);
+      expect(sections.length).toBeGreaterThan(0);
     });
   });
 
