@@ -171,9 +171,14 @@ export class Search {
     const { sections, sectionMap } = MarkdownParser.parseMarkdownSections(content);
 
     // Filter sections that contain the search pattern in header or content
-    return sections.filter(section =>
+    const matchedSections = sections.filter(section =>
       this.doesSectionContainQuery(section, content, sectionMap, sections, regex)
     );
+
+    // Apply conditional logic: only show subsection_count if not all children are matched
+    MarkdownParser.applyConditionalSubsectionCounts(matchedSections);
+
+    return matchedSections;
   }
 
   /**

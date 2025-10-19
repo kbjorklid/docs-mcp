@@ -714,12 +714,13 @@ describe('Search E2E Tests', () => {
       const searchResult = JSON.parse(content.text);
       const matches = searchResult.results[0].matches;
 
-      // Find the "Key Features" section (level 1) - should have subsection_count
+      // Find the "Key Features" section (level 1) - all its children are matched
       const keyFeaturesSection = matches.find((s: any) => s.level === 1);
       expect(keyFeaturesSection).toBeDefined();
       expect(keyFeaturesSection.title).toBe('Key Features');
-      // Should have 3 direct children (Feature One, Feature Two, Feature Three)
-      expect(keyFeaturesSection.subsection_count).toBe(3);
+      // When all direct children (Feature One, Feature Two, Feature Three) are matched,
+      // subsection_count should be undefined (not redundant)
+      expect(keyFeaturesSection.subsection_count).toBeUndefined();
 
       // Find "Feature One" section - leaf section, should not have subsection_count
       const featureOneSection = matches.find((s: any) => s.title === 'Feature One');
@@ -753,15 +754,15 @@ describe('Search E2E Tests', () => {
         expect(section.subsection_count).toBeUndefined();
       });
 
-      // Parent sections should have subsection_count
+      // Parent sections: when all children are matched, subsection_count should be undefined
       const parentSections = matches.filter((s: any) => s.level === 1 || s.level === 2);
       parentSections.forEach((section: any) => {
         if (section.level === 1) {
-          // Main Examples section
-          expect(section.subsection_count).toBeDefined();
+          // Main Examples section has all 2 children (Basic Examples, Advanced Examples) matched
+          expect(section.subsection_count).toBeUndefined();
         } else if (section.title === 'Basic Examples' || section.title === 'Advanced Examples') {
-          // These sections have children (the examples)
-          expect(section.subsection_count).toBeDefined();
+          // These sections have all their children matched (Examples 1&2, and Example 3 respectively)
+          expect(section.subsection_count).toBeUndefined();
         }
       });
     });

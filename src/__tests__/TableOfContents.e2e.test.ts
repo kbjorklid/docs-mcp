@@ -1469,19 +1469,22 @@ describe('table_of_contents E2E Tests', () => {
         const sections = helper.parseJsonContent(response);
 
         // Find level-1 section (should have 3 level-2 children: 1.1, 1.2, 1.3)
+        // When all children are visible, subsection_count should be undefined (not redundant)
         const level1 = sections.find((s: any) => s.level === 1 && s.id === '1');
         expect(level1).toBeDefined();
-        expect(level1.subsection_count).toBe(3);
+        expect(level1.subsection_count).toBeUndefined();
 
         // Find level-2 section 1.2 (should have 2 level-3 children: 1.2.1, 1.2.2)
+        // When all children are visible, subsection_count should be undefined (not redundant)
         const level2Section = sections.find((s: any) => s.level === 2 && s.id === '1/2');
         expect(level2Section).toBeDefined();
-        expect(level2Section.subsection_count).toBe(2);
+        expect(level2Section.subsection_count).toBeUndefined();
 
         // Find level-1 section 2 (should have 1 level-2 child: 2.1)
+        // When all children are visible, subsection_count should be undefined (not redundant)
         const level1Second = sections.find((s: any) => s.level === 1 && s.id === '2');
         expect(level1Second).toBeDefined();
-        expect(level1Second.subsection_count).toBe(1);
+        expect(level1Second.subsection_count).toBeUndefined();
       } finally {
         await helper.stopServer();
       }
@@ -1525,14 +1528,16 @@ describe('table_of_contents E2E Tests', () => {
         const sections = helper.parseJsonContent(response);
 
         // Level-1 section should only count level-2 children (1/1 and 1/2), not level-3 and 4 grandchildren/great-grandchildren
+        // When all children are visible, subsection_count should be undefined (not redundant)
         const level1 = sections.find((s: any) => s.level === 1);
         expect(level1).toBeDefined();
-        expect(level1.subsection_count).toBe(2); // Only 2 direct level-2 children
+        expect(level1.subsection_count).toBeUndefined(); // All 2 direct level-2 children are visible
 
         // Level-2 section 1/2 should only count level-3 children (just 1/2/1)
+        // When all children are visible, subsection_count should be undefined (not redundant)
         const level2 = sections.find((s: any) => s.id === '1/2');
         expect(level2).toBeDefined();
-        expect(level2.subsection_count).toBe(1); // Only 1 direct level-3 child, not level-4 grandchild
+        expect(level2.subsection_count).toBeUndefined(); // All 1 direct level-3 child is visible
       } finally {
         await helper.stopServer();
       }

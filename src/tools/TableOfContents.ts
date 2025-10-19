@@ -89,6 +89,9 @@ export class TableOfContents {
     // This ensures counts reflect only visible sections after filtering
     MarkdownParser.calculateSubsectionCountsForSections(filtered, true);
 
+    // Apply conditional logic: only show subsection_count if not all children are visible
+    MarkdownParser.applyConditionalSubsectionCounts(filtered);
+
     return filtered;
   }
 

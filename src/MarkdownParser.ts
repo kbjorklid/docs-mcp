@@ -202,6 +202,51 @@ export class MarkdownParser {
   }
 
   /**
+   * Apply conditional subsection_count logic to sections.
+   * Only displays subsection_count if at least one direct child is NOT present in the results.
+   * If all direct children are shown, omits subsection_count entirely.
+   *
+   * This is useful for filtering scenarios (search, depth limiting) where showing subsection_count
+   * for sections whose children are all present in the results would be redundant.
+   *
+   * Uses O(n) algorithm with Map-based child counting for efficiency.
+   *
+   * @param sections - Array of sections to process (modified in-place)
+   */
+  static applyConditionalSubsectionCounts(sections: Section[]): void {
+    // Build map of parent section IDs to their visible direct children count
+    // This allows O(1) lookup instead of scanning all sections for each parent
+    const visibleChildrenByParent = new Map<string, number>();
+
+    // First pass: count visible direct children for each parent
+    sections.forEach((section) => {
+      const parentId = this.getParentSectionId(section.id);
+      if (parentId !== null) {
+        visibleChildrenByParent.set(parentId, (visibleChildrenByParent.get(parentId) || 0) + 1);
+      }
+    });
+
+    // Second pass: compare visible children count against subsection_count
+    sections.forEach((section) => {
+      const currentSubsectionCount = section.subsection_count;
+
+      // Skip if no subsection_count (leaf section)
+      if (!currentSubsectionCount || currentSubsectionCount === 0) {
+        return;
+      }
+
+      // Get count of visible direct children for this section
+      const visibleChildCount = visibleChildrenByParent.get(section.id) || 0;
+
+      // If all direct children are visible, remove subsection_count (it's redundant)
+      if (visibleChildCount === currentSubsectionCount) {
+        delete section.subsection_count;
+      }
+      // If some/none are visible, keep subsection_count as-is (it shows count of hidden children)
+    });
+  }
+
+  /**
    * Private wrapper for backward compatibility with internal usage
    */
   private static calculateSubsectionCounts(sections: Section[]): void {
