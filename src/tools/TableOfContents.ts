@@ -1,7 +1,7 @@
-import { Section, Configuration } from '../types';
+import { Section, Configuration, TableOfContentsResponse } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, validateAndResolveFile, parseToolError, getErrorMessage, createFileNotFoundError } from '../utils';
+import { createSuccessResponse, createErrorResponse, validateAndResolveFile, parseToolError, getErrorMessage, createFileNotFoundError, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 export class TableOfContents {
@@ -61,7 +61,7 @@ export class TableOfContents {
   /**
    * Get table of contents for a markdown file
    */
-  private async getTableOfContents(filename: string): Promise<Section[]> {
+  private async getTableOfContents(filename: string): Promise<TableOfContentsResponse> {
     // Validate and resolve the file path
     const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
 
@@ -72,12 +72,12 @@ export class TableOfContents {
 
     // Read and parse the file
     const { content } = MarkdownParser.readMarkdownFile(fileValidation.fullPath!);
-    const { sections } = MarkdownParser.parseMarkdownSections(content);
+    const { sections: fullSections } = MarkdownParser.parseMarkdownSections(content);
 
     // Filter sections by max toc depth from configuration if set
-    let filtered = sections;
+    let filtered = fullSections;
     if (this.config.maxTocDepth !== undefined && this.config.maxTocDepth > 0) {
-      filtered = sections.filter(section => section.level <= this.config.maxTocDepth!);
+      filtered = fullSections.filter(section => section.level <= this.config.maxTocDepth!);
     }
 
     // Apply max headers limit from configuration if set
@@ -85,14 +85,22 @@ export class TableOfContents {
       filtered = this.applyMaxHeadersLimit(filtered, this.config.maxHeaders);
     }
 
-    // Recalculate subsection counts based on filtered sections
-    // This ensures counts reflect only visible sections after filtering
-    MarkdownParser.calculateSubsectionCountsForSections(filtered, true);
-
     // Apply conditional logic: only show subsection_count if not all children are visible
+    // The subsection counts were calculated from the full document during parsing,
+    // and we conditionally hide them if all children are already visible in the filtered results
     MarkdownParser.applyConditionalSubsectionCounts(filtered);
 
-    return filtered;
+    // Build response with sections and optional instructions
+    const response: TableOfContentsResponse = {
+      sections: filtered,
+    };
+
+    // Add instructions if any section has hidden subsections
+    if (hasHiddenSubsections(filtered)) {
+      response.instructions = INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS;
+    }
+
+    return response;
   }
 
   /**

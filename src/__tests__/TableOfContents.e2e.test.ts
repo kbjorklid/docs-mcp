@@ -149,7 +149,8 @@ describe('table_of_contents E2E Tests', () => {
         expect(response.error).toBeUndefined();
 
         const content = response.result.content[0];
-        const sections = JSON.parse(content.text);
+        const parsedResponse = JSON.parse(content.text);
+        const sections = parsedResponse.sections;
 
         // Should have the main document header (not counting front matter)
         const mainHeader = sections.find((s: any) => s.title === 'Document with Front Matter');
@@ -185,7 +186,8 @@ describe('table_of_contents E2E Tests', () => {
         expect(response.error).toBeUndefined();
 
         const content = response.result.content[0];
-        const sections = JSON.parse(content.text);
+        const parsedResponse = JSON.parse(content.text);
+        const sections = parsedResponse.sections;
         expect(Array.isArray(sections)).toBe(true);
         expect(sections.length).toBe(0);
       } finally {
@@ -215,7 +217,8 @@ describe('table_of_contents E2E Tests', () => {
         expect(response.error).toBeUndefined();
 
         const content = response.result.content[0];
-        const sections = JSON.parse(content.text);
+        const parsedResponse = JSON.parse(content.text);
+        const sections = parsedResponse.sections;
 
         expect(sections.length).toBe(1);
         expect(sections[0].level).toBe(1);
@@ -248,7 +251,8 @@ describe('table_of_contents E2E Tests', () => {
         expect(response.error).toBeUndefined();
 
         const content = response.result.content[0];
-        const sections = JSON.parse(content.text);
+        const parsedResponse = JSON.parse(content.text);
+        const sections = parsedResponse.sections;
 
         // Should have headers with various special characters
         const specialHeaders = sections.filter((s: any) =>
@@ -1668,6 +1672,32 @@ describe('table_of_contents E2E Tests', () => {
         expect(section5.subsection_count).toBe(1); // Has 1 hidden level-2 child
       } finally {
         serverProcess.kill();
+      }
+    });
+  });
+
+  describe('instructions field for hidden subsections', () => {
+    it('should omit instructions when no hidden subsections exist', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-omit-instructions-when-no-hidden-subsections');
+      await helper.startServer();
+
+      try {
+        const response = await helper.callTool('table_of_contents', {
+          filename: 'simple-headers.md'
+        });
+
+        helper.expectSuccessfulResponse(response);
+        const content = response.result.content[0];
+        const parsedResponse = JSON.parse(content.text);
+
+        // Should have sections property
+        expect(parsedResponse.sections).toBeDefined();
+        expect(Array.isArray(parsedResponse.sections)).toBe(true);
+
+        // Should NOT have instructions property because all sections are visible
+        expect(parsedResponse.instructions).toBeUndefined();
+      } finally {
+        await helper.stopServer();
       }
     });
   });

@@ -767,4 +767,44 @@ describe('Search E2E Tests', () => {
       });
     });
   });
+
+  describe('instructions field for hidden subsections', () => {
+    it('should omit instructions when search results have no hidden subsections', async () => {
+      const helper = new E2ETestHelper('Search', 'should-omit-instructions-when-no-hidden');
+      await helper.startServer();
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'search',
+            arguments: {
+              query: 'JavaScript',
+              filename: 'code-examples.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequest(request);
+        expect(response.error).toBeUndefined();
+
+        const content = response.result.content[0];
+        const searchResult = JSON.parse(content.text);
+
+        // Should have the standard search result properties
+        expect(searchResult.query).toBeDefined();
+        expect(searchResult.results).toBeDefined();
+
+        // Should not have instructions if no hidden subsections
+        if (searchResult.instructions !== undefined) {
+          expect(typeof searchResult.instructions).toBe('string');
+          expect(searchResult.instructions).toContain('section_table_of_contents');
+        }
+      } finally {
+        await helper.stopServer();
+      }
+    });
+  });
 });

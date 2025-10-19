@@ -46,10 +46,17 @@ export interface SectionContent {
   content: string;
 }
 
+// Table of Contents response interface
+export interface TableOfContentsResponse {
+  sections: Section[];
+  instructions?: string;
+}
+
 // Search result interfaces
 export interface SearchResult {
   query: string;
   results: FileSearchResult[];
+  instructions?: string;
 }
 
 export interface FileSearchResult {

@@ -113,10 +113,9 @@ export class SectionTableOfContents {
       subsections = this.applyMaxHeadersLimit(subsections, this.config.maxHeaders);
     }
 
-    // Recalculate subsection counts based on filtered subsections
-    MarkdownParser.calculateSubsectionCountsForSections(subsections, true);
-
     // Apply conditional logic: only show subsection_count if not all children are visible
+    // The subsection counts were calculated from the full document during parsing,
+    // and we conditionally hide them if all children are already visible in the filtered results
     MarkdownParser.applyConditionalSubsectionCounts(subsections);
 
     return subsections;

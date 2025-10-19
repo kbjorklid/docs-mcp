@@ -300,6 +300,27 @@ Provides a structured table of contents for a markdown file, showing section hie
 **Parameters:**
 - `filename` (required) - The documentation file to analyze
 
+**Response Format:**
+
+The tool returns a response object with the following structure:
+```json
+{
+  "sections": [
+    {
+      "id": "1",
+      "title": "Section Title",
+      "level": 1,
+      "character_count": 1234,
+      "subsection_count": 3
+    }
+  ],
+  "instructions": "To explore hidden subsections, use the section_table_of_contents tool with the section IDs of interest."
+}
+```
+
+- `sections` - Array of section objects with id, title, level, character_count, and optional subsection_count
+- `instructions` (optional) - Guidance string present when any section has hidden subsections (subsection_count >= 1)
+
 **Configuration Options:**
 
 The table of contents tool behavior is controlled by two server-wide configuration options:
@@ -343,6 +364,15 @@ MAX_TOC_DEPTH=2 MAX_HEADERS=15 npm start
 # CLI takes precedence over environment
 MAX_TOC_DEPTH=2 npm start -- --max-toc-depth 4  # Uses 4 from CLI
 ```
+
+**Instructions Field Usage:**
+
+When the response includes an `instructions` field, it indicates that some sections have hidden subsections. This happens when:
+- Filtering by `max-toc-depth` hides deeper header levels
+- Filtering by `max-headers` reduces the number of shown headers
+- Not all direct children of a section are visible
+
+In these cases, agents receiving the response should use the `section_table_of_contents` tool with the appropriate section IDs to explore the hidden subsections.
 
 ### section_table_of_contents
 Provides a structured table of contents for subsections within specified parent sections. Unlike `table_of_contents` which starts from the file root, this tool returns only the direct children of the specified section IDs.
@@ -403,11 +433,43 @@ Searches for text patterns using regular expressions in documentation files, ret
 - `query` (required) - The regular expression pattern to search for (case-insensitive). The pattern automatically includes the "i" and "s" flags for case-insensitive and multiline matching
 - `filename` (optional) - Specific file to search in. If not provided, searches all available documentation files
 
+**Response Format:**
+
+The tool returns a search result object with the following structure:
+```json
+{
+  "query": "search pattern",
+  "results": [
+    {
+      "filename": "file.md",
+      "matches": [
+        {
+          "id": "1/2",
+          "title": "Matched Section",
+          "level": 2,
+          "character_count": 500,
+          "subsection_count": 2
+        }
+      ]
+    }
+  ],
+  "instructions": "To explore hidden subsections, use the section_table_of_contents tool with the section IDs of interest."
+}
+```
+
+- `query` - The search pattern that was used
+- `results` - Array of file results containing matched sections
+- `instructions` (optional) - Guidance string present when any matched section has hidden subsections
+
 **Regular Expression Features:**
 - **Case-insensitive matching**: Patterns automatically ignore case
 - **Multiline matching**: `.` matches newlines (dotAll flag enabled)
 - **Full regex syntax**: Supports character classes, quantifiers, alternation, groups, etc.
 - **Backward compatibility**: Simple text strings work as exact matches
+
+**Instructions Field Usage:**
+
+When the response includes an `instructions` field, it indicates that some matched sections have hidden subsections. Agents receiving the response should use the `section_table_of_contents` tool with the appropriate section IDs to explore these hidden subsections.
 
 **Error Handling:**
 Invalid regular expressions will return an `INVALID_PARAMETER` error with a descriptive message.

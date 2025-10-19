@@ -1,7 +1,7 @@
 import { Section, Configuration, SearchResult, FileSearchResult } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, validateAndResolveFile, isNonEmptyString, isError, parseToolError, getErrorMessage, createFileNotFoundError, type ToolResponse } from '../utils';
+import { createSuccessResponse, createErrorResponse, validateAndResolveFile, isNonEmptyString, isError, parseToolError, getErrorMessage, createFileNotFoundError, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS, type ToolResponse } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 // Regular expression flags
@@ -144,10 +144,17 @@ export class Search {
   private async searchInSpecificFile(regex: RegExp, filename: string): Promise<SearchResult> {
     const matches = await this.findMatchesInFile(regex, filename);
 
-    return {
+    const result: SearchResult = {
       query: regex.source,
       results: [{ filename, matches }],
     };
+
+    // Add instructions if any matched section has hidden subsections
+    if (hasHiddenSubsections(matches)) {
+      result.instructions = INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS;
+    }
+
+    return result;
   }
 
   /**

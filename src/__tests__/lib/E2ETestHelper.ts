@@ -282,7 +282,13 @@ export class E2ETestHelper {
 
   parseJsonContent<T = any>(response: JSONRPCResponse): T {
     const text = this.parseTextContent(response);
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    // If the response has a 'sections' property (table_of_contents response format),
+    // unwrap it to return just the sections array for backwards compatibility
+    if (parsed && typeof parsed === 'object' && 'sections' in parsed) {
+      return parsed.sections as T;
+    }
+    return parsed;
   }
 
   // Error response parsing

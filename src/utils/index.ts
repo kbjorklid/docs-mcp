@@ -23,3 +23,7 @@ export {
   createFileNotFoundError,
   createSectionNotFoundError,
 } from './ToolErrorFactory';
+export {
+  hasHiddenSubsections,
+  INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS,
+} from './InstructionsHelper';
