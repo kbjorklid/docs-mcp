@@ -14,7 +14,7 @@ import { TableOfContents } from './tools/TableOfContents';
 import { ReadSections } from './tools/ReadSections';
 import { Search } from './tools/Search';
 import { createConfig } from './config/ConfigManager';
-import { createErrorResponse } from './utils';
+import { createErrorResponse, isNonEmptyString, isStringArray } from './utils';
 import { ERROR_MESSAGES } from './constants';
 
 const config = createConfig();
@@ -24,16 +24,6 @@ const listDocumentationFiles = new ListDocumentationFiles(config);
 const tableOfContents = new TableOfContents(config);
 const readSections = new ReadSections(config);
 const search = new Search(config);
-
-// Type guards for parameter validation
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === 'string' && value.trim().length > 0;
-
-const isPositiveNumber = (value: unknown): value is number =>
-  typeof value === 'number' && value > 0;
-
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every(item => typeof item === 'string');
 
 // Tool registry for declarative tool management
 interface ToolHandler {

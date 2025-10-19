@@ -1,7 +1,7 @@
 import { Section, Configuration } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, validateAndResolveFile } from '../utils';
+import { createSuccessResponse, createErrorResponse, validateAndResolveFile, parseToolError, getErrorMessage, createFileNotFoundError } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 export class TableOfContents {
@@ -52,18 +52,8 @@ export class TableOfContents {
       const sections = await this.getTableOfContents(filename);
       return createSuccessResponse(sections);
     } catch (error) {
-      // Check if it's a FILE_NOT_FOUND error
-      if (
-        error instanceof Error &&
-        error.message.startsWith('FILE_NOT_FOUND:')
-      ) {
-        // Format: FILE_NOT_FOUND: filename|error message
-        const parts = error.message.split('|');
-        const errorMsg = parts[1] || ERROR_MESSAGES.PARSE_ERROR;
-        return createErrorResponse(errorMsg);
-      }
-
-      return createErrorResponse(ERROR_MESSAGES.PARSE_ERROR);
+      const parsedError = parseToolError(error);
+      return createErrorResponse(getErrorMessage(parsedError));
     }
   }
 
@@ -77,7 +67,7 @@ export class TableOfContents {
 
     if (!fileValidation.valid) {
       const errorMsg = fileValidation.errorMessage || `File '${filename}' not found`;
-      throw new Error(`FILE_NOT_FOUND: ${filename}|${errorMsg}`);
+      throw createFileNotFoundError(filename, errorMsg);
     }
 
     // Read and parse the file

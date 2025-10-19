@@ -30,27 +30,27 @@ function filterEmptyFields(obj: any): any {
   if (obj !== null && typeof obj === 'object') {
     const filtered: Record<string, any> = {};
     for (const [key, value] of Object.entries(obj)) {
-      const filtered_value = filterEmptyFields(value);
+      const filteredValue = filterEmptyFields(value);
 
       // Only filter empty values for known optional fields
       if (FILTERABLE_FIELDS.has(key)) {
         // Skip null, undefined, empty string, empty array for these fields
         if (
-          filtered_value === null ||
-          filtered_value === undefined ||
-          (typeof filtered_value === 'string' && filtered_value === '') ||
-          (Array.isArray(filtered_value) && filtered_value.length === 0)
+          filteredValue === null ||
+          filteredValue === undefined ||
+          (typeof filteredValue === 'string' && filteredValue === '') ||
+          (Array.isArray(filteredValue) && filteredValue.length === 0)
         ) {
           continue;
         }
       } else {
         // For all other fields, only skip null/undefined
-        if (filtered_value === null || filtered_value === undefined) {
+        if (filteredValue === null || filteredValue === undefined) {
           continue;
         }
       }
 
-      filtered[key] = filtered_value;
+      filtered[key] = filteredValue;
     }
     return filtered;
   }

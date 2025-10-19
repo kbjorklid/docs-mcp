@@ -1,7 +1,7 @@
 import { Section, Configuration, SearchResult, FileSearchResult } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, validateAndResolveFile, type ToolResponse } from '../utils';
+import { createSuccessResponse, createErrorResponse, validateAndResolveFile, isNonEmptyString, isError, parseToolError, getErrorMessage, createFileNotFoundError, type ToolResponse } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 // Regular expression flags
@@ -14,24 +14,6 @@ export class Search {
   constructor(config: Configuration) {
     this.config = config;
     this.fileDiscovery = new FileDiscoveryService(config);
-  }
-
-  /**
-   * Type guard to check if a value is a non-empty string
-   * @param value - Value to check
-   * @returns boolean indicating if value is a non-empty string
-   */
-  private isNonEmptyString(value: unknown): value is string {
-    return typeof value === 'string' && value.trim().length > 0;
-  }
-
-  /**
-   * Type guard to check if a value is an Error instance
-   * @param error - Value to check
-   * @returns boolean indicating if value is an Error instance
-   */
-  private isError(error: unknown): error is Error {
-    return error instanceof Error;
   }
 
   /**
@@ -100,11 +82,11 @@ export class Search {
     query: unknown,
     filename: unknown
   ): ToolResponse | null {
-    if (!this.isNonEmptyString(query)) {
+    if (!isNonEmptyString(query)) {
       return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('query'));
     }
 
-    if (!this.isNonEmptyString(filename)) {
+    if (!isNonEmptyString(filename)) {
       return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('filename'));
     }
 
@@ -140,20 +122,14 @@ export class Search {
    * @returns Formatted error response with helpful guidance
    */
   private handleSearchError(error: unknown, filename: string): ToolResponse {
-    // Handle specific file not found errors from our validateFile method
-    if (this.isError(error) && error.message.startsWith('FILE_NOT_FOUND:')) {
-      // Format: FILE_NOT_FOUND: filename|error message
-      const parts = error.message.split('|');
-      const errorMsg = parts[1] || ERROR_MESSAGES.SEARCH_ERROR;
-      return createErrorResponse(errorMsg);
+    const parsedError = parseToolError(error);
+
+    // If it's a specific tool error type (FILE_NOT_FOUND or SECTION_NOT_FOUND), use the parsed message
+    if (parsedError.type !== 'PARSE_ERROR') {
+      return createErrorResponse(getErrorMessage(parsedError));
     }
 
-    // Handle Error instances - return the error message or a generic search error message
-    if (this.isError(error)) {
-      return createErrorResponse(ERROR_MESSAGES.SEARCH_ERROR);
-    }
-
-    // Handle non-Error objects - return a generic search error message
+    // For generic parse errors or unknown errors, use search-specific error message
     return createErrorResponse(ERROR_MESSAGES.SEARCH_ERROR);
   }
 
@@ -187,7 +163,7 @@ export class Search {
 
     if (!fileValidation.valid) {
       const errorMsg = fileValidation.errorMessage || ERROR_MESSAGES.FILE_NOT_FOUND(filename);
-      throw new Error(`FILE_NOT_FOUND: ${filename}|${errorMsg}`);
+      throw createFileNotFoundError(filename, errorMsg);
     }
 
     // Read and parse the markdown file

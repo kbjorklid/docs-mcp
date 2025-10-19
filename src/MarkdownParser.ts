@@ -2,6 +2,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { FileMetadata, Section, SectionContent } from './types';
+import { normalizeLineEndings } from './utils/LineNormalizer';
+import {
+  HEADER_PATTERN,
+  FRONT_MATTER_PATTERN,
+  SECTION_TITLE_PATTERN,
+  SPECIAL_CHAR_PATTERN,
+  WHITESPACE_PATTERN,
+  HYPHEN_PATTERN,
+  TRIM_HYPHEN_PATTERN,
+} from './constants/MarkdownPatterns';
 
 export class MarkdownParser {
   /**
@@ -11,8 +21,7 @@ export class MarkdownParser {
     metadata: FileMetadata;
     content: string;
   } {
-    const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
-    const match = content.match(frontMatterRegex);
+    const match = content.match(FRONT_MATTER_PATTERN);
 
     if (!match) {
       return { metadata: {}, content };
@@ -33,10 +42,10 @@ export class MarkdownParser {
   static generateSectionId(title: string): string {
     return title
       .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
+      .replace(SPECIAL_CHAR_PATTERN, '')
+      .replace(WHITESPACE_PATTERN, '-')
+      .replace(HYPHEN_PATTERN, '-')
+      .replace(TRIM_HYPHEN_PATTERN, '');
   }
 
   /**
@@ -47,8 +56,7 @@ export class MarkdownParser {
     sections: Section[];
     sectionMap: Map<string, { start: number; end: number }>;
   } {
-    // Normalize line endings to handle both Windows (\r\n) and Unix (\n) line endings
-    const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const normalizedContent = normalizeLineEndings(content);
     const lines = normalizedContent.split('\n');
     const sections: Section[] = [];
     const sectionMap = new Map<string, { start: number; end: number }>();
@@ -61,26 +69,26 @@ export class MarkdownParser {
     }[] = [];
 
     // Track position counters for each header level (1-6)
-    const levelCounters: number[] = [0, 0, 0, 0, 0, 0];
+    const headerLevelCounters: number[] = [0, 0, 0, 0, 0, 0];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
+      const headerMatch = line.match(HEADER_PATTERN);
 
       if (headerMatch) {
         const level = headerMatch[1].length;
         const title = headerMatch[2].trim();
 
         // Increment counter for current level
-        levelCounters[level - 1]++;
+        headerLevelCounters[level - 1]++;
 
         // Reset all deeper level counters
         for (let j = level; j < 6; j++) {
-          levelCounters[j] = 0;
+          headerLevelCounters[j] = 0;
         }
 
         // Build numeric ID from active counters
-        const id = levelCounters.slice(0, level).join('/');
+        const id = headerLevelCounters.slice(0, level).join('/');
 
         // Close all sections at the same or higher level (when a new header of same/higher level is encountered)
         // A section should only close when we encounter a header of the same or higher level (shallower nesting)
@@ -155,7 +163,7 @@ export class MarkdownParser {
       const sectionContent = sectionLines.join('\n');
 
       // Extract title from first line
-      const titleMatch = sectionContent.match(/^#{1,6}\s+(.+)$/m);
+      const titleMatch = sectionContent.match(SECTION_TITLE_PATTERN);
       const title = titleMatch ? titleMatch[1].trim() : sectionId;
 
       results.push({

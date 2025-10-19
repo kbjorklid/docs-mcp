@@ -1,7 +1,7 @@
 import { SectionContent, Configuration } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, validateAndResolveFile } from '../utils';
+import { createSuccessResponse, createErrorResponse, validateAndResolveFile, parseToolError, getErrorMessage, createFileNotFoundError, createSectionNotFoundError } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 export class ReadSections {
@@ -61,25 +61,8 @@ export class ReadSections {
       const sections = await this.readSections(filename, sectionIds);
       return createSuccessResponse(sections);
     } catch (error) {
-      // Handle specific error types
-      if (error instanceof Error) {
-        if (error.message.startsWith('FILE_NOT_FOUND')) {
-          // Format: FILE_NOT_FOUND: filename|error message
-          const parts = error.message.split('|');
-          const errorMsg = parts[1] || ERROR_MESSAGES.PARSE_ERROR;
-          return createErrorResponse(errorMsg);
-        } else if (error.message.startsWith('SECTION_NOT_FOUND')) {
-          const parts = error.message.split(': ');
-          const extractedFilename = parts[1];
-          const missingSections = JSON.parse(parts[2]);
-          return createErrorResponse(
-            ERROR_MESSAGES.SECTION_NOT_FOUND(missingSections, extractedFilename)
-          );
-        }
-      }
-
-      // Generic error handling
-      return createErrorResponse(ERROR_MESSAGES.PARSE_ERROR);
+      const parsedError = parseToolError(error);
+      return createErrorResponse(getErrorMessage(parsedError));
     }
   }
 
@@ -101,7 +84,7 @@ export class ReadSections {
     if (!fileValidation.valid) {
       // Return the FILE_NOT_FOUND error message directly by throwing with the error message
       const errorMsg = fileValidation.errorMessage || `File '${filename}' not found`;
-      throw new Error(`FILE_NOT_FOUND: ${filename}|${errorMsg}`);
+      throw createFileNotFoundError(filename, errorMsg);
     }
 
     // Read and parse the file
@@ -111,9 +94,7 @@ export class ReadSections {
     // Check if all requested sections exist
     const missingSections = sectionIds.filter((id) => !sectionMap.has(id));
     if (missingSections.length > 0) {
-      throw new Error(
-        `SECTION_NOT_FOUND: ${filename}: ${JSON.stringify(missingSections)}`
-      );
+      throw createSectionNotFoundError(filename, missingSections);
     }
 
     // Read the requested sections
