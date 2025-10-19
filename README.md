@@ -314,7 +314,7 @@ The tool returns a response object with the following structure:
       "subsection_count": 3
     }
   ],
-  "instructions": "To explore subsections under a specific section that is not currently shown, use the section_table_of_contents tool with the section IDs of interest."
+  "instructions": "To explore deeper subsections under a specific subsection that are not currently shown (the \"subsection_count\" is > 0), use the section_table_of_contents tool with the section IDs of interest."
 }
 ```
 
@@ -367,12 +367,12 @@ MAX_TOC_DEPTH=2 npm start -- --max-toc-depth 4  # Uses 4 from CLI
 
 **Instructions Field Usage:**
 
-When the response includes an `instructions` field, it indicates that some sections have hidden subsections. This happens when:
+When the response includes an `instructions` field, it indicates that some sections have hidden subsections (subsection_count >= 1). This happens when:
 - Filtering by `max-toc-depth` hides deeper header levels
 - Filtering by `max-headers` reduces the number of shown headers
 - Not all direct children of a section are visible
 
-In these cases, agents receiving the response should use the `section_table_of_contents` tool with the appropriate section IDs to explore the hidden subsections.
+In these cases, agents receiving the response should use the `section_table_of_contents` tool with the appropriate section IDs to explore deeper subsections.
 
 ### section_table_of_contents
 Provides a structured table of contents for subsections within specified parent sections. Unlike `table_of_contents` which starts from the file root, this tool returns only the direct children of the specified section IDs.
@@ -453,13 +453,13 @@ The tool returns a search result object with the following structure:
       ]
     }
   ],
-  "instructions": "To explore subsections under a specific section that is not currently shown, use the section_table_of_contents tool with the section IDs of interest."
+  "instructions": "To explore deeper subsections under a specific subsection that are not currently shown (the \"subsection_count\" is > 0), use the section_table_of_contents tool with the section IDs of interest."
 }
 ```
 
 - `query` - The search pattern that was used
 - `results` - Array of file results containing matched sections
-- `instructions` (optional) - Guidance string present when any matched section has hidden subsections
+- `instructions` (optional) - Guidance string present when any matched section has hidden subsections (subsection_count >= 1)
 
 **Regular Expression Features:**
 - **Case-insensitive matching**: Patterns automatically ignore case
@@ -469,7 +469,7 @@ The tool returns a search result object with the following structure:
 
 **Instructions Field Usage:**
 
-When the response includes an `instructions` field, it indicates that some matched sections have hidden subsections. Agents receiving the response should use the `section_table_of_contents` tool with the appropriate section IDs to explore these hidden subsections.
+When the response includes an `instructions` field, it indicates that some matched sections have hidden subsections (subsection_count >= 1). Agents receiving the response should use the `section_table_of_contents` tool with the appropriate section IDs to explore deeper subsections.
 
 **Error Handling:**
 Invalid regular expressions will return an `INVALID_PARAMETER` error with a descriptive message.

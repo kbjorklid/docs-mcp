@@ -1,7 +1,7 @@
-import { Section, Configuration } from '../types';
+import { Section, Configuration, TableOfContentsResponse } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, validateAndResolveFile, parseToolError, getErrorMessage, createFileNotFoundError, createSectionNotFoundError } from '../utils';
+import { createSuccessResponse, createErrorResponse, validateAndResolveFile, parseToolError, getErrorMessage, createFileNotFoundError, createSectionNotFoundError, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 /**
@@ -82,7 +82,7 @@ export class SectionTableOfContents {
   /**
    * Get table of contents for subsections of specified sections
    */
-  private async getSectionTableOfContents(filename: string, sectionIds: string[]): Promise<Section[]> {
+  private async getSectionTableOfContents(filename: string, sectionIds: string[]): Promise<TableOfContentsResponse> {
     // Validate and resolve the file path
     const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
 
@@ -118,7 +118,17 @@ export class SectionTableOfContents {
     // and we conditionally hide them if all children are already visible in the filtered results
     MarkdownParser.applyConditionalSubsectionCounts(subsections);
 
-    return subsections;
+    // Build response with sections and optional instructions
+    const response: TableOfContentsResponse = {
+      sections: subsections,
+    };
+
+    // Add instructions if any section has hidden subsections
+    if (hasHiddenSubsections(subsections)) {
+      response.instructions = INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS;
+    }
+
+    return response;
   }
 
   /**

@@ -4,7 +4,7 @@ import { Section } from '../types';
  * Constant for instructions to use section_table_of_contents tool
  */
 export const INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS =
-  'To explore subsections under a specific section that is not currently shown, use the section_table_of_contents tool with the section IDs of interest.';
+  'To explore deeper subsections under a specific subsection that are not currently shown (the "subsection_count" is > 0), use the section_table_of_contents tool with the section IDs of interest.';
 
 /**
  * Check if any section in the array has hidden subsections

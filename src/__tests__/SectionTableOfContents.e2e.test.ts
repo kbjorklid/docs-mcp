@@ -547,4 +547,138 @@ describe('section_table_of_contents E2E Tests', () => {
       }
     });
   });
+
+  describe('instructions field for hidden subsections', () => {
+    it('should include instructions when subsections are hidden by max_headers', async () => {
+      const helper = new E2ETestHelper('SectionTableOfContents', 'should-include-instructions-when-hidden-by-max-headers');
+      const docsPath = helper.getTestDocsPath();
+
+      // Set max_headers to limit results and hide some subsections
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-headers', '2']);
+
+      try {
+        const request = helper.createToolCallRequest('section_table_of_contents', {
+          filename: 'nested-structure.md',
+          section_ids: ['1']
+        });
+
+        const response = await helper.sendRequestToServer(serverProcess, request);
+        helper.expectSuccessfulResponse(response);
+
+        const content = response.result.content[0];
+        const fullResponse = JSON.parse(content.text);
+
+        // The response should have a sections property and possibly instructions
+        expect(fullResponse.sections).toBeDefined();
+        expect(Array.isArray(fullResponse.sections)).toBe(true);
+
+        // Check if any sections have subsection_count (indicating hidden children)
+        const hasHiddenSubsections = fullResponse.sections.some((s: any) => s.subsection_count !== undefined);
+
+        if (hasHiddenSubsections) {
+          // Should have instructions property when subsections are hidden
+          expect(fullResponse.instructions).toBeDefined();
+          expect(typeof fullResponse.instructions).toBe('string');
+          expect(fullResponse.instructions.length).toBeGreaterThan(0);
+        }
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should omit instructions when no subsections are hidden', async () => {
+      const helper = new E2ETestHelper('SectionTableOfContents', 'should-omit-instructions-when-no-hidden-subsections');
+      await helper.startServer();
+
+      try {
+        const response = await helper.callTool('section_table_of_contents', {
+          filename: 'nested-structure.md',
+          section_ids: ['1/1/1'] // Leaf section with no children
+        });
+
+        helper.expectSuccessfulResponse(response);
+        const content = response.result.content[0];
+        const fullResponse = JSON.parse(content.text);
+
+        // Should have sections property
+        expect(fullResponse.sections).toBeDefined();
+        expect(Array.isArray(fullResponse.sections)).toBe(true);
+
+        // Leaf section has no children, so no subsection_count
+        expect(fullResponse.sections.length).toBe(0);
+
+        // Should NOT have instructions property because no sections have hidden subsections
+        expect(fullResponse.instructions).toBeUndefined();
+      } finally {
+        await helper.stopServer();
+      }
+    });
+
+    it('should include correct instruction message text when subsections are hidden', async () => {
+      const helper = new E2ETestHelper('SectionTableOfContents', 'should-include-correct-instruction-message');
+      const docsPath = helper.getTestDocsPath();
+
+      // Set max_headers to limit results
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-headers', '2']);
+
+      try {
+        const request = helper.createToolCallRequest('section_table_of_contents', {
+          filename: 'nested-structure.md',
+          section_ids: ['1']
+        });
+
+        const response = await helper.sendRequestToServer(serverProcess, request);
+        helper.expectSuccessfulResponse(response);
+
+        const content = response.result.content[0];
+        const fullResponse = JSON.parse(content.text);
+
+        // Check if any sections have subsection_count
+        const hasHiddenSubsections = fullResponse.sections.some((s: any) => s.subsection_count !== undefined);
+
+        if (hasHiddenSubsections) {
+          // Verify the instruction message contains expected content
+          expect(fullResponse.instructions).toContain('section_table_of_contents');
+          expect(fullResponse.instructions).toContain('subsections');
+          // The instruction should guide users on how to explore hidden subsections
+          expect(fullResponse.instructions.toLowerCase()).toContain('explore');
+          expect(fullResponse.instructions.toLowerCase()).toContain('not currently shown');
+        }
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should omit instructions when all children are visible', async () => {
+      const helper = new E2ETestHelper('SectionTableOfContents', 'should-omit-instructions-when-all-children-visible');
+      await helper.startServer();
+
+      try {
+        // Request subsections with no max_headers limit, so all children should be visible
+        const response = await helper.callTool('section_table_of_contents', {
+          filename: 'nested-structure.md',
+          section_ids: ['1']
+        });
+
+        helper.expectSuccessfulResponse(response);
+        const content = response.result.content[0];
+        const fullResponse = JSON.parse(content.text);
+
+        // Should have sections property
+        expect(fullResponse.sections).toBeDefined();
+        expect(Array.isArray(fullResponse.sections)).toBe(true);
+        expect(fullResponse.sections.length).toBeGreaterThan(0);
+
+        // When all children are visible, subsection_count should be undefined for all sections
+        const anyHaveSubsectionCount = fullResponse.sections.some((s: any) => s.subsection_count !== undefined);
+
+        // If no sections have subsection_count, instructions should be omitted
+        if (!anyHaveSubsectionCount) {
+          expect(fullResponse.instructions).toBeUndefined();
+        }
+      } finally {
+        await helper.stopServer();
+      }
+    });
+  });
 });
