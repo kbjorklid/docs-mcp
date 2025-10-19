@@ -635,4 +635,63 @@ describe('Search E2E Tests', () => {
       expect(searchResult.results[0].matches.length).toBeGreaterThanOrEqual(0);
     });
   });
+
+  describe('Hierarchical Section Matching', () => {
+    it('should only return child sections when search term appears only in child, not parent', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 30,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: 'TheThing', // Only in ## Bar section
+            filename: 'hierarchical-test.md'
+          }
+        }
+      };
+
+      const response = await helper.sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      const matches = searchResult.results[0].matches;
+
+      // Should only find the ## Bar section (1/1), not the # Foo section (1)
+      expect(matches.length).toBe(1);
+      expect(matches[0].id).toBe('1/1');
+      expect(matches[0].title).toBe('Bar');
+      expect(matches[0].level).toBe(2);
+    });
+
+    it('should return both parent and child sections when search term appears in both', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 31,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: 'Text', // Appears in both # Foo and ## Bar
+            filename: 'hierarchical-test.md'
+          }
+        }
+      };
+
+      const response = await helper.sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      const matches = searchResult.results[0].matches;
+
+      // Should find both sections since "Text" appears in both
+      expect(matches.length).toBe(2);
+      expect(matches[0].id).toBe('1');
+      expect(matches[0].title).toBe('Foo');
+      expect(matches[0].level).toBe(1);
+      expect(matches[1].id).toBe('1/1');
+      expect(matches[1].title).toBe('Bar');
+      expect(matches[1].level).toBe(2);
+    });
+  });
 });

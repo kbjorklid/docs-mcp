@@ -196,7 +196,7 @@ export class Search {
 
     // Filter sections that contain the search pattern in header or content
     return sections.filter(section =>
-      this.doesSectionContainQuery(section, content, sectionMap, regex)
+      this.doesSectionContainQuery(section, content, sectionMap, sections, regex)
     );
   }
 
@@ -206,6 +206,7 @@ export class Search {
    * @param section - Section to check
    * @param content - Full file content
    * @param sectionMap - Map of section IDs to their line ranges
+   * @param sections - All sections in the file
    * @param regex - Compiled regular expression to search with
    * @returns boolean - True if section contains the search query in header or content
    */
@@ -213,11 +214,12 @@ export class Search {
     section: Section,
     content: string,
     sectionMap: Map<string, { start: number; end: number }>,
+    sections: Section[],
     regex: RegExp
   ): boolean {
     // Check header first (typically shorter and faster to evaluate)
     return this.doesHeaderMatch(section, regex) ||
-           this.doesContentMatch(section, content, sectionMap, regex);
+           this.doesContentMatch(section, content, sectionMap, sections, regex);
   }
 
   /**
@@ -233,9 +235,11 @@ export class Search {
   /**
    * Check if section content matches the search query
    * Extracts the specific content lines for the section from the full file content
+   * Excludes content that belongs to direct child sections
    * @param section - Section to check
    * @param content - Full file content (split by lines)
    * @param sectionMap - Map of section IDs to their line ranges {start, end}
+   * @param sections - All sections in the file (to identify children)
    * @param regex - Compiled regular expression to search with
    * @returns boolean - True if section content matches the search query
    */
@@ -243,6 +247,7 @@ export class Search {
     section: Section,
     content: string,
     sectionMap: Map<string, { start: number; end: number }>,
+    sections: Section[],
     regex: RegExp
   ): boolean {
     const range = sectionMap.get(section.id);
@@ -251,24 +256,64 @@ export class Search {
       return false;
     }
 
-    // Extract content lines for this specific section
-    const sectionContent = this.extractSectionContent(content, range);
+    // Extract content lines for this specific section, excluding child sections
+    const sectionContent = this.extractSectionContent(content, range, section, sectionMap, sections);
 
     return regex.test(sectionContent);
   }
 
   /**
    * Extract the content for a specific section using its line range
+   * Excludes content that belongs to direct child sections
    * @param content - Full file content
    * @param range - Line range {start, end} for the section
-   * @returns string - The section's content
+   * @param section - The current section
+   * @param sectionMap - Map of section IDs to their line ranges
+   * @param sections - All sections in the file
+   * @returns string - The section's content with child sections excluded
    */
   private extractSectionContent(
     content: string,
-    range: { start: number; end: number }
+    range: { start: number; end: number },
+    section: Section,
+    sectionMap: Map<string, { start: number; end: number }>,
+    sections: Section[]
   ): string {
     const contentLines = content.split('\n');
-    const sectionContentLines = contentLines.slice(range.start, range.end + 1);
-    return sectionContentLines.join('\n');
+
+    // Find direct child sections (sections whose IDs start with this section's ID followed by /)
+    const childSections = sections.filter(s =>
+      s.id.startsWith(section.id + '/') &&
+      s.id.split('/').length === section.id.split('/').length + 1
+    );
+
+    // Build line ranges to include, excluding child sections
+    const linesToInclude: { start: number; end: number }[] = [];
+    let currentPos = range.start;
+
+    // Sort child sections by their start line
+    const sortedChildren = childSections
+      .map(child => ({ section: child, range: sectionMap.get(child.id)! }))
+      .sort((a, b) => a.range.start - b.range.start);
+
+    for (const { section: childSection, range: childRange } of sortedChildren) {
+      if (childRange.start > currentPos) {
+        // Include content before this child
+        linesToInclude.push({ start: currentPos, end: childRange.start - 1 });
+      }
+      // Skip the child section entirely
+      currentPos = childRange.end + 1;
+    }
+
+    // Include remaining content after last child
+    if (currentPos <= range.end) {
+      linesToInclude.push({ start: currentPos, end: range.end });
+    }
+
+    // Extract the content from the identified ranges
+    const sectionLines = linesToInclude
+      .flatMap(r => contentLines.slice(r.start, r.end + 1));
+
+    return sectionLines.join('\n');
   }
 }
