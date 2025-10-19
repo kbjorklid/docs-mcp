@@ -2,7 +2,7 @@
 name: documentation-updater
 description: Use this agent when you need to update the README.md file with user-facing documentation that reflects recent changes to the project. This agent should be used proactively after significant feature additions, configuration changes, or documentation updates that affect end users. Examples: <example>Context: The user has just implemented new command line arguments for the docs-mcp server. user: 'I've added --docs-path and --version flags to the server' assistant: 'I'll use the readme-updater agent to update the README.md with the new command line options and usage examples.' <commentary>Since new command line arguments affect end users, use the readme-updater agent to update the user-facing documentation.</commentary></example> <example>Context: The user has just completed adding comprehensive error handling to the MCP server. user: 'The server now returns structured error responses for all failure cases' assistant: 'Let me use the readme-updater agent to add the error codes section to the README.md' <commentary>Error codes are important for users to understand troubleshooting, so use the readme-updater agent.</commentary></example>
 tools: Glob, Grep, Read, Edit, Write, NotebookEdit, WebFetch, TodoWrite, WebSearch, BashOutput, KillShell, SlashCommand
-model: sonnet
+model: haiku
 color: green
 ---
 

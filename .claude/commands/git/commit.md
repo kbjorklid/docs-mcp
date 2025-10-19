@@ -29,7 +29,7 @@ Do not re-execute the commands mentioned above; trust that the output is correct
 
 (b) If there is no user input AND there are staged changes: create a commit of the staged changes.
 
-(c) If there is no user input AND there are no staged changes and/or untracked files AND there are unstaged changes: Check the unstaged changes and consider what should be committed. If you think there are things that would not make sense to commit (for example, files that seem temporary), ask user. Provide user choice to commit everything, or commit what you suggest, or write an explanation what they expect to be committed.
+(c) If there is no user input AND there are no staged changes and/or untracked files AND there are unstaged changes: Check the unstaged changes and consider what should be committed. If you think there are things that would not make sense to commit (for example, files that seem temporary), ask user using the AskUserQuestion tool. Provide user choice to commit everything, or commit what you suggest, or write an explanation what they expect to be committed.
 
 If there is nothing to commit (no changes at all and no untracked files): notify user that this is the case, do not create a commit.
 

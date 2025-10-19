@@ -2,7 +2,7 @@
 name: test-coverage-planner
 description: Use this agent when you need to analyze test coverage for specific code and create a comprehensive testing plan. Examples: <example>Context: User has just implemented a new authentication service and wants to ensure it's properly tested. user: 'I just finished implementing the JWT authentication service with token validation and refresh logic. Can you help me make sure it's thoroughly tested?' assistant: 'I'll use the test-coverage-planner agent to analyze the current test coverage and create a comprehensive testing plan for your authentication service.' <commentary>Since the user wants to analyze test coverage for newly implemented code, use the test-coverage-planner agent to assess current coverage and create a testing plan.</commentary></example> <example>Context: User has modified existing code and wants to ensure the changes are properly tested. user: 'I updated the data processing pipeline to handle edge cases for null values and want to make sure the tests cover these scenarios.' assistant: 'Let me use the test-coverage-planner agent to analyze the current test coverage for your data processing pipeline and create a plan for testing the new edge cases.' <commentary>The user needs test coverage analysis for modified code, so use the test-coverage-planner agent to assess coverage and plan additional tests.</commentary></example>
 tools: Bash, Glob, Grep, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillShell, SlashCommand
-model: sonnet
+model: inherit
 color: green
 ---
 

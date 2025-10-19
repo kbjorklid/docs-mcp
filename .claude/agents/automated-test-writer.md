@@ -1,7 +1,7 @@
 ---
 name: automated-test-writer
 description: Use this agent when you need to plan, implement, and validate automated tests for code that has been recently written or modified. Examples: <example>Context: User has just implemented a new function for calculating fibonacci numbers. user: 'I just wrote this fibonacci function, can you help me test it?' assistant: 'I'll use the test-automation-planner agent to create comprehensive tests for your fibonacci function.' <commentary>Since the user has implemented new code and wants testing, use the test-automation-planner agent to handle the complete testing workflow.</commentary></example> 
-model: sonnet
+model: inherit
 color: red
 ---
 
