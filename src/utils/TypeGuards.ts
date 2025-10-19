@@ -33,3 +33,15 @@ export const isStringArray = (value: unknown): value is string[] =>
  */
 export const isError = (error: unknown): error is Error =>
   error instanceof Error;
+
+/**
+ * Validate file ID format (f followed by number)
+ * @param fileId - The file ID to validate
+ * @returns true if valid format, false otherwise
+ */
+export function isValidFileId(fileId: unknown): fileId is string {
+  if (!isNonEmptyString(fileId)) {
+    return false;
+  }
+  return /^f[0-9]+$/.test(fileId);
+}

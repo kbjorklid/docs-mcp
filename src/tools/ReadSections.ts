@@ -1,7 +1,7 @@
-import { SectionContent, Configuration } from '../types';
+import { ReadSectionsResponse, Configuration } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, validateAndResolveFile, parseToolError, getErrorMessage, createFileNotFoundError, createSectionNotFoundError } from '../utils';
+import { createSuccessResponse, createErrorResponse, parseToolError, getErrorMessage, createSectionNotFoundError, isValidFileId } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 export class ReadSections {
@@ -25,10 +25,10 @@ export class ReadSections {
       inputSchema: {
         type: 'object',
         properties: {
-          filename: {
+          fileId: {
             type: 'string',
             description:
-              'Path to the markdown file relative to the documentation folder',
+              'The file ID (e.g., \'f1\', \'f2\') returned by the list_documentation_files tool.',
           },
           section_ids: {
             type: 'array',
@@ -38,7 +38,7 @@ export class ReadSections {
             description: 'Array of numeric section identifiers to read (e.g., ["1/1", "1/2"])',
           },
         },
-        required: ['filename', 'section_ids'],
+        required: ['fileId', 'section_ids'],
       },
     };
   }
@@ -46,10 +46,10 @@ export class ReadSections {
   /**
    * Execute the read_sections tool
    */
-  async execute(filename: string, sectionIds: string[]) {
-    // Validate filename parameter
-    if (!filename) {
-      return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
+  async execute(fileId: string, sectionIds: string[]) {
+    // Validate fileId parameter
+    if (!isValidFileId(fileId)) {
+      return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId));
     }
 
     // Validate section_ids parameter
@@ -58,8 +58,8 @@ export class ReadSections {
     }
 
     try {
-      const sections = await this.readSections(filename, sectionIds);
-      return createSuccessResponse(sections);
+      const result = await this.readSections(fileId, sectionIds);
+      return createSuccessResponse(result);
     } catch (error) {
       const parsedError = parseToolError(error);
       return createErrorResponse(getErrorMessage(parsedError));
@@ -70,31 +70,33 @@ export class ReadSections {
    * Read specific sections from a markdown file
    */
   private async readSections(
-    filename: string,
+    fileId: string,
     sectionIds: string[]
-  ): Promise<SectionContent[]> {
-    // Handle empty section_ids array - return empty result
-    if (sectionIds.length === 0) {
-      return [];
+  ): Promise<ReadSectionsResponse> {
+    // Resolve fileId to file path
+    const fileMapping = await this.fileDiscovery.getFileByFileId(fileId);
+
+    if (!fileMapping) {
+      throw new Error(ERROR_MESSAGES.FILE_ID_NOT_FOUND(fileId));
     }
 
-    // Validate and resolve the file path
-    const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
-
-    if (!fileValidation.valid) {
-      // Return the FILE_NOT_FOUND error message directly by throwing with the error message
-      const errorMsg = fileValidation.errorMessage || `File '${filename}' not found`;
-      throw createFileNotFoundError(filename, errorMsg);
+    // Handle empty section_ids array - return empty result with file info
+    if (sectionIds.length === 0) {
+      return {
+        fileId,
+        filename: fileMapping.filename,
+        sections: [],
+      };
     }
 
     // Read and parse the file
-    const { content } = MarkdownParser.readMarkdownFile(fileValidation.fullPath!);
+    const { content } = MarkdownParser.readMarkdownFile(fileMapping.fullPath);
     const { sectionMap } = MarkdownParser.parseMarkdownSections(content);
 
     // Check if all requested sections exist
     const missingSections = sectionIds.filter((id) => !sectionMap.has(id));
     if (missingSections.length > 0) {
-      throw createSectionNotFoundError(filename, missingSections);
+      throw createSectionNotFoundError(fileMapping.filename, missingSections);
     }
 
     // Read the requested sections
@@ -103,6 +105,11 @@ export class ReadSections {
       sectionIds,
       sectionMap
     );
-    return sections;
+
+    return {
+      fileId,
+      filename: fileMapping.filename,
+      sections,
+    };
   }
 }

@@ -1,7 +1,7 @@
 import { Section, Configuration, SearchResult, FileSearchResult } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, validateAndResolveFile, isNonEmptyString, isError, parseToolError, getErrorMessage, createFileNotFoundError, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS, type ToolResponse } from '../utils';
+import { createSuccessResponse, createErrorResponse, isNonEmptyString, isError, parseToolError, getErrorMessage, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS, isValidFileId, type ToolResponse } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 // Regular expression flags
@@ -23,7 +23,7 @@ export class Search {
     return {
       name: 'search',
       description:
-        'Use this tool ONLY AS A FALLBACK if you cannot find the information you need by using \'table_of_contents\' tool -. ' +
+        'Use this tool ONLY AS A FALLBACK if you cannot find the information you need by using \'table_of_contents\' tool. ' +
         'Search for text matches using regular expressions in documentation files. ' +
         'Use list_documentation_files to see available files before using this tool. ' +
         'Multiline-matching, case is ignored.',
@@ -32,15 +32,15 @@ export class Search {
         properties: {
           query: {
             type: 'string',
-            description: 'The regular expression pattern to search for (case-insensitive, multiline-matching). ' + 
+            description: 'The regular expression pattern to search for (case-insensitive, multiline-matching). ' +
             'Examples: "foo.*bar" matches across line breaks, "\\b[A-Z][a-z]+\\b" matches capitalized words.',
           },
-          filename: {
+          fileId: {
             type: 'string',
-            description: 'required specific file to search in. Use the list_documentation_files tool to see available files.',
+            description: 'Optional file ID (e.g., \'f1\', \'f2\') to search in. If not provided, searches all files. Use the list_documentation_files tool to see available file IDs.',
           },
         },
-        required: ['query', 'filename'],
+        required: ['query'],
       },
     };
   }
@@ -48,14 +48,20 @@ export class Search {
   /**
    * Execute the search tool with improved type safety and validation
    * @param query - The regular expression pattern to search for
-   * @param filename - Specific file to search in
+   * @param fileId - Optional file ID to search in (if not provided, searches all files)
    * @returns Promise<ToolResponse> - Search results or error response
    */
-  async execute(query: unknown, filename: unknown): Promise<ToolResponse> {
-    // Validate input parameters using type guards
-    const validationResult = this.validateInputParameters(query, filename);
-    if (validationResult) {
-      return validationResult;
+  async execute(query: unknown, fileId?: unknown): Promise<ToolResponse> {
+    // Validate query parameter
+    if (!isNonEmptyString(query)) {
+      return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('query'));
+    }
+
+    // Validate fileId if provided
+    if (fileId !== undefined && fileId !== null) {
+      if (!isValidFileId(fileId)) {
+        return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId as string));
+      }
     }
 
     // Compile and validate regular expression
@@ -65,33 +71,15 @@ export class Search {
     }
 
     try {
-      const searchResults = await this.searchInSpecificFile(regexResult.regex!, filename as string);
+      const searchResults = fileId
+        ? await this.searchInSpecificFile(regexResult.regex!, fileId as string)
+        : await this.searchInAllFiles(regexResult.regex!);
       return createSuccessResponse(searchResults);
     } catch (error) {
-      return this.handleSearchError(error, filename as string);
+      return this.handleSearchError(error, fileId as string | undefined);
     }
   }
 
-  /**
-   * Validate input parameters using type guards
-   * @param query - Query parameter to validate
-   * @param filename - Filename parameter to validate
-   * @returns ToolResponse | null - Error response if validation fails, null if valid
-   */
-  private validateInputParameters(
-    query: unknown,
-    filename: unknown
-  ): ToolResponse | null {
-    if (!isNonEmptyString(query)) {
-      return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('query'));
-    }
-
-    if (!isNonEmptyString(filename)) {
-      return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('filename'));
-    }
-
-    return null;
-  }
 
   /**
    * Compile and validate the regular expression
@@ -118,13 +106,13 @@ export class Search {
   /**
    * Handle search errors with comprehensive error type coverage
    * @param error - The error that occurred during search (can be any type)
-   * @param filename - Filename where the error occurred
+   * @param fileId - Optional file ID where the error occurred
    * @returns Formatted error response with helpful guidance
    */
-  private handleSearchError(error: unknown, filename: string): ToolResponse {
+  private handleSearchError(error: unknown, fileId?: string): ToolResponse {
     const parsedError = parseToolError(error);
 
-    // If it's a specific tool error type (FILE_NOT_FOUND or SECTION_NOT_FOUND), use the parsed message
+    // If it's a specific tool error type, use the parsed message
     if (parsedError.type !== 'PARSE_ERROR') {
       return createErrorResponse(getErrorMessage(parsedError));
     }
@@ -133,20 +121,67 @@ export class Search {
     return createErrorResponse(ERROR_MESSAGES.SEARCH_ERROR);
   }
 
-  
+
   /**
-   * Search in a specific file for matching sections
+   * Search in all files for matching sections
    * @param regex - Compiled regular expression to search with
-   * @param filename - Name of the file to search in
-   * @returns Promise<SearchResult> - Search results for the specific file
-   * @throws Error if file validation fails or file cannot be processed
+   * @returns Promise<SearchResult> - Search results across all files
    */
-  private async searchInSpecificFile(regex: RegExp, filename: string): Promise<SearchResult> {
-    const matches = await this.findMatchesInFile(regex, filename);
+  private async searchInAllFiles(regex: RegExp): Promise<SearchResult> {
+    const allFiles = await this.fileDiscovery.getAllFiles();
+    const results: FileSearchResult[] = [];
+
+    for (let index = 0; index < allFiles.length; index++) {
+      const file = allFiles[index];
+      const fileId = `f${index + 1}`;
+      const matches = await this.findMatchesInFile(regex, file.fullPath);
+
+      if (matches.length > 0) {
+        results.push({
+          fileId,
+          filename: file.filename,
+          matches,
+        });
+      }
+    }
 
     const result: SearchResult = {
       query: regex.source,
-      results: [{ filename, matches }],
+      results,
+    };
+
+    // Check if any matched section has hidden subsections
+    const allMatches = results.flatMap(r => r.matches);
+    if (hasHiddenSubsections(allMatches)) {
+      result.instructions = INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS;
+    }
+
+    return result;
+  }
+
+  /**
+   * Search in a specific file for matching sections
+   * @param regex - Compiled regular expression to search with
+   * @param fileId - File ID to search in
+   * @returns Promise<SearchResult> - Search results for the specific file
+   * @throws Error if file validation fails or file cannot be processed
+   */
+  private async searchInSpecificFile(regex: RegExp, fileId: string): Promise<SearchResult> {
+    const fileMapping = await this.fileDiscovery.getFileByFileId(fileId);
+
+    if (!fileMapping) {
+      throw new Error(ERROR_MESSAGES.FILE_ID_NOT_FOUND(fileId));
+    }
+
+    const matches = await this.findMatchesInFile(regex, fileMapping.fullPath);
+
+    const result: SearchResult = {
+      query: regex.source,
+      results: [{
+        fileId,
+        filename: fileMapping.filename,
+        matches,
+      }],
     };
 
     // Add instructions if any matched section has hidden subsections
@@ -160,21 +195,13 @@ export class Search {
   /**
    * Find all sections in a file that contain the search pattern
    * @param regex - Compiled regular expression to search with
-   * @param filename - Name of the file to search in
+   * @param fullPath - Full path to the file to search in
    * @returns Section[] - Array of sections that match the search pattern
-   * @throws Error if file validation fails or content cannot be parsed
+   * @throws Error if file cannot be read or parsed
    */
-  private async findMatchesInFile(regex: RegExp, filename: string): Promise<Section[]> {
-    // Validate and resolve the file path
-    const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
-
-    if (!fileValidation.valid) {
-      const errorMsg = fileValidation.errorMessage || ERROR_MESSAGES.FILE_NOT_FOUND(filename);
-      throw createFileNotFoundError(filename, errorMsg);
-    }
-
+  private async findMatchesInFile(regex: RegExp, fullPath: string): Promise<Section[]> {
     // Read and parse the markdown file
-    const { content } = MarkdownParser.readMarkdownFile(fileValidation.fullPath!);
+    const { content } = MarkdownParser.readMarkdownFile(fullPath);
     const { sections, sectionMap } = MarkdownParser.parseMarkdownSections(content);
 
     // Filter sections that contain the search pattern in header or content

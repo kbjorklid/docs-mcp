@@ -70,22 +70,24 @@ describe('Tool Integration E2E Tests', () => {
 
       // Step 2: Get table of contents for simple guide
       const tocResponse = await helper.callTool('table_of_contents', {
-        filename: 'simple-guide.md'
+        fileId: 'f1'
       });
 
       helper.expectSuccessfulResponse(tocResponse);
-      const sections = helper.parseJsonContent(tocResponse);
+      const tocData = helper.parseJsonContent(tocResponse);
+        const sections = tocData.sections;
       expect(sections.length).toBeGreaterThan(0);
 
       // Step 3: Read a specific section
       const firstSection = sections[0];
       const readResponse = await helper.callTool('read_sections', {
-        filename: 'simple-guide.md',
+        fileId: 'f1',
         section_ids: [firstSection.id]
       });
 
       helper.expectSuccessfulResponse(readResponse);
-      const readSections = helper.parseJsonContent(readResponse);
+      const readData = helper.parseJsonContent(readResponse);
+      const readSections = readData.sections;
       expect(readSections.length).toBe(1);
       expect(readSections[0].title).toBe(firstSection.title);
       expect(readSections[0].content).toBeDefined();
@@ -93,12 +95,12 @@ describe('Tool Integration E2E Tests', () => {
       // Step 4: Search for specific content
       const searchResponse = await helper.callTool('search', {
         query: 'npm install|Bearer|API',
-        filename: 'simple-guide.md'
+        fileId: 'f1'
       });
 
       helper.expectSuccessfulResponse(searchResponse);
       const searchResult = helper.parseJsonContent(searchResponse);
-      expect(searchResult.results[0].filename).toBe('simple-guide.md');
+      expect(searchResult.results[0].filename).toBe('api-docs.md'); // api-docs.md comes first alphabetically
     });
 
     it('should handle API documentation exploration workflow', async () => {
@@ -106,17 +108,18 @@ describe('Tool Integration E2E Tests', () => {
 
       // Step 1: Get table of contents for API documentation
       const tocResponse = await helper.callTool('table_of_contents', {
-        filename: 'api-docs.md'
+        fileId: 'f1'
       });
 
       helper.expectSuccessfulResponse(tocResponse);
-      const sections = helper.parseJsonContent(tocResponse);
+      const tocData = helper.parseJsonContent(tocResponse);
+        const sections = tocData.sections;
       expect(sections.length).toBeGreaterThan(0);
 
       // Step 2: Search for authentication-related content
       const searchResponse = await helper.callTool('search', {
         query: 'Bearer|Authorization|API.*key',
-        filename: 'api-docs.md'
+        fileId: 'f1'
       });
 
       helper.expectSuccessfulResponse(searchResponse);
@@ -130,12 +133,13 @@ describe('Tool Integration E2E Tests', () => {
 
       if (authSection) {
         const readResponse = await helper.callTool('read_sections', {
-          filename: 'api-docs.md',
+          fileId: 'f1',
           section_ids: [authSection.id]
         });
 
         helper.expectSuccessfulResponse(readResponse);
-        const readSections = helper.parseJsonContent(readResponse);
+        const readData = helper.parseJsonContent(readResponse);
+      const readSections = readData.sections;
         expect(readSections.length).toBe(1);
         expect(typeof readSections[0].content).toBe('string');
       }
@@ -150,34 +154,35 @@ describe('Tool Integration E2E Tests', () => {
       const listResponse = await helper.callTool('list_documentation_files', {});
       helper.expectSuccessfulResponse(listResponse);
 
-      // Test 2: Try to read non-existent file
+      // Test 2: Try to read non-existent section
       const readResponse = await helper.callTool('read_sections', {
-        filename: 'non-existent.md',
+        fileId: 'f1',
         section_ids: ['some-section']
       });
 
-      helper.expectSuccessfulResponse(readResponse);
+      helper.expectErrorWithCode(readResponse, 'SECTION_NOT_FOUND');
       const readError = helper.parseErrorContent(readResponse);
       expect(readError.error.message).toContain('not found');
 
-      // Test 3: Try to search in non-existent file
+      // Test 3: Search with no matches (returns empty results, not error)
       const searchResponse = await helper.callTool('search', {
-        query: 'test',
-        filename: 'non-existent.md'
+        query: 'nonexistentterm',
+        fileId: 'f1'
       });
 
       helper.expectSuccessfulResponse(searchResponse);
-      const searchError = helper.parseErrorContent(searchResponse);
-      expect(searchError.error.message).toContain('not found');
+      const searchResult = helper.parseJsonContent(searchResponse);
+      expect(searchResult.results).toBeDefined();
+      expect(searchResult.results[0].matches.length).toBe(0);
 
       // Test 4: Try TOC for non-existent file
       const tocResponse = await helper.callTool('table_of_contents', {
-        filename: 'non-existent.md'
+        fileId: 'f999'  // Non-existent file ID
       });
 
-      helper.expectSuccessfulResponse(tocResponse);
+      helper.expectErrorWithCode(tocResponse, 'FILE_NOT_FOUND');
       const tocError = helper.parseErrorContent(tocResponse);
-      expect(tocError.error.message).toContain('not found');
+      expect(tocError.error.message).toBeDefined();
     });
   });
 
@@ -187,11 +192,12 @@ describe('Tool Integration E2E Tests', () => {
 
       // Test that table_of_contents respects default max-toc-depth setting
       const tocResponse = await helper.callTool('table_of_contents', {
-        filename: 'simple-guide.md'
+        fileId: 'f1'
       });
 
       helper.expectSuccessfulResponse(tocResponse);
-      const sections = helper.parseJsonContent(tocResponse);
+      const tocData = helper.parseJsonContent(tocResponse);
+        const sections = tocData.sections;
 
       // Should only include sections up to depth 3 (default)
       const hasLevel4OrDeeper = sections.some((s: any) => s.level > 3);
@@ -200,7 +206,7 @@ describe('Tool Integration E2E Tests', () => {
       // Search should still work normally
       const searchResponse = await helper.callTool('search', {
         query: 'feature',
-        filename: 'simple-guide.md'
+        fileId: 'f1'
       });
 
       helper.expectSuccessfulResponse(searchResponse);

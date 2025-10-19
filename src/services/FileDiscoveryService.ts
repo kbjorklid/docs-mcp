@@ -5,7 +5,7 @@
 
 import { glob } from 'glob';
 import * as path from 'path';
-import { Configuration, FileMetadata, FileInfo } from '../types';
+import { Configuration, FileMetadata, FileInfo, FileInfoWithId } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 
 /**
@@ -20,44 +20,56 @@ export interface DiscoveredFile {
 }
 
 /**
+ * File ID mapping for session-scoped file references
+ */
+export interface FileIdMapping {
+  fileId: string;
+  filename: string;
+  fullPath: string;
+  sourceDirectory: string;
+  discoveredFile: DiscoveredFile;
+}
+
+/**
  * Service for discovering and managing files across multiple documentation directories
  */
 export class FileDiscoveryService {
   private config: Configuration;
   private fileCache: DiscoveredFile[] | null = null;
+  private fileIdRegistry: Map<string, FileIdMapping> = new Map();
+  private filenameToFileId: Map<string, string> = new Map();
+  private isInitialized: boolean = false;
 
   constructor(config: Configuration) {
     this.config = config;
   }
 
   /**
-   * Get all discovered files with conflict resolution applied
+   * Get all discovered files with file IDs assigned
    */
   async getAllFiles(): Promise<DiscoveredFile[]> {
-    if (this.fileCache) {
+    if (this.isInitialized && this.fileCache) {
       return this.fileCache;
     }
 
     const discoveredFiles: DiscoveredFile[] = [];
-    const seenFilenames = new Set<string>();
 
-    // Process directories in order to handle conflicts
+    // Process directories in config order
     for (const directory of this.config.documentationPaths) {
       const filesInDir = await this.discoverFilesInDirectory(directory);
-
-      for (const file of filesInDir) {
-        // Skip if we've already seen this filename (conflict resolution)
-        if (seenFilenames.has(file.filename)) {
-          continue;
-        }
-
-        discoveredFiles.push(file);
-        seenFilenames.add(file.filename);
-      }
+      discoveredFiles.push(...filesInDir);
     }
 
-    this.fileCache = discoveredFiles;
-    return discoveredFiles;
+    // Sort files deterministically: directory-first, then alphabetical within each directory
+    const sortedFiles = this.sortFilesByDirectoryAndAlphabet(discoveredFiles);
+
+    // Assign file IDs
+    this.assignFileIds(sortedFiles);
+
+    this.fileCache = sortedFiles;
+    this.isInitialized = true;
+
+    return sortedFiles;
   }
 
   /**
@@ -97,6 +109,93 @@ export class FileDiscoveryService {
    */
   clearCache(): void {
     this.fileCache = null;
+    this.fileIdRegistry.clear();
+    this.filenameToFileId.clear();
+    this.isInitialized = false;
+  }
+
+  /**
+   * Get file mapping by file ID
+   */
+  async getFileByFileId(fileId: string): Promise<FileIdMapping | null> {
+    // Ensure files are discovered and IDs assigned
+    await this.getAllFiles();
+
+    return this.fileIdRegistry.get(fileId) || null;
+  }
+
+  /**
+   * Get all files with file IDs included
+   */
+  async getAllFilesWithIds(): Promise<FileInfoWithId[]> {
+    const files = await this.getAllFiles();
+
+    return files.map((file, index) => ({
+      fileId: `f${index + 1}`,
+      filename: file.filename,
+      title: file.metadata.title || path.basename(file.filename, '.md'),
+      description: file.metadata.description,
+      keywords: file.metadata.keywords || [],
+      size: file.size,
+      sourceDirectory: file.sourceDirectory,
+    }));
+  }
+
+  /**
+   * Sort files deterministically: directory-first (config order), then alphabetical within each directory
+   */
+  private sortFilesByDirectoryAndAlphabet(files: DiscoveredFile[]): DiscoveredFile[] {
+    // Group files by source directory
+    const filesByDir = new Map<string, DiscoveredFile[]>();
+
+    for (const file of files) {
+      if (!filesByDir.has(file.sourceDirectory)) {
+        filesByDir.set(file.sourceDirectory, []);
+      }
+      filesByDir.get(file.sourceDirectory)!.push(file);
+    }
+
+    // Process directories in config order
+    const sortedFiles: DiscoveredFile[] = [];
+
+    for (const directory of this.config.documentationPaths) {
+      const filesInDir = filesByDir.get(directory) || [];
+
+      // Sort files alphabetically within directory (by filename, which includes subdirectory paths)
+      filesInDir.sort((a, b) => a.filename.localeCompare(b.filename));
+
+      sortedFiles.push(...filesInDir);
+    }
+
+    return sortedFiles;
+  }
+
+  /**
+   * Assign file IDs to discovered files
+   */
+  private assignFileIds(files: DiscoveredFile[]): void {
+    this.fileIdRegistry.clear();
+    this.filenameToFileId.clear();
+
+    files.forEach((file, index) => {
+      const fileId = `f${index + 1}`;
+
+      const mapping: FileIdMapping = {
+        fileId,
+        filename: file.filename,
+        fullPath: file.fullPath,
+        sourceDirectory: file.sourceDirectory,
+        discoveredFile: file,
+      };
+
+      this.fileIdRegistry.set(fileId, mapping);
+
+      // Note: Multiple files can have same filename in different directories
+      // We only store the first occurrence for backward compatibility lookups
+      if (!this.filenameToFileId.has(file.filename)) {
+        this.filenameToFileId.set(file.filename, fileId);
+      }
+    });
   }
 
   /**

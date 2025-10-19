@@ -25,4 +25,9 @@ export const ERROR_MESSAGES = {
   FILENAME_REQUIRED: 'The filename parameter is required. Use the list_documentation_files tool to see available files and provide the correct filename.',
   SECTION_IDS_REQUIRED: 'The section_ids parameter must be an array of section identifiers. Use the table_of_contents tool first to get valid section IDs.',
   NO_FILES_FOUND: 'No documentation files were found in the configured documentation directories. Please check that your documentation path is configured correctly.',
+  INVALID_FILE_ID: (fileId: string) =>
+    `The file ID '${fileId}' is invalid. File IDs must be in the format 'f' followed by a number (e.g., 'f1', 'f2'). Use the list_documentation_files tool to see all valid file IDs.`,
+  FILE_ID_NOT_FOUND: (fileId: string) =>
+    `The file ID '${fileId}' was not found. Use the list_documentation_files tool to see all available files and their IDs.`,
+  FILE_ID_REQUIRED: 'The fileId parameter is required. Use the list_documentation_files tool to see available files and their IDs.',
 } as const;

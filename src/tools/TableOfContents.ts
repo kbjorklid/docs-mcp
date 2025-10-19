@@ -1,7 +1,7 @@
 import { Section, Configuration, TableOfContentsResponse } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, validateAndResolveFile, parseToolError, getErrorMessage, createFileNotFoundError, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS } from '../utils';
+import { createSuccessResponse, createErrorResponse, parseToolError, getErrorMessage, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS, isValidFileId } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 export class TableOfContents {
@@ -21,20 +21,20 @@ export class TableOfContents {
       name: 'table_of_contents',
       description:
         'Provides a structured table of contents for a documentation file with numeric section IDs (e.g., "1/2/3"). ' +
-        'Use the list_documentation_files tool to see available files. ' +
+        'Use the list_documentation_files tool to get file IDs. ' +
         'ALWAYS use this tool first before resorting to the \'search\' tool. ' +
         'After using this tool, use the read_sections tool with the section IDs to read specific sections. ' +
         'The depth of headers returned is controlled by the server\'s max-toc-depth setting (default: 3 for ### headers).',
       inputSchema: {
         type: 'object',
         properties: {
-          filename: {
+          fileId: {
             type: 'string',
             description:
-              'The documentation file path as provided by the list_documentation_files tool.',
+              'The file ID (e.g., \'f1\', \'f2\') returned by the list_documentation_files tool.',
           },
         },
-        required: ['filename'],
+        required: ['fileId'],
       },
     };
   }
@@ -42,15 +42,15 @@ export class TableOfContents {
   /**
    * Execute the table_of_contents tool
    */
-  async execute(filename: string) {
-    // Validate filename parameter
-    if (!filename) {
-      return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
+  async execute(fileId: string) {
+    // Validate fileId parameter
+    if (!isValidFileId(fileId)) {
+      return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId));
     }
 
     try {
-      const sections = await this.getTableOfContents(filename);
-      return createSuccessResponse(sections);
+      const result = await this.getTableOfContents(fileId);
+      return createSuccessResponse(result);
     } catch (error) {
       const parsedError = parseToolError(error);
       return createErrorResponse(getErrorMessage(parsedError));
@@ -61,17 +61,16 @@ export class TableOfContents {
   /**
    * Get table of contents for a markdown file
    */
-  private async getTableOfContents(filename: string): Promise<TableOfContentsResponse> {
-    // Validate and resolve the file path
-    const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
+  private async getTableOfContents(fileId: string): Promise<TableOfContentsResponse> {
+    // Resolve fileId to file path
+    const fileMapping = await this.fileDiscovery.getFileByFileId(fileId);
 
-    if (!fileValidation.valid) {
-      const errorMsg = fileValidation.errorMessage || `File '${filename}' not found`;
-      throw createFileNotFoundError(filename, errorMsg);
+    if (!fileMapping) {
+      throw new Error(ERROR_MESSAGES.FILE_ID_NOT_FOUND(fileId));
     }
 
     // Read and parse the file
-    const { content } = MarkdownParser.readMarkdownFile(fileValidation.fullPath!);
+    const { content } = MarkdownParser.readMarkdownFile(fileMapping.fullPath);
     const { sections: fullSections } = MarkdownParser.parseMarkdownSections(content);
 
     // Filter sections by max toc depth from configuration if set
@@ -90,8 +89,10 @@ export class TableOfContents {
     // and we conditionally hide them if all children are already visible in the filtered results
     MarkdownParser.applyConditionalSubsectionCounts(filtered);
 
-    // Build response with sections and optional instructions
+    // Build response with file info and sections
     const response: TableOfContentsResponse = {
+      fileId,
+      filename: fileMapping.filename,
       sections: filtered,
     };
 

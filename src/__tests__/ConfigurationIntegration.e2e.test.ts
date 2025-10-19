@@ -52,11 +52,12 @@ describe('Configuration Integration E2E Tests', () => {
 
         // Step 2: Get table of contents (uses default max-toc-depth of 3)
         const tocResponse = await helper.callTool('table_of_contents', {
-          filename: 'user-guide.md'
+          fileId: 'f1'
         });
 
         helper.expectSuccessfulResponse(tocResponse);
-        const sections = helper.parseJsonContent(tocResponse);
+        const tocData = helper.parseJsonContent(tocResponse);
+        const sections = tocData.sections;
         expect(Array.isArray(sections)).toBe(true);
 
         // Verify default max toc depth is respected - should only have level 1-3 headers
@@ -66,14 +67,14 @@ describe('Configuration Integration E2E Tests', () => {
         // Step 3: Read specific sections
         if (sections.length > 0) {
           const readResponse = await helper.callTool('read_sections', {
-            filename: 'user-guide.md',
+            fileId: 'f1',
             section_ids: [sections[0].id]
           });
 
           helper.expectSuccessfulResponse(readResponse);
-          const content = helper.parseJsonContent(readResponse);
-          expect(Array.isArray(content)).toBe(true);
-          expect(content.length).toBe(1);
+          const readData = helper.parseJsonContent(readResponse);
+          expect(Array.isArray(readData.sections)).toBe(true);
+          expect(readData.sections.length).toBe(1);
         }
       } finally {
         serverProcess.kill();
@@ -104,27 +105,28 @@ describe('Configuration Integration E2E Tests', () => {
 
         // Step 2: Get table of contents
         const tocResponse = await helper.callTool('table_of_contents', {
-          filename: 'user-guide.md'
+          fileId: 'f1'
         });
 
         helper.expectSuccessfulResponse(tocResponse);
-        const sections = helper.parseJsonContent(tocResponse);
+        const tocData = helper.parseJsonContent(tocResponse);
+        const sections = tocData.sections;
         expect(Array.isArray(sections)).toBe(true);
         expect(sections.length).toBeGreaterThan(0);
 
         // Step 3: Read first section
         if (sections.length > 0) {
           const readResponse = await helper.callTool('read_sections', {
-            filename: 'user-guide.md',
+            fileId: 'f1',
             section_ids: [sections[0].id]
           });
 
           helper.expectSuccessfulResponse(readResponse);
-          const content = helper.parseJsonContent(readResponse);
-          expect(Array.isArray(content)).toBe(true);
-          expect(content[0]).toBeDefined();
-          expect(content[0].title).toBeTruthy();
-          expect(content[0].content).toBeTruthy();
+          const readData = helper.parseJsonContent(readResponse);
+          expect(Array.isArray(readData.sections)).toBe(true);
+          expect(readData.sections[0]).toBeDefined();
+          expect(readData.sections[0].title).toBeTruthy();
+          expect(readData.sections[0].content).toBeTruthy();
         }
       } finally {
         serverProcess.kill();
@@ -166,11 +168,11 @@ describe('Configuration Integration E2E Tests', () => {
           } else if (toolName === 'search') {
             args = {
               query: 'test',
-              filename: 'user-guide.md'
+              fileId: 'f1'
             };
           } else {
             args = {
-              filename: 'user-guide.md'
+              fileId: 'f1'
             };
           }
 
@@ -184,7 +186,8 @@ describe('Configuration Integration E2E Tests', () => {
             expect(files.length).toBeGreaterThan(0);
             expect(files.some((file: any) => file.filename === 'user-guide.md')).toBe(true);
           } else if (toolName === 'table_of_contents') {
-            const sections = helper.parseJsonContent(toolResponse);
+            const tocData = helper.parseJsonContent(toolResponse);
+        const sections = tocData.sections;
             expect(Array.isArray(sections)).toBe(true);
             expect(sections.length).toBeGreaterThan(0);
           } else if (toolName === 'search') {
@@ -195,17 +198,18 @@ describe('Configuration Integration E2E Tests', () => {
           } else if (toolName === 'read_sections') {
             // First get TOC to get a valid section ID
             const tocResponse = await helper.callTool('table_of_contents', {
-              filename: 'user-guide.md'
+              fileId: 'f1'
             });
-            const sections = helper.parseJsonContent(tocResponse);
+            const tocData = helper.parseJsonContent(tocResponse);
+        const sections = tocData.sections;
             if (sections.length > 0) {
               const readResponse = await helper.callTool('read_sections', {
-                filename: 'user-guide.md',
+                fileId: 'f1',
                 section_ids: [sections[0].id]
               });
-              const content = helper.parseJsonContent(readResponse);
-              expect(Array.isArray(content)).toBe(true);
-              expect(content.length).toBeGreaterThan(0);
+              const readData = helper.parseJsonContent(readResponse);
+              expect(Array.isArray(readData.sections)).toBe(true);
+              expect(readData.sections.length).toBeGreaterThan(0);
             }
           }
         }

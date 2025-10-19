@@ -1,7 +1,7 @@
 import { Section, Configuration, TableOfContentsResponse } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, validateAndResolveFile, parseToolError, getErrorMessage, createFileNotFoundError, createSectionNotFoundError, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS } from '../utils';
+import { createSuccessResponse, createErrorResponse, parseToolError, getErrorMessage, createSectionNotFoundError, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS, isValidFileId } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 /**
@@ -37,10 +37,10 @@ export class SectionTableOfContents {
       inputSchema: {
         type: 'object',
         properties: {
-          filename: {
+          fileId: {
             type: 'string',
             description:
-              'The documentation file path as provided by the list_documentation_files tool.',
+              'The file ID (e.g., \'f1\', \'f2\') returned by the list_documentation_files tool.',
           },
           section_ids: {
             type: 'array',
@@ -51,7 +51,7 @@ export class SectionTableOfContents {
             minItems: 1,
           },
         },
-        required: ['filename', 'section_ids'],
+        required: ['fileId', 'section_ids'],
       },
     };
   }
@@ -59,10 +59,10 @@ export class SectionTableOfContents {
   /**
    * Execute the section_table_of_contents tool
    */
-  async execute(filename: string, sectionIds: string[]) {
-    // Validate filename parameter
-    if (!filename) {
-      return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
+  async execute(fileId: string, sectionIds: string[]) {
+    // Validate fileId parameter
+    if (!isValidFileId(fileId)) {
+      return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId));
     }
 
     // Validate section_ids parameter
@@ -71,8 +71,8 @@ export class SectionTableOfContents {
     }
 
     try {
-      const sections = await this.getSectionTableOfContents(filename, sectionIds);
-      return createSuccessResponse(sections);
+      const result = await this.getSectionTableOfContents(fileId, sectionIds);
+      return createSuccessResponse(result);
     } catch (error) {
       const parsedError = parseToolError(error);
       return createErrorResponse(getErrorMessage(parsedError));
@@ -82,23 +82,22 @@ export class SectionTableOfContents {
   /**
    * Get table of contents for subsections of specified sections
    */
-  private async getSectionTableOfContents(filename: string, sectionIds: string[]): Promise<TableOfContentsResponse> {
-    // Validate and resolve the file path
-    const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
+  private async getSectionTableOfContents(fileId: string, sectionIds: string[]): Promise<TableOfContentsResponse> {
+    // Resolve fileId to file path
+    const fileMapping = await this.fileDiscovery.getFileByFileId(fileId);
 
-    if (!fileValidation.valid) {
-      const errorMsg = fileValidation.errorMessage || `File '${filename}' not found`;
-      throw createFileNotFoundError(filename, errorMsg);
+    if (!fileMapping) {
+      throw new Error(ERROR_MESSAGES.FILE_ID_NOT_FOUND(fileId));
     }
 
     // Read and parse the file
-    const { content } = MarkdownParser.readMarkdownFile(fileValidation.fullPath!);
+    const { content } = MarkdownParser.readMarkdownFile(fileMapping.fullPath);
     const { sections, sectionMap } = MarkdownParser.parseMarkdownSections(content);
 
     // Check if all requested sections exist
     const missingSections = sectionIds.filter((id) => !sectionMap.has(id));
     if (missingSections.length > 0) {
-      throw createSectionNotFoundError(filename, missingSections);
+      throw createSectionNotFoundError(fileMapping.filename, missingSections);
     }
 
     // Get direct children of all requested sections
@@ -118,8 +117,10 @@ export class SectionTableOfContents {
     // and we conditionally hide them if all children are already visible in the filtered results
     MarkdownParser.applyConditionalSubsectionCounts(subsections);
 
-    // Build response with sections and optional instructions
+    // Build response with file info and sections
     const response: TableOfContentsResponse = {
+      fileId,
+      filename: fileMapping.filename,
       sections: subsections,
     };
 

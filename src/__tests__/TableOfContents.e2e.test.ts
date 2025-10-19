@@ -18,8 +18,8 @@ describe('table_of_contents E2E Tests', () => {
         const tool = await helper.verifyToolAvailable('table_of_contents');
 
         // Check required parameters
-        expect(tool.inputSchema.required).toContain('filename');
-        expect(tool.inputSchema.properties.filename).toBeDefined();
+        expect(tool.inputSchema.required).toContain('fileId');
+        expect(tool.inputSchema.properties.fileId).toBeDefined();
         // max_depth parameter should not exist (removed in favor of --max-toc-depth config)
         expect(tool.inputSchema.properties.max_depth).toBeUndefined();
       } finally {
@@ -35,7 +35,7 @@ describe('table_of_contents E2E Tests', () => {
 
       try {
         const response = await helper.callTool('table_of_contents', {
-          filename: 'simple-headers.md'
+          fileId: 'f1'
         });
 
         helper.expectSuccessfulResponse(response);
@@ -43,7 +43,7 @@ describe('table_of_contents E2E Tests', () => {
         expect(content[0].type).toBe('text');
 
         // Parse the JSON content - it's the sections array directly
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
         expect(Array.isArray(sections)).toBe(true);
         expect(sections.length).toBeGreaterThan(0);
 
@@ -93,7 +93,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'complex-nested.md'
+              fileId: 'f1'
             }
           }
         };
@@ -101,7 +101,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Check that we have headers at all levels (1-6)
         const levels = new Set(sections.map((s: any) => s.level));
@@ -139,7 +139,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'with-front-matter.md'
+              fileId: 'f1'
             }
           }
         };
@@ -176,7 +176,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'no-headers.md'
+              fileId: 'f1'
             }
           }
         };
@@ -207,7 +207,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'single-header.md'
+              fileId: 'f1'
             }
           }
         };
@@ -241,7 +241,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'special-characters.md'
+              fileId: 'f1'
             }
           }
         };
@@ -287,7 +287,7 @@ describe('table_of_contents E2E Tests', () => {
 
       try {
         const response = await helper.callTool('table_of_contents', {
-          filename: 'non-existent-file.md'
+          fileId: 'f1'
         });
 
         helper.expectErrorWithCode(response, 'FILE_NOT_FOUND');
@@ -358,7 +358,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'many-headers.md'
+              fileId: 'f1'
             }
           }
         };
@@ -366,7 +366,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should limit to 20 headers max
         expect(sections.length).toBeLessThanOrEqual(20);
@@ -417,7 +417,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'many-top-level.md'
+              fileId: 'f1'
             }
           }
         };
@@ -425,7 +425,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should have all 30 level-1 headers (always included even though it exceeds limit of 10)
         const level1 = sections.filter((s: any) => s.level === 1);
@@ -470,7 +470,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'test-file.md'
+              fileId: 'f1'
             }
           }
         };
@@ -478,7 +478,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should limit to 8 headers
         expect(sections.length).toBeLessThanOrEqual(8);
@@ -515,7 +515,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'cli-test.md'
+              fileId: 'f1'
             }
           }
         };
@@ -523,7 +523,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should limit to 5 headers
         expect(sections.length).toBeLessThanOrEqual(5);
@@ -568,7 +568,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'deep-nested.md'
+              fileId: 'f1'
             }
           }
         };
@@ -576,7 +576,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should have max_toc_depth applied first (only level 1-2)
         const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
@@ -617,7 +617,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'many-headers.md'
+              fileId: 'f1'
             }
           }
         };
@@ -625,7 +625,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should apply the default limit of 25
         expect(sections.length).toBeLessThanOrEqual(25);
@@ -665,7 +665,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'test-file.md'
+              fileId: 'f1'
             }
           }
         };
@@ -673,7 +673,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should use CLI value of 20, not ENV value of 8
         expect(sections.length).toBeLessThanOrEqual(20);
@@ -715,7 +715,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'single-section-many-subheaders.md'
+              fileId: 'f1'
             }
           }
         };
@@ -723,7 +723,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Phase 1 should trigger: base algorithm returns 1 header (< 3)
         // So Phase 1 includes all level-2 subheaders, even though it exceeds limit
@@ -768,7 +768,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'two-sections-many-subheaders.md'
+              fileId: 'f1'
             }
           }
         };
@@ -776,7 +776,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Phase 1 should trigger: base algorithm returns 2 headers (< 3)
         // So Phase 1 includes all level-2 subheaders
@@ -821,7 +821,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'two-headers-only.md'
+              fileId: 'f1'
             }
           }
         };
@@ -829,7 +829,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Phase 1 should NOT trigger: document has < 3 headers total (only 2)
         expect(sections.length).toBe(2);
@@ -871,7 +871,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'three-sections.md'
+              fileId: 'f1'
             }
           }
         };
@@ -879,7 +879,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Phase 1 should NOT trigger: base algorithm returns 23 headers (>= 3)
         expect(sections.length).toBe(23); // 3 L1 + 20 L2
@@ -925,7 +925,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'phase2-fills-slots.md'
+              fileId: 'f1'
             }
           }
         };
@@ -933,7 +933,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Base algorithm returns 18 headers (3 L1 + 15 L2)
         // Phase 2 fills remaining 7 slots with L3 headers from largest sections
@@ -977,7 +977,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'phase2-partial-fit.md'
+              fileId: 'f1'
             }
           }
         };
@@ -985,7 +985,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Phase 2 should not add partial groups of children
         // Base algorithm should give 21 headers, Phase 2 might add more but must respect limits
@@ -1033,7 +1033,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'phase2-char-count-priority.md'
+              fileId: 'f1'
             }
           }
         };
@@ -1041,7 +1041,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Base algorithm returns 18 headers
         // Phase 2 should prioritize Section C (largest char count) for its children
@@ -1085,7 +1085,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'phase2-exact-limit.md'
+              fileId: 'f1'
             }
           }
         };
@@ -1093,7 +1093,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Base algorithm: 24 headers, Phase 2 can add 1 more to reach exactly 25
         expect(sections.length).toBeLessThanOrEqual(25);
@@ -1134,7 +1134,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'two-level1-only.md'
+              fileId: 'f1'
             }
           }
         };
@@ -1142,7 +1142,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should return all level-1 headers (no deeper levels to include)
         expect(sections.length).toBe(2);
@@ -1183,7 +1183,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'all-sections-fit.md'
+              fileId: 'f1'
             }
           }
         };
@@ -1191,7 +1191,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // All 18 sections fit within limit, Phase 2 has nothing to add
         expect(sections.length).toBe(18); // 3 L1 + 15 L2
@@ -1234,7 +1234,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'large-section.md'
+              fileId: 'f1'
             }
           }
         };
@@ -1242,7 +1242,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should respect the limit
         expect(sections.length).toBeLessThanOrEqual(25);
@@ -1282,7 +1282,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'complex-nested.md'
+              fileId: 'f1'
             }
           }
         };
@@ -1290,7 +1290,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should only have headers up to level 2
         const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
@@ -1335,7 +1335,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'complex-nested.md'
+              fileId: 'f1'
             }
           }
         };
@@ -1343,7 +1343,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should only have headers up to level 2
         const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
@@ -1381,7 +1381,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'complex-nested.md'
+              fileId: 'f1'
             }
           }
         };
@@ -1389,7 +1389,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should have headers up to level 3 (default)
         const levels = new Set(sections.map((s: any) => s.level));
@@ -1436,7 +1436,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'complex-nested.md'
+              fileId: 'f1'
             }
           }
         };
@@ -1444,7 +1444,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should use CLI value of 4, not ENV value of 2
         const levels = new Set(sections.map((s: any) => s.level));
@@ -1466,11 +1466,11 @@ describe('table_of_contents E2E Tests', () => {
 
       try {
         const response = await helper.callTool('table_of_contents', {
-          filename: 'nested-sections.md'
+          fileId: 'f1'
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Find level-1 section (should have 3 level-2 children: 1.1, 1.2, 1.3)
         // When all children are visible, subsection_count should be undefined (not redundant)
@@ -1500,11 +1500,11 @@ describe('table_of_contents E2E Tests', () => {
 
       try {
         const response = await helper.callTool('table_of_contents', {
-          filename: 'no-children.md'
+          fileId: 'f1'
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Leaf sections should not have subsection_count
         const leafSection = sections.find((s: any) => s.level === 3);
@@ -1525,11 +1525,11 @@ describe('table_of_contents E2E Tests', () => {
 
       try {
         const response = await helper.callTool('table_of_contents', {
-          filename: 'deep-hierarchy.md'
+          fileId: 'f1'
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Level-1 section should only count level-2 children (1/1 and 1/2), not level-3 and 4 grandchildren/great-grandchildren
         // When all children are visible, subsection_count should be undefined (not redundant)
@@ -1576,14 +1576,14 @@ describe('table_of_contents E2E Tests', () => {
           method: 'tools/call',
           params: {
             name: 'table_of_contents',
-            arguments: { filename: 'deep-nested.md' }
+            arguments: { fileId: 'f1' }
           }
         };
 
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // With max_toc_depth = 2, level-3 sections should be filtered out
         const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
@@ -1633,14 +1633,14 @@ describe('table_of_contents E2E Tests', () => {
           method: 'tools/call',
           params: {
             name: 'table_of_contents',
-            arguments: { filename: 'five-sections.md' }
+            arguments: { fileId: 'f1' }
           }
         };
 
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonContent(response);
+        const sections = helper.parseJsonSections(response);
 
         // Should only have 5 level-1 sections
         expect(sections.length).toBe(5);
@@ -1683,7 +1683,7 @@ describe('table_of_contents E2E Tests', () => {
 
       try {
         const response = await helper.callTool('table_of_contents', {
-          filename: 'simple-headers.md'
+          fileId: 'f1'
         });
 
         helper.expectSuccessfulResponse(response);

@@ -2,4 +2,4 @@
  * Services module exports
  */
 
-export { FileDiscoveryService, DiscoveredFile } from './FileDiscoveryService';
+export { FileDiscoveryService, type DiscoveredFile, type FileIdMapping } from './FileDiscoveryService';

@@ -18,11 +18,11 @@ describe('read_sections E2E Tests', () => {
         const tool = await helper.verifyToolAvailable('read_sections');
 
         // Check required parameters
-        expect(tool.inputSchema.required).toContain('filename');
+        expect(tool.inputSchema.required).toContain('fileId');
         expect(tool.inputSchema.required).toContain('section_ids');
 
         // Check parameter definitions
-        expect(tool.inputSchema.properties.filename).toBeDefined();
+        expect(tool.inputSchema.properties.fileId).toBeDefined();
         expect(tool.inputSchema.properties.section_ids).toBeDefined();
       } finally {
         await helper.stopServer();
@@ -43,7 +43,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'complex-guide.md',
+              fileId: 'f1',
               section_ids: ['1/1']
             }
           }
@@ -61,11 +61,11 @@ describe('read_sections E2E Tests', () => {
         expect(content.text).toBeDefined();
 
         // Parse the JSON response
-        const sectionsData = JSON.parse(content.text);
-        expect(Array.isArray(sectionsData)).toBe(true);
-        expect(sectionsData.length).toBe(1);
+        const readData = JSON.parse(content.text);
+        expect(Array.isArray(readData.sections)).toBe(true);
+        expect(readData.sections.length).toBe(1);
 
-        const sectionData = sectionsData[0];
+        const sectionData = readData.sections[0];
         expect(sectionData.title).toBe('Getting Started');
         expect(sectionData.content).toBeDefined();
 
@@ -88,7 +88,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'complex-guide.md',
+              fileId: 'f1',
               section_ids: ['1/1/1', '1/1/2']
             }
           }
@@ -105,7 +105,8 @@ describe('read_sections E2E Tests', () => {
         expect(content.text).toBeDefined();
 
         // Parse the JSON response
-        const sectionsData = JSON.parse(content.text);
+        const readData = JSON.parse(content.text);
+        const sectionsData = readData.sections;
         expect(Array.isArray(sectionsData)).toBe(true);
         expect(sectionsData.length).toBe(2);
 
@@ -135,7 +136,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'complex-guide.md',
+              fileId: 'f1',
               section_ids: ['1/2/1/1', '1/2/1/2']
             }
           }
@@ -148,7 +149,8 @@ describe('read_sections E2E Tests', () => {
         expect(response.result.content).toBeDefined();
 
         const content = response.result.content[0];
-        const sectionsData = JSON.parse(content.text);
+        const readData = JSON.parse(content.text);
+        const sectionsData = readData.sections;
 
         const frontendSection = sectionsData.find((s: any) => s.title === 'Frontend Components');
         expect(frontendSection).toBeDefined();
@@ -176,7 +178,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'edge-cases.md',
+              fileId: 'f1',
               section_ids: ['1/2/1']
             }
           }
@@ -188,7 +190,8 @@ describe('read_sections E2E Tests', () => {
         expect(response.result).toBeDefined();
 
         const content = response.result.content[0];
-        const sectionsData = JSON.parse(content.text);
+        const readData = JSON.parse(content.text);
+        const sectionsData = readData.sections;
 
         const unicodeSection = sectionsData[0];
         expect(unicodeSection.title).toBe('Unicode Characters');
@@ -212,7 +215,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'edge-cases.md',
+              fileId: 'f1',
               section_ids: ['2/2/2']
             }
           }
@@ -224,7 +227,8 @@ describe('read_sections E2E Tests', () => {
         expect(response.result).toBeDefined();
 
         const content = response.result.content[0];
-        const sectionsData = JSON.parse(content.text);
+        const readData = JSON.parse(content.text);
+        const sectionsData = readData.sections;
 
         const codeSection = sectionsData[0];
         expect(codeSection.content).toContain('function greet');
@@ -246,7 +250,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'edge-cases.md',
+              fileId: 'f1',
               section_ids: ['1/1']
             }
           }
@@ -258,7 +262,8 @@ describe('read_sections E2E Tests', () => {
         expect(response.result).toBeDefined();
 
         const content = response.result.content[0];
-        const sectionsData = JSON.parse(content.text);
+        const readData = JSON.parse(content.text);
+        const sectionsData = readData.sections;
 
         const emptySection = sectionsData[0];
         expect(emptySection.title).toBe('Empty Section Test');
@@ -283,7 +288,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'api-docs.md',
+              fileId: 'f1',
               section_ids: ['1/2/1']
             }
           }
@@ -295,7 +300,8 @@ describe('read_sections E2E Tests', () => {
         expect(response.result).toBeDefined();
 
         const content = response.result.content[0];
-        const sectionsData = JSON.parse(content.text);
+        const readData = JSON.parse(content.text);
+        const sectionsData = readData.sections;
 
         const authSection = sectionsData[0];
         expect(authSection.title).toBe('API Key Authentication');
@@ -317,7 +323,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'api-docs.md',
+              fileId: 'f1',
               section_ids: ['1/3/1/1', '1/4/2']
             }
           }
@@ -329,7 +335,8 @@ describe('read_sections E2E Tests', () => {
         expect(response.result).toBeDefined();
 
         const content = response.result.content[0];
-        const sectionsData = JSON.parse(content.text);
+        const readData = JSON.parse(content.text);
+        const sectionsData = readData.sections;
 
         const userSection = sectionsData.find((s: any) => s.title === 'Get Current User');
         expect(userSection).toBeDefined();
@@ -356,7 +363,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'api-docs.md',
+              fileId: 'f1',
               section_ids: ['1/7/1']
             }
           }
@@ -368,7 +375,8 @@ describe('read_sections E2E Tests', () => {
         expect(response.result).toBeDefined();
 
         const content = response.result.content[0];
-        const sectionsData = JSON.parse(content.text);
+        const readData = JSON.parse(content.text);
+        const sectionsData = readData.sections;
 
         const sdkSection = sectionsData[0];
         expect(sdkSection.title).toBe('JavaScript/TypeScript');
@@ -393,7 +401,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'non-existent-file.md',
+              fileId: 'f1',
               section_ids: ['some-section']
             }
           }
@@ -425,7 +433,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'complex-guide.md',
+              fileId: 'f1',
               section_ids: ['non-existent-section-id']
             }
           }
@@ -466,7 +474,7 @@ describe('read_sections E2E Tests', () => {
         expect(response.result).toBeDefined();
 
         const errorData = helper.parseErrorContent(response);
-        expect(errorData.error.message).toContain('filename parameter is required');
+        expect(errorData.error.message).toContain('fileId parameter is required');
       } finally {
         await helper.stopServer();
       }
@@ -484,7 +492,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'complex-guide.md'
+              fileId: 'f1'
             }
           }
         };
@@ -513,7 +521,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'complex-guide.md',
+              fileId: 'f1',
               section_ids: []
             }
           }
@@ -529,7 +537,8 @@ describe('read_sections E2E Tests', () => {
         expect(content.text).toBeDefined();
 
         // Parse the response - empty section_ids should return empty array
-        const sectionsData = JSON.parse(content.text);
+        const readData = JSON.parse(content.text);
+        const sectionsData = readData.sections;
         expect(Array.isArray(sectionsData)).toBe(true);
         expect(sectionsData.length).toBe(0);
       } finally {
@@ -549,7 +558,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'complex-guide.md',
+              fileId: 'f1',
               section_ids: ['invalid@#$%^&*()section-id']
             }
           }
@@ -581,7 +590,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'complex-guide.md',
+              fileId: 'f1',
               section_ids: ['1/3/1/1']
             }
           }
@@ -593,7 +602,8 @@ describe('read_sections E2E Tests', () => {
         expect(response.result).toBeDefined();
 
         const content = response.result.content[0];
-        const sectionsData = JSON.parse(content.text);
+        const readData = JSON.parse(content.text);
+        const sectionsData = readData.sections;
 
         const pluginSection = sectionsData[0];
         expect(pluginSection.title).toBe('Plugin Development');
@@ -615,7 +625,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'complex-guide.md',
+              fileId: 'f2',  // complex-guide.md
               section_ids: ['1']
             }
           }
@@ -628,7 +638,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'api-docs.md',
+              fileId: 'f1',  // api-docs.md
               section_ids: ['1']
             }
           }
@@ -644,8 +654,10 @@ describe('read_sections E2E Tests', () => {
         const content1 = response1.result.content[0];
         const content2 = response2.result.content[0];
 
-        const sections1 = JSON.parse(content1.text);
-        const sections2 = JSON.parse(content2.text);
+        const readResponse1 = JSON.parse(content1.text);
+        const sections1 = readResponse1.sections;
+        const readResponse2 = JSON.parse(content2.text);
+        const sections2 = readResponse2.sections;
 
         expect(sections1[0].content).toContain('Welcome to the complete developer guide');
         expect(sections2[0].content).toContain('Welcome to the comprehensive API documentation');
@@ -666,7 +678,7 @@ describe('read_sections E2E Tests', () => {
           params: {
             name: 'read_sections',
             arguments: {
-              filename: 'edge-cases.md',
+              fileId: 'f1',
               section_ids: ['3/4']
             }
           }
@@ -678,7 +690,8 @@ describe('read_sections E2E Tests', () => {
         expect(response.result).toBeDefined();
 
         const content = response.result.content[0];
-        const sectionsData = JSON.parse(content.text);
+        const readData = JSON.parse(content.text);
+        const sectionsData = readData.sections;
 
         const longSection = sectionsData[0];
         expect(longSection.title).toBe('Section with Very Long Content');

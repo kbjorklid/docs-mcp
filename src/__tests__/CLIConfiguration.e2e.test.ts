@@ -138,12 +138,12 @@ describe('CLI Configuration E2E Tests', () => {
       expect(files.length).toBeGreaterThan(0);
 
       // Test table_of_contents
-      const tocResponse = await helper.callTool('table_of_contents', {
-        filename: 'test.md'
+      const tocResponse = await helper.callTool('table_of_contents', { fileId: 'f1'  // test.md
       });
 
       helper.expectSuccessfulResponse(tocResponse);
-      const sections = helper.parseJsonContent(tocResponse);
+      const tocData = helper.parseJsonContent(tocResponse);
+      const sections = tocData.sections;
       expect(sections.length).toBeGreaterThan(0);
     });
   });

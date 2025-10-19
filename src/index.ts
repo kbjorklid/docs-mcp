@@ -15,7 +15,7 @@ import { ReadSections } from './tools/ReadSections';
 import { SectionTableOfContents } from './tools/SectionTableOfContents';
 import { Search } from './tools/Search';
 import { createConfig } from './config/ConfigManager';
-import { createErrorResponse, isNonEmptyString, isStringArray } from './utils';
+import { createErrorResponse, isNonEmptyString, isStringArray, isValidFileId } from './utils';
 import { ERROR_MESSAGES } from './constants';
 
 const config = createConfig();
@@ -41,68 +41,87 @@ const toolRegistry: Record<string, ToolHandler> = {
   table_of_contents: {
     definition: TableOfContents.getToolDefinition(),
     execute: async (args) => {
-      const filename = args.filename;
+      const fileId = args.fileId;
 
       // Validate parameters using type guards
-      if (!isNonEmptyString(filename)) {
-        return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
+      if (!isNonEmptyString(fileId)) {
+        return createErrorResponse(ERROR_MESSAGES.FILE_ID_REQUIRED);
       }
 
-      return await tableOfContents.execute(filename);
+      if (!isValidFileId(fileId)) {
+        return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId));
+      }
+
+      return await tableOfContents.execute(fileId);
     },
   },
   read_sections: {
     definition: ReadSections.getToolDefinition(),
     execute: async (args) => {
-      const filename = args.filename;
+      const fileId = args.fileId;
       const sectionIds = args.section_ids;
 
       // Validate parameters using type guards
-      if (!isNonEmptyString(filename)) {
-        return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
+      if (!isNonEmptyString(fileId)) {
+        return createErrorResponse(ERROR_MESSAGES.FILE_ID_REQUIRED);
+      }
+
+      if (!isValidFileId(fileId)) {
+        return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId));
       }
 
       if (!isStringArray(sectionIds)) {
         return createErrorResponse(ERROR_MESSAGES.SECTION_IDS_REQUIRED);
       }
 
-      return await readSections.execute(filename, sectionIds);
+      return await readSections.execute(fileId, sectionIds);
     },
   },
   section_table_of_contents: {
     definition: SectionTableOfContents.getToolDefinition(),
     execute: async (args) => {
-      const filename = args.filename;
+      const fileId = args.fileId;
       const sectionIds = args.section_ids;
 
       // Validate parameters using type guards
-      if (!isNonEmptyString(filename)) {
-        return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
+      if (!isNonEmptyString(fileId)) {
+        return createErrorResponse(ERROR_MESSAGES.FILE_ID_REQUIRED);
+      }
+
+      if (!isValidFileId(fileId)) {
+        return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId));
       }
 
       if (!isStringArray(sectionIds) || sectionIds.length === 0) {
         return createErrorResponse(ERROR_MESSAGES.SECTION_IDS_REQUIRED);
       }
 
-      return await sectionTableOfContents.execute(filename, sectionIds);
+      return await sectionTableOfContents.execute(fileId, sectionIds);
     },
   },
   search: {
     definition: Search.getToolDefinition(),
     execute: async (args) => {
       const query = args.query;
-      const filename = args.filename;
+      const fileId = args.fileId;
 
-      // Validate parameters using type guards
+      // Validate query parameter
       if (!isNonEmptyString(query)) {
         return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('query'));
       }
 
-      if (!isNonEmptyString(filename)) {
-        return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('filename'));
+      // Validate fileId if provided (optional parameter)
+      if (fileId !== undefined && fileId !== null) {
+        if (!isNonEmptyString(fileId)) {
+          return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('fileId'));
+        }
+
+        if (!isValidFileId(fileId)) {
+          return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId as string));
+        }
       }
 
-      return await search.execute(query, filename);
+      return await search.execute(query, fileId);
     },
   },
 };

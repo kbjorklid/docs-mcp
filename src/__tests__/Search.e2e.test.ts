@@ -23,19 +23,21 @@ describe('Search E2E Tests', () => {
     it('should be available in tools/list', async () => {
       const searchTool = await helper.verifyToolAvailable('search');
       expect(searchTool.inputSchema.required).toContain('query');
-      expect(searchTool.inputSchema.required).toContain('filename');
+      // fileId is now optional for search - when not provided, searches all files
     });
 
     it('should search for basic text patterns in a single file', async () => {
       const response = await helper.callTool('search', {
         query: 'authentication',
-        filename: 'api-documentation.md'
+        fileId: 'f1'
       });
 
       helper.expectSearchResults(response, 'authentication', 1);
 
       // Additional detailed checks
       const searchResult = helper.parseJsonContent(response);
+      expect(searchResult.results[0].fileId).toBe('f1');
+      expect(searchResult.results[0].fileId).toBe('f1');
       expect(searchResult.results[0].filename).toBe('api-documentation.md');
       expect(Array.isArray(searchResult.results[0].matches)).toBe(true);
       expect(searchResult.results[0].matches.length).toBeGreaterThan(0);
@@ -50,7 +52,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'AUTHENTICATION', // uppercase
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -72,7 +74,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'welcome.*platform', // Should match across lines
-            filename: 'user-guide.md'
+            fileId: 'f14'
           }
         }
       };
@@ -94,7 +96,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'React|useState|useEffect',
-            filename: 'code-examples.md'
+            fileId: 'f2'
           }
         }
       };
@@ -116,7 +118,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '∑|∏|∫|√|∞',
-            filename: 'special-characters.md'
+            fileId: 'f12'
           }
         }
       };
@@ -138,7 +140,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'café|naïve|résumé',
-            filename: 'special-characters.md'
+            fileId: 'f12'
           }
         }
       };
@@ -160,7 +162,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'microservices|Kubernetes|Docker',
-            filename: 'technical-specs.md'
+            fileId: 'f13'
           }
         }
       };
@@ -182,7 +184,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'definitelydoesnotexist12345',
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -204,7 +206,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '',
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -218,7 +220,7 @@ describe('Search E2E Tests', () => {
       expect(errorResult.error.message).toContain('parameter is required');
     });
 
-    it('should handle missing filename parameter error', async () => {
+    it('should search all files when fileId is not provided', async () => {
       const request: JSONRPCRequest = {
         jsonrpc: '2.0',
         id: 11,
@@ -227,20 +229,29 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'test'
-            // missing filename
+            // no fileId - should search all files
           }
         }
       };
 
       const response = await helper.sendRequest(request);
 
-      expect(response.result).toBeDefined();
-      const errorResult = helper.parseErrorContent(response);
-      expect(errorResult.error).toBeDefined();
-      expect(errorResult.error.message).toContain('parameter is required');
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      expect(searchResult.results).toBeDefined();
+      expect(Array.isArray(searchResult.results)).toBe(true);
+      // Should search across multiple files
+      expect(searchResult.results.length).toBeGreaterThan(0);
+      // Each result should have fileId
+      searchResult.results.forEach((result: any) => {
+        expect(result.fileId).toBeDefined();
+        expect(result.fileId).toMatch(/^f\d+$/);
+        expect(result.filename).toBeDefined();
+      });
     });
 
-    it('should handle file not found error', async () => {
+    it('should handle invalid fileId error', async () => {
       const request: JSONRPCRequest = {
         jsonrpc: '2.0',
         id: 12,
@@ -249,7 +260,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'test',
-            filename: 'nonexistent-file.md'
+            fileId: 'f999' // Non-existent file ID
           }
         }
       };
@@ -259,7 +270,7 @@ describe('Search E2E Tests', () => {
       expect(response.result).toBeDefined();
       const errorResult = helper.parseErrorContent(response);
       expect(errorResult.error).toBeDefined();
-      expect(errorResult.error.message).toContain('not found');
+      expect(errorResult.error.message).toMatch(/error.*searching|file.*exists|fileId.*not found/i);
     });
 
     it('should handle invalid regular expression', async () => {
@@ -271,7 +282,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '[unclosed bracket',
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -295,7 +306,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'dashboard',
-            filename: 'user-guide.md'
+            fileId: 'f14'
           }
         }
       };
@@ -304,6 +315,8 @@ describe('Search E2E Tests', () => {
       expect(response1.error).toBeUndefined();
       const content1 = response1.result.content[0];
       const searchResult1 = JSON.parse(content1.text);
+      expect(searchResult1.results[0].fileId).toBe('f14');
+      expect(searchResult1.results[0].fileId).toBe('f14');
       expect(searchResult1.results[0].filename).toBe('user-guide.md');
       expect(searchResult1.results[0].matches.length).toBeGreaterThan(0);
 
@@ -316,7 +329,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'database',
-            filename: 'technical-specs.md'
+            fileId: 'f13'
           }
         }
       };
@@ -325,6 +338,8 @@ describe('Search E2E Tests', () => {
       expect(response2.error).toBeUndefined();
       const content2 = response2.result.content[0];
       const searchResult2 = JSON.parse(content2.text);
+      expect(searchResult2.results[0].fileId).toBe('f13');
+      expect(searchResult2.results[0].fileId).toBe('f13');
       expect(searchResult2.results[0].filename).toBe('technical-specs.md');
       expect(searchResult2.results[0].matches.length).toBeGreaterThan(0);
     });
@@ -338,7 +353,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '\\bAPI\\b', // Match exact word "API" not part of other words
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -360,7 +375,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'v\\d+\\.\\d+\\.\\d+', // Version pattern like v2.1.0
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -382,7 +397,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}',
-            filename: 'code-examples.md'
+            fileId: 'f2'
           }
         }
       };
@@ -404,7 +419,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '(GET|POST|PUT|DELETE)\\s+/api/[^\\s]+',
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -426,7 +441,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'function|const|let|var',
-            filename: 'code-examples.md'
+            fileId: 'f2'
           }
         }
       };
@@ -450,7 +465,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'Authorization.*Bearer', // Authorization followed by Bearer
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -471,7 +486,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '(GET|POST|PUT)\\s+/api/[^\\s]+', // HTTP methods with API endpoints
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -492,7 +507,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '\\b[A-Z][a-z]+(?:\\s+[A-Z][a-z]+)*\\b', // Title case words
-            filename: 'technical-specs.md'
+            fileId: 'f13'
           }
         }
       };
@@ -513,7 +528,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '\\w+@\\w+\\.\\w+', // Email pattern
-            filename: 'code-examples.md'
+            fileId: 'f2'
           }
         }
       };
@@ -534,7 +549,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '(?:OAuth|JWT|Bearer|API\\s+key)', // Authentication methods
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -558,7 +573,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: longPattern,
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -579,7 +594,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '```[\\s\\S]*?```', // Match entire code blocks
-            filename: 'api-documentation.md'
+            fileId: 'f1'
           }
         }
       };
@@ -601,7 +616,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '[café]+|[résumé]+', // International characters
-            filename: 'special-characters.md'
+            fileId: 'f12'
           }
         }
       };
@@ -622,7 +637,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: '(?<=\\d{3})\\s*\\d{3}\\s*\\d{4}', // Phone number pattern with lookbehind
-            filename: 'code-examples.md'
+            fileId: 'f2'
           }
         }
       };
@@ -646,7 +661,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'TheThing', // Only in ## Bar section
-            filename: 'hierarchical-test.md'
+            fileId: 'f5'
           }
         }
       };
@@ -673,7 +688,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'Text', // Appears in both # Foo and ## Bar
-            filename: 'hierarchical-test.md'
+            fileId: 'f5'
           }
         }
       };
@@ -703,7 +718,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'feature',
-            filename: 'features-doc.md'
+            fileId: 'f4'
           }
         }
       };
@@ -737,7 +752,7 @@ describe('Search E2E Tests', () => {
           name: 'search',
           arguments: {
             query: 'example',
-            filename: 'examples.md'
+            fileId: 'f3'
           }
         }
       };
@@ -782,7 +797,7 @@ describe('Search E2E Tests', () => {
             name: 'search',
             arguments: {
               query: 'JavaScript',
-              filename: 'code-examples.md'
+              fileId: 'f1' // code-examples.md is the only file, so it's f1
             }
           }
         };
@@ -791,6 +806,12 @@ describe('Search E2E Tests', () => {
         expect(response.error).toBeUndefined();
 
         const content = response.result.content[0];
+        
+        // Check for errors first
+        if (response.error) {
+          throw new Error(`Search failed: ${JSON.stringify(response.error)}`);
+        }
+        
         const searchResult = JSON.parse(content.text);
 
         // Should have the standard search result properties

@@ -24,11 +24,24 @@ export interface FileMetadata {
 
 // File info interface
 export interface FileInfo {
+  fileId?: string;
   filename: string;
   title: string;
   description?: string;
   keywords: string[];
   size: string;
+  sourceDirectory?: string;
+}
+
+// File info with ID interface (for list_documentation_files)
+export interface FileInfoWithId {
+  fileId: string;
+  filename: string;
+  title: string;
+  description?: string;
+  keywords: string[];
+  size: string;
+  sourceDirectory: string;
 }
 
 // Section interface
@@ -48,6 +61,8 @@ export interface SectionContent {
 
 // Table of Contents response interface
 export interface TableOfContentsResponse {
+  fileId: string;
+  filename: string;
   sections: Section[];
   instructions?: string;
 }
@@ -60,8 +75,16 @@ export interface SearchResult {
 }
 
 export interface FileSearchResult {
+  fileId: string;
   filename: string;
   matches: Section[];
+}
+
+// Read sections response interface
+export interface ReadSectionsResponse {
+  fileId: string;
+  filename: string;
+  sections: SectionContent[];
 }
 
 // Internal file list item interface (matches ListDocumentationFiles output)

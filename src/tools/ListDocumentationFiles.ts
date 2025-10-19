@@ -1,4 +1,4 @@
-import { FileInfo, Configuration } from '../types';
+import { FileInfoWithId, Configuration } from '../types';
 import { FileDiscoveryService } from '../services';
 import { createSuccessResponse, createErrorResponse } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
@@ -19,7 +19,10 @@ export class ListDocumentationFiles {
     return {
       name: 'list_documentation_files',
       description:
-        'Lists all available documentation files with their metadata. Use table_of_contents tool to see metadata for a specific file, and then the read_sections tool to read specific parts.',
+        'Lists all available documentation files with their file IDs and metadata. ' +
+        'Each file is assigned a unique file ID (e.g., f1, f2, f3) that you must use when calling other tools. ' +
+        'Use table_of_contents tool with the file ID to see the structure of a specific file, ' +
+        'and then the read_sections tool to read specific parts.',
       inputSchema: {
         type: 'object',
         properties: {},
@@ -44,9 +47,9 @@ export class ListDocumentationFiles {
   }
 
   /**
-   * Get all documentation files with metadata
+   * Get all documentation files with metadata and file IDs
    */
-  private async getDocumentationFiles(): Promise<FileInfo[]> {
-    return await this.fileDiscovery.getFileInfoList();
+  private async getDocumentationFiles(): Promise<FileInfoWithId[]> {
+    return await this.fileDiscovery.getAllFilesWithIds();
   }
 }

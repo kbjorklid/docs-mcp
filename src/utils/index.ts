@@ -9,6 +9,7 @@ export {
   isPositiveNumber,
   isStringArray,
   isError,
+  isValidFileId,
 } from './TypeGuards';
 export {
   parseToolError,
