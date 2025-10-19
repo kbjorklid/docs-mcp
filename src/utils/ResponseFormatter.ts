@@ -61,16 +61,15 @@ function filterEmptyFields(obj: any): any {
 /**
  * Create a successful response with data
  * @param data - The data to return
- * @param prettyPrint - Optional flag to enable JSON pretty-printing (default: false)
  * @returns Formatted tool response
  */
-export function createSuccessResponse(data: any, prettyPrint: boolean = false): ToolResponse {
+export function createSuccessResponse(data: any): ToolResponse {
   const filteredData = filterEmptyFields(data);
   return {
     content: [
       {
         type: 'text',
-        text: prettyPrint ? JSON.stringify(filteredData, null, 2) : JSON.stringify(filteredData),
+        text: JSON.stringify(filteredData),
       },
     ],
   };

@@ -12,7 +12,7 @@ export class CommandLineProvider extends ConfigurationProvider {
 
   public isAvailable(): boolean {
     const args = this.parseCommandLineArgs();
-    return !!args.docsPaths || args.maxHeaders !== undefined || args.prettyPrint !== undefined;
+    return !!args.docsPaths || args.maxHeaders !== undefined;
   }
 
   public load(): Partial<Configuration> {
@@ -27,10 +27,6 @@ export class CommandLineProvider extends ConfigurationProvider {
       config.maxHeaders = args.maxHeaders;
     }
 
-    if (args.prettyPrint !== undefined) {
-      config.prettyPrint = args.prettyPrint;
-    }
-
     return config;
   }
 
@@ -40,7 +36,6 @@ export class CommandLineProvider extends ConfigurationProvider {
    * Supported arguments:
    * - --docs-path or -d: Path to documentation directory
    * - --max-headers: Maximum number of headers to include in table of contents
-   * - --pretty-print: Enable pretty-printing of JSON responses
    *
    * @returns Object containing parsed arguments
    */
@@ -64,8 +59,6 @@ export class CommandLineProvider extends ConfigurationProvider {
             i++; // Skip the next argument
           }
         }
-      } else if (args[i] === '--pretty-print') {
-        result.prettyPrint = true;
       }
     }
 

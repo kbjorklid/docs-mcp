@@ -37,7 +37,7 @@ export class ListDocumentationFiles {
 
       // Return the files array (even if empty)
       // An empty array is a valid result, not an error
-      return createSuccessResponse(files, this.config.prettyPrint);
+      return createSuccessResponse(files);
     } catch (error) {
       return createErrorResponse(ERROR_MESSAGES.FILE_SYSTEM_ERROR);
     }

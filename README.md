@@ -174,34 +174,7 @@ Note: You may need to edit `run.ps1` to specify your documentation path.
 
 - `--docs-path <path>` or `-d <path>` - Specify documentation directory (can be used multiple times for multiple directories)
 - `--max-headers <number>` - Maximum number of headers to include in table of contents (default: 25)
-- `--pretty-print` - Enable JSON pretty-printing for tool responses (useful for debugging and readability; default: disabled for token efficiency)
 - `--help` or `-h` - Show help information
-
-### JSON Output Format
-
-By default, the server returns JSON output in compact format to minimize token usage. This compact format is suitable for programmatic consumption by AI agents and clients.
-
-#### Compact Format (Default)
-```bash
-npm start -- --docs-path ./docs
-# Returns: {"filename":"readme.md","title":"ReadMe","keywords":[],"size":"2.5kb"}
-```
-
-#### Pretty-Printed Format
-Use the `--pretty-print` flag to enable indented, human-readable JSON output for debugging and exploration:
-
-```bash
-npm start -- --docs-path ./docs --pretty-print
-# Returns:
-# {
-#   "filename": "readme.md",
-#   "title": "ReadMe",
-#   "keywords": [],
-#   "size": "2.5kb"
-# }
-```
-
-**Token Savings**: Compact format saves approximately 20% on response size compared to pretty-printed output, which can result in significant token savings across multiple API calls.
 
 ### Path Configuration Precedence
 

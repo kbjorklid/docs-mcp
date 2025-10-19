@@ -111,14 +111,6 @@ export class ConfigurationManager {
       }
     }
 
-    // Validate prettyPrint if present
-    if (config.prettyPrint !== undefined) {
-      if (typeof config.prettyPrint !== 'boolean') {
-        // Remove invalid prettyPrint, fall back to default
-        delete config.prettyPrint;
-      }
-    }
-
     return config as Configuration;
   }
 
@@ -167,7 +159,7 @@ class CommandLineProviderWithArgs extends CommandLineProvider {
   }
 
   public isAvailable(): boolean {
-    return !!this.args.docsPaths || this.args.maxHeaders !== undefined || this.args.prettyPrint !== undefined;
+    return !!this.args.docsPaths || this.args.maxHeaders !== undefined;
   }
 
   public load(): Partial<Configuration> {
@@ -179,10 +171,6 @@ class CommandLineProviderWithArgs extends CommandLineProvider {
 
     if (this.args.maxHeaders !== undefined) {
       config.maxHeaders = this.args.maxHeaders;
-    }
-
-    if (this.args.prettyPrint !== undefined) {
-      config.prettyPrint = this.args.prettyPrint;
     }
 
     return config;

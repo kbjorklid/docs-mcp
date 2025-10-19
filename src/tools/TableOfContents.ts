@@ -55,7 +55,7 @@ export class TableOfContents {
 
     try {
       const sections = await this.getTableOfContents(filename, maxDepth);
-      return createSuccessResponse(sections, this.config.prettyPrint);
+      return createSuccessResponse(sections);
     } catch (error) {
       // Check if it's a FILE_NOT_FOUND error
       if (
