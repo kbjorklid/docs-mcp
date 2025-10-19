@@ -59,7 +59,7 @@ export class ReadSections {
 
     try {
       const sections = await this.readSections(filename, sectionIds);
-      return createSuccessResponse(sections);
+      return createSuccessResponse(sections, this.config.prettyPrint);
     } catch (error) {
       // Handle specific error types
       if (error instanceof Error) {

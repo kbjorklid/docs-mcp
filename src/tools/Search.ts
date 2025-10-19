@@ -84,7 +84,7 @@ export class Search {
 
     try {
       const searchResults = await this.searchInSpecificFile(regexResult.regex!, filename as string);
-      return createSuccessResponse(searchResults);
+      return createSuccessResponse(searchResults, this.config.prettyPrint);
     } catch (error) {
       return this.handleSearchError(error, filename as string);
     }
