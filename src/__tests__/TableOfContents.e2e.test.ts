@@ -1585,11 +1585,87 @@ describe('table_of_contents E2E Tests', () => {
         const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
         expect(hasLevel3OrDeeper).toBe(false);
 
-        // Level-2 sections should have no subsection_count (because their children are filtered)
-        const level2Sections = sections.filter((s: any) => s.level === 2);
-        level2Sections.forEach((section: any) => {
-          expect(section.subsection_count).toBeUndefined();
-        });
+        // Level-2 sections with hidden children should show subsection_count
+        const section11 = sections.find((s: any) => s.id === '1/1');
+        expect(section11).toBeDefined();
+        expect(section11.subsection_count).toBe(1); // Has 1 hidden level-3 child
+
+        // Level-2 sections without children should not show subsection_count
+        const section21 = sections.find((s: any) => s.id === '2/1');
+        expect(section21).toBeDefined();
+        expect(section21.subsection_count).toBeUndefined(); // No children at all
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should show subsection_count when max_headers limits visibility of child sections', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-show-subsection-count-with-max-headers');
+      const docsPath = helper.getTestDocsPath();
+
+      // Set max_headers to 5 so only the 5 main sections are shown, not their children
+      const serverProcess = await helper.spawnServerWithArgs([
+        '--docs-path', docsPath,
+        '--max-headers', '5'
+      ]);
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: { filename: 'five-sections.md' }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should only have 5 level-1 sections
+        expect(sections.length).toBe(5);
+        expect(sections.every((s: any) => s.level === 1)).toBe(true);
+
+        // Section One: no children at all
+        const section1 = sections.find((s: any) => s.id === '1');
+        expect(section1).toBeDefined();
+        expect(section1.subsection_count).toBeUndefined(); // No children
+
+        // Section Two: has 2 hidden children
+        const section2 = sections.find((s: any) => s.id === '2');
+        expect(section2).toBeDefined();
+        expect(section2.subsection_count).toBe(2); // Has 2 hidden level-2 children
+
+        // Section Three: has 1 hidden child (and that child has its own child, but we only count direct children)
+        const section3 = sections.find((s: any) => s.id === '3');
+        expect(section3).toBeDefined();
+        expect(section3.subsection_count).toBe(1); // Has 1 hidden level-2 child
+
+        // Section Four: no children at all
+        const section4 = sections.find((s: any) => s.id === '4');
+        expect(section4).toBeDefined();
+        expect(section4.subsection_count).toBeUndefined(); // No children
+
+        // Section Five: has 1 hidden child
+        const section5 = sections.find((s: any) => s.id === '5');
+        expect(section5).toBeDefined();
+        expect(section5.subsection_count).toBe(1); // Has 1 hidden level-2 child
       } finally {
         serverProcess.kill();
       }
