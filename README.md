@@ -314,7 +314,7 @@ The tool returns a response object with the following structure:
       "subsection_count": 3
     }
   ],
-  "instructions": "To explore hidden subsections, use the section_table_of_contents tool with the section IDs of interest."
+  "instructions": "To explore subsections under a specific section that is not currently shown, use the section_table_of_contents tool with the section IDs of interest."
 }
 ```
 
@@ -453,7 +453,7 @@ The tool returns a search result object with the following structure:
       ]
     }
   ],
-  "instructions": "To explore hidden subsections, use the section_table_of_contents tool with the section IDs of interest."
+  "instructions": "To explore subsections under a specific section that is not currently shown, use the section_table_of_contents tool with the section IDs of interest."
 }
 ```
 
