@@ -6,6 +6,7 @@ A Model Context Protocol (MCP) server that provides tools for reading and naviga
 
 - **List Documentation Files**: Discover and browse available documentation files with metadata
 - **Table of Contents**: Generate structured table of contents with configurable depth and header limit control
+- **Section Table of Contents**: Get subsections within specified parent sections for targeted exploration
 - **Read Sections**: Read specific sections of documentation by their IDs
 - **Search**: Find text patterns using regular expressions across documentation files with multiline matching support
 - **Multi-Directory Support**: Configure multiple documentation directories with conflict resolution
@@ -287,7 +288,7 @@ MAX_HEADERS=10 npm start -- --max-headers 25  # Uses 25 from CLI
 
 ## Available Tools
 
-The server provides four tools for working with documentation:
+The server provides five tools for working with documentation:
 
 ### list_documentation_files
 Lists all available documentation files with metadata including file size, modification time, and front matter information.
@@ -342,6 +343,51 @@ MAX_TOC_DEPTH=2 MAX_HEADERS=15 npm start
 # CLI takes precedence over environment
 MAX_TOC_DEPTH=2 npm start -- --max-toc-depth 4  # Uses 4 from CLI
 ```
+
+### section_table_of_contents
+Provides a structured table of contents for subsections within specified parent sections. Unlike `table_of_contents` which starts from the file root, this tool returns only the direct children of the specified section IDs.
+
+**Parameters:**
+- `filename` (required) - The documentation file to analyze
+- `section_ids` (required) - Non-empty array of section identifiers to get subsections for
+
+**Configuration Options:**
+
+Only the **Max Headers** option is respected for this tool:
+- `--max-headers <number>` (CLI) or `MAX_HEADERS` (environment variable)
+- **Default**: 25 headers
+- **Note**: The `max-toc-depth` setting is NOT applied to this tool (all subsection levels are returned)
+
+**Examples:**
+
+```bash
+# Get subsections of section "1" (direct children only, no grandchildren)
+# Usage via Claude with parameters: {"filename": "guide.md", "section_ids": ["1"]}
+
+# Get subsections from multiple parent sections
+# Usage: {"filename": "guide.md", "section_ids": ["1", "2"]}
+
+# Get subsections with max headers limit
+npm start -- --docs-path ./docs --max-headers 10
+# Usage: {"filename": "guide.md", "section_ids": ["1"]}
+```
+
+**Workflow Example:**
+
+1. Use `table_of_contents` to see all sections and get section IDs
+2. Pick one or more section IDs to explore further
+3. Use `section_table_of_contents` to get only the direct children of those sections
+4. Use `read_sections` to read the full content of specific children
+
+**Key Differences from table_of_contents:**
+
+| Feature | table_of_contents | section_table_of_contents |
+|---------|-------------------|---------------------------|
+| **Starting point** | Document root (all level-1 headers) | Specified parent sections |
+| **Returns** | All descendants (hierarchy) | Only direct children (flat) |
+| **max-toc-depth** | Applied ✓ | NOT applied ✗ |
+| **max-headers** | Applied ✓ | Applied ✓ |
+| **Use case** | Get overall structure | Explore specific section subtree |
 
 ### read_sections
 Reads specific sections from a markdown file by their IDs.

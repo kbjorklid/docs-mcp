@@ -12,6 +12,7 @@ import { Configuration } from './types';
 import { ListDocumentationFiles } from './tools/ListDocumentationFiles';
 import { TableOfContents } from './tools/TableOfContents';
 import { ReadSections } from './tools/ReadSections';
+import { SectionTableOfContents } from './tools/SectionTableOfContents';
 import { Search } from './tools/Search';
 import { createConfig } from './config/ConfigManager';
 import { createErrorResponse, isNonEmptyString, isStringArray } from './utils';
@@ -23,6 +24,7 @@ const config = createConfig();
 const listDocumentationFiles = new ListDocumentationFiles(config);
 const tableOfContents = new TableOfContents(config);
 const readSections = new ReadSections(config);
+const sectionTableOfContents = new SectionTableOfContents(config);
 const search = new Search(config);
 
 // Tool registry for declarative tool management
@@ -65,6 +67,24 @@ const toolRegistry: Record<string, ToolHandler> = {
       }
 
       return await readSections.execute(filename, sectionIds);
+    },
+  },
+  section_table_of_contents: {
+    definition: SectionTableOfContents.getToolDefinition(),
+    execute: async (args) => {
+      const filename = args.filename;
+      const sectionIds = args.section_ids;
+
+      // Validate parameters using type guards
+      if (!isNonEmptyString(filename)) {
+        return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
+      }
+
+      if (!isStringArray(sectionIds) || sectionIds.length === 0) {
+        return createErrorResponse(ERROR_MESSAGES.SECTION_IDS_REQUIRED);
+      }
+
+      return await sectionTableOfContents.execute(filename, sectionIds);
     },
   },
   search: {
