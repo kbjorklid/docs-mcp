@@ -9,7 +9,7 @@ A Model Context Protocol (MCP) server that provides tools for reading and naviga
 - **Read Sections**: Read specific sections of documentation by their IDs
 - **Search**: Find text patterns using regular expressions across documentation files with multiline matching support
 - **Multi-Directory Support**: Configure multiple documentation directories with conflict resolution
-- **Configurable Max Depth**: Limit table of contents depth for better navigation
+- **Configurable Max TOC Depth**: Limit table of contents header depth (e.g., only show `#`, `##`, and `###` headers, default: 3)
 - **Configurable Max Headers**: Limit total number of headers returned by table of contents (default: 25)
 - **Flexible Configuration**: Support for command line, environment variables, and default paths
 - **Comprehensive Error Handling**: Clear error messages and validation
@@ -100,6 +100,32 @@ $env:DOCS_PATH="C:\docs\api,C:\docs\guides,C:\docs\examples"; npm start
 DOCS_PATH="./docs,../shared-docs,/opt/documentation" npm start
 ```
 
+#### MAX_TOC_DEPTH
+
+Set the `MAX_TOC_DEPTH` environment variable to limit the maximum depth/level of headers returned by the `table_of_contents` tool:
+
+```bash
+# Linux/macOS - include headers up to level 2 (# and ##)
+MAX_TOC_DEPTH=2 npm start
+
+# Windows (Command Prompt) - include headers up to level 2
+set MAX_TOC_DEPTH=2 && npm start
+
+# Windows (PowerShell) - include headers up to level 2
+$env:MAX_TOC_DEPTH="2"; npm start
+```
+
+**Default value**: 3 (includes `#`, `##`, and `###` headers)
+
+**Depth Values:**
+- `1` - Only `#` (level-1) headers
+- `2` - `#` and `##` (level-1 and level-2) headers
+- `3` - `#`, `##`, and `###` headers (default)
+- `4` - Up to `####` headers
+- And so on...
+
+**Example**: With `MAX_TOC_DEPTH=2`, the table of contents will only show top-level (`#`) and second-level (`##`) headers, excluding any deeper headers (`###`, `####`, etc.) from the document.
+
 #### MAX_HEADERS
 
 Set the `MAX_HEADERS` environment variable to limit the number of headers returned by the `table_of_contents` tool:
@@ -173,6 +199,7 @@ Note: You may need to edit `run.ps1` to specify your documentation path.
 ### Options
 
 - `--docs-path <path>` or `-d <path>` - Specify documentation directory (can be used multiple times for multiple directories)
+- `--max-toc-depth <number>` - Maximum depth for table of contents headers (default: 3, e.g., 2 = only `#` and `##` headers)
 - `--max-headers <number>` - Maximum number of headers to include in table of contents (default: 25)
 - `--help` or `-h` - Show help information
 
@@ -224,6 +251,25 @@ npm start
 MAX_HEADERS=20 npm start
 ```
 
+#### Max TOC Depth Examples
+```bash
+# Limit table of contents to only level-1 and level-2 headers
+npm start -- --max-toc-depth 2
+
+# Combine with documentation path
+npm start -- --docs-path ./docs --max-toc-depth 3
+
+# Use environment variable for max toc depth
+MAX_TOC_DEPTH=2 npm start
+
+# Use both CLI and environment variables (CLI takes precedence)
+MAX_TOC_DEPTH=2 npm start -- --max-toc-depth 4  # Uses 4 from CLI
+
+# Combine max-toc-depth and max-headers
+npm start -- --docs-path ./docs --max-toc-depth 3 --max-headers 20
+# Result: Headers limited to levels 1-3, then limited to 20 total headers
+```
+
 #### Max Headers Examples
 ```bash
 # Limit table of contents to 15 headers
@@ -252,28 +298,49 @@ Provides a structured table of contents for a markdown file, showing section hie
 
 **Parameters:**
 - `filename` (required) - The documentation file to analyze
-- `max_depth` (optional) - Maximum header depth to include (0 = disabled/unlimited)
 
-**Max Depth Values:**
-- `1` - Only `#` headers
-- `2` - `#` and `##` headers
-- `3` - `#`, `##`, and `###` headers
-- `0` - Disabled (returns all sections)
-- Not specified - Returns all sections (unlimited)
+**Configuration Options:**
 
-**Configuration:**
-- `--max-headers <number>` (CLI) or `MAX_HEADERS` (environment) - Limits the total number of headers returned
-- **Default**: 25 headers
-- **Behavior**: When enabled, progressively includes header levels (starting with level-1) until adding another level would exceed the limit
-- **Level-1 preservation**: Top-level headers (`#`) are always included to preserve document structure, even if they exceed the limit
+The table of contents tool behavior is controlled by two server-wide configuration options:
 
-**Example with max_headers:**
+1. **Max TOC Depth** - Limits the maximum header level to include:
+   - `--max-toc-depth <number>` (CLI) or `MAX_TOC_DEPTH` (environment variable)
+   - **Default**: 3 (includes `#`, `##`, and `###` headers)
+   - **Values**:
+     - `1` - Only `#` headers
+     - `2` - `#` and `##` headers
+     - `3` - `#`, `##`, and `###` headers (default)
+     - `4` - Up to `####` headers
+     - And so on...
+
+2. **Max Headers** - Limits the total number of headers to include:
+   - `--max-headers <number>` (CLI) or `MAX_HEADERS` (environment variable)
+   - **Default**: 25 headers
+   - **Behavior**: When a document exceeds this limit, the tool progressively includes header levels (starting with level-1) until adding another level would exceed the limit
+   - **Level-1 preservation**: Top-level headers (`#`) are always included to preserve document structure, even if they exceed the limit
+
+**How They Interact:**
+1. First, max-toc-depth filtering is applied (removes headers deeper than the configured depth)
+2. Then, max-headers limiting is applied (selects the most important headers within the limit)
+
+**Examples:**
+
 ```bash
-# Set server limit to 20 total headers
+# Set max toc depth to 2 (only # and ## headers)
+npm start -- --max-toc-depth 2
+
+# Set max headers to 20 total
 npm start -- --max-headers 20
 
-# Now when querying a 50-header document, only up to 20 headers are returned
-# (all level-1 headers + as many deeper levels as fit within the 20-header limit)
+# Combine both settings
+npm start -- --docs-path ./docs --max-toc-depth 3 --max-headers 20
+# Result: Shows headers up to ### level, limited to 20 total headers
+
+# Use environment variables
+MAX_TOC_DEPTH=2 MAX_HEADERS=15 npm start
+
+# CLI takes precedence over environment
+MAX_TOC_DEPTH=2 npm start -- --max-toc-depth 4  # Uses 4 from CLI
 ```
 
 ### read_sections

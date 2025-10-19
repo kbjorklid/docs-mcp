@@ -50,19 +50,18 @@ describe('Configuration Integration E2E Tests', () => {
         expect(Array.isArray(files)).toBe(true);
         expect(files.length).toBeGreaterThan(0);
 
-        // Step 2: Get table of contents with max_depth = 2
+        // Step 2: Get table of contents (uses default max-toc-depth of 3)
         const tocResponse = await helper.callTool('table_of_contents', {
-          filename: 'user-guide.md',
-          max_depth: 2
+          filename: 'user-guide.md'
         });
 
         helper.expectSuccessfulResponse(tocResponse);
         const sections = helper.parseJsonContent(tocResponse);
         expect(Array.isArray(sections)).toBe(true);
 
-        // Verify max depth is respected - should only have level 1 and 2 headers
+        // Verify default max toc depth is respected - should only have level 1-3 headers
         const sectionLevels = sections.map((section: any) => section.level);
-        expect(sectionLevels.every((level: number) => level <= 2)).toBe(true);
+        expect(sectionLevels.every((level: number) => level <= 3)).toBe(true);
 
         // Step 3: Read specific sections
         if (sections.length > 0) {

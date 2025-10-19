@@ -12,7 +12,7 @@ export class CommandLineProvider extends ConfigurationProvider {
 
   public isAvailable(): boolean {
     const args = this.parseCommandLineArgs();
-    return !!args.docsPaths || args.maxHeaders !== undefined;
+    return !!args.docsPaths || args.maxHeaders !== undefined || args.maxTocDepth !== undefined;
   }
 
   public load(): Partial<Configuration> {
@@ -27,6 +27,10 @@ export class CommandLineProvider extends ConfigurationProvider {
       config.maxHeaders = args.maxHeaders;
     }
 
+    if (args.maxTocDepth !== undefined) {
+      config.maxTocDepth = args.maxTocDepth;
+    }
+
     return config;
   }
 
@@ -36,6 +40,7 @@ export class CommandLineProvider extends ConfigurationProvider {
    * Supported arguments:
    * - --docs-path or -d: Path to documentation directory
    * - --max-headers: Maximum number of headers to include in table of contents
+   * - --max-toc-depth: Maximum depth for table of contents (default: 3)
    *
    * @returns Object containing parsed arguments
    */
@@ -56,6 +61,14 @@ export class CommandLineProvider extends ConfigurationProvider {
           const parsed = parseInt(args[i + 1], 10);
           if (!isNaN(parsed) && parsed > 0) {
             result.maxHeaders = parsed;
+            i++; // Skip the next argument
+          }
+        }
+      } else if (args[i] === '--max-toc-depth') {
+        if (i + 1 < args.length) {
+          const parsed = parseInt(args[i + 1], 10);
+          if (!isNaN(parsed) && parsed > 0) {
+            result.maxTocDepth = parsed;
             i++; // Skip the next argument
           }
         }

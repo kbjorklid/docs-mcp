@@ -11,8 +11,8 @@ export class EnvironmentProvider extends ConfigurationProvider {
   readonly priority = 50; // Medium priority
 
   public isAvailable(): boolean {
-    // Environment provider is available if DOCS_PATH or MAX_HEADERS is set
-    return process.env.DOCS_PATH !== undefined || process.env.MAX_HEADERS !== undefined;
+    // Environment provider is available if DOCS_PATH, MAX_HEADERS, or MAX_TOC_DEPTH is set
+    return process.env.DOCS_PATH !== undefined || process.env.MAX_HEADERS !== undefined || process.env.MAX_TOC_DEPTH !== undefined;
   }
 
   public load(): Partial<Configuration> {
@@ -32,6 +32,14 @@ export class EnvironmentProvider extends ConfigurationProvider {
       const parsed = parseInt(process.env.MAX_HEADERS, 10);
       if (!isNaN(parsed) && parsed > 0) {
         config.maxHeaders = parsed;
+      }
+    }
+
+    // Parse MAX_TOC_DEPTH from environment if set
+    if (process.env.MAX_TOC_DEPTH !== undefined) {
+      const parsed = parseInt(process.env.MAX_TOC_DEPTH, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        config.maxTocDepth = parsed;
       }
     }
 

@@ -50,25 +50,13 @@ const toolRegistry: Record<string, ToolHandler> = {
     definition: TableOfContents.getToolDefinition(),
     execute: async (args) => {
       const filename = args.filename;
-      let maxDepth = args.max_depth;
 
       // Validate parameters using type guards
       if (!isNonEmptyString(filename)) {
         return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
       }
 
-      // maxDepth is optional but if provided must be a number
-      // Handle gracefully: negative/non-numeric values are treated as "no limit" (undefined)
-      let finalMaxDepth: number | undefined = undefined;
-      if (maxDepth !== undefined) {
-        const numericDepth = typeof maxDepth === 'number' ? maxDepth : parseFloat(String(maxDepth));
-        // If not a valid number or negative, treat as no limit (undefined)
-        if (!isNaN(numericDepth) && numericDepth >= 0) {
-          finalMaxDepth = numericDepth;
-        }
-      }
-
-      return await tableOfContents.execute(filename, finalMaxDepth);
+      return await tableOfContents.execute(filename);
     },
   },
   read_sections: {

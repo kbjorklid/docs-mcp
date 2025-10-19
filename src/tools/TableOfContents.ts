@@ -23,7 +23,8 @@ export class TableOfContents {
         'Provides a structured table of contents for a documentation file with numeric section IDs (e.g., "1/2/3"). ' +
         'Use the list_documentation_files tool to see available files. ' +
         'ALWAYS use this tool first before resorting to the \'search\' tool. ' +
-        'After using this tool, use the read_sections tool with the section IDs to read specific sections.',
+        'After using this tool, use the read_sections tool with the section IDs to read specific sections. ' +
+        'The depth of headers returned is controlled by the server\'s max-toc-depth setting (default: 3 for ### headers).',
       inputSchema: {
         type: 'object',
         properties: {
@@ -31,12 +32,6 @@ export class TableOfContents {
             type: 'string',
             description:
               'The documentation file path as provided by the list_documentation_files tool.',
-          },
-          max_depth: {
-            type: 'number',
-            description:
-              'Optional maximum depth for table of contents entries. If provided, only headers up to this level will be included (e.g., 2 for # and ## headers only). Use 0 to disable depth limiting and return all sections.',
-            minimum: 0,
           },
         },
         required: ['filename'],
@@ -47,14 +42,14 @@ export class TableOfContents {
   /**
    * Execute the table_of_contents tool
    */
-  async execute(filename: string, maxDepth?: number) {
+  async execute(filename: string) {
     // Validate filename parameter
     if (!filename) {
       return createErrorResponse(ERROR_MESSAGES.FILENAME_REQUIRED);
     }
 
     try {
-      const sections = await this.getTableOfContents(filename, maxDepth);
+      const sections = await this.getTableOfContents(filename);
       return createSuccessResponse(sections);
     } catch (error) {
       // Check if it's a FILE_NOT_FOUND error
@@ -76,7 +71,7 @@ export class TableOfContents {
   /**
    * Get table of contents for a markdown file
    */
-  private async getTableOfContents(filename: string, maxDepth?: number): Promise<Section[]> {
+  private async getTableOfContents(filename: string): Promise<Section[]> {
     // Validate and resolve the file path
     const fileValidation = await validateAndResolveFile(filename, this.fileDiscovery);
 
@@ -89,10 +84,10 @@ export class TableOfContents {
     const { content } = MarkdownParser.readMarkdownFile(fileValidation.fullPath!);
     const { sections } = MarkdownParser.parseMarkdownSections(content);
 
-    // Filter sections by max depth if specified (0 means disabled - return all sections)
+    // Filter sections by max toc depth from configuration if set
     let filtered = sections;
-    if (maxDepth !== undefined && maxDepth > 0) {
-      filtered = sections.filter(section => section.level <= maxDepth);
+    if (this.config.maxTocDepth !== undefined && this.config.maxTocDepth > 0) {
+      filtered = sections.filter(section => section.level <= this.config.maxTocDepth!);
     }
 
     // Apply max headers limit from configuration if set

@@ -20,7 +20,8 @@ describe('table_of_contents E2E Tests', () => {
         // Check required parameters
         expect(tool.inputSchema.required).toContain('filename');
         expect(tool.inputSchema.properties.filename).toBeDefined();
-        expect(tool.inputSchema.properties.max_depth).toBeDefined();
+        // max_depth parameter should not exist (removed in favor of --max-toc-depth config)
+        expect(tool.inputSchema.properties.max_depth).toBeUndefined();
       } finally {
         await helper.stopServer();
       }
@@ -64,41 +65,42 @@ describe('table_of_contents E2E Tests', () => {
       }
     });
 
-    it('should respect max_depth parameter', async () => {
-      const helper = new E2ETestHelper('TableOfContents', 'should-respect-max-depth-parameter');
-      await helper.startServer();
-
-      try {
-        const response = await helper.callTool('table_of_contents', {
-          filename: 'simple-headers.md',
-          max_depth: 2
-        });
-
-        helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonContent(response);
-
-        // Should only include headers up to level 2
-        const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
-        expect(hasLevel3OrDeeper).toBe(false);
-
-        // Should still have level 1 and 2 headers
-        const hasLevel1Or2 = sections.some((s: any) => s.level <= 2);
-        expect(hasLevel1Or2).toBe(true);
-      } finally {
-        await helper.stopServer();
-      }
-    });
-
     it('should handle complex nested structures correctly', async () => {
       const helper = new E2ETestHelper('TableOfContents', 'should-handle-complex-nested-structures-correctly');
-      await helper.startServer();
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn server with --max-toc-depth 6 to get all levels
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-toc-depth', '6']);
 
       try {
-        const response = await helper.callTool('table_of_contents', {
-          filename: 'complex-nested.md'
-        });
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
 
-        helper.expectSuccessfulResponse(response);
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'complex-nested.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
         const sections = helper.parseJsonContent(response);
 
         // Check that we have headers at all levels (1-6)
@@ -121,7 +123,7 @@ describe('table_of_contents E2E Tests', () => {
         const topLevelSections = sections.filter((s: any) => s.level === 1);
         expect(topLevelSections.length).toBe(1); // Complex Nested Structure (all others are under it)
       } finally {
-        await helper.stopServer();
+        serverProcess.kill();
       }
     });
 
@@ -272,73 +274,6 @@ describe('table_of_contents E2E Tests', () => {
       }
     });
 
-    it('should handle max_depth = 0 correctly', async () => {
-      const helper = new E2ETestHelper('TableOfContents', 'should-handle-max-depth-zero-correctly');
-      await helper.startServer();
-
-      try {
-        const request: JSONRPCRequest = {
-          jsonrpc: '2.0',
-          id: 9,
-          method: 'tools/call',
-          params: {
-            name: 'table_of_contents',
-            arguments: {
-              filename: 'simple-headers.md',
-              max_depth: 0
-            }
-          }
-        };
-
-        const response = await helper.sendRequest(request);
-
-        expect(response.error).toBeUndefined();
-
-        const content = response.result.content[0];
-        const sections = JSON.parse(content.text);
-
-        // max_depth = 0 means no limit, should return all sections
-        expect(sections.length).toBeGreaterThan(0);
-      } finally {
-        await helper.stopServer();
-      }
-    });
-
-    it('should handle max_depth larger than document depth', async () => {
-      const helper = new E2ETestHelper('TableOfContents', 'should-handle-max-depth-larger-than-document-depth');
-      await helper.startServer();
-
-      try {
-        const request: JSONRPCRequest = {
-          jsonrpc: '2.0',
-          id: 10,
-          method: 'tools/call',
-          params: {
-            name: 'table_of_contents',
-            arguments: {
-              filename: 'simple-headers.md',
-              max_depth: 10
-            }
-          }
-        };
-
-        const response = await helper.sendRequest(request);
-
-        expect(response.error).toBeUndefined();
-
-        const content = response.result.content[0];
-        const sections = JSON.parse(content.text);
-
-        // Should include all available sections when max_depth is very large
-        expect(sections.length).toBeGreaterThan(0);
-
-        // Should include level 3 headers
-        const hasLevel3Headers = sections.some((s: any) => s.level === 3);
-        expect(hasLevel3Headers).toBe(true);
-      } finally {
-        await helper.stopServer();
-      }
-    });
   });
 
   describe('Error handling', () => {
@@ -386,75 +321,6 @@ describe('table_of_contents E2E Tests', () => {
       }
     });
 
-    it('should handle negative max_depth parameter gracefully', async () => {
-      const helper = new E2ETestHelper('TableOfContents', 'should-handle-negative-max-depth-parameter-gracefully');
-      await helper.startServer();
-
-      try {
-        const request: JSONRPCRequest = {
-          jsonrpc: '2.0',
-          id: 13,
-          method: 'tools/call',
-          params: {
-            name: 'table_of_contents',
-            arguments: {
-              filename: 'simple-headers.md',
-              max_depth: -1
-            }
-          }
-        };
-
-        const response = await helper.sendRequest(request);
-
-        expect(response.error).toBeUndefined();
-        expect(response.result).toBeDefined();
-        expect(response.result.content).toBeDefined();
-
-        const content = response.result.content[0];
-        expect(content.type).toBe('text');
-
-        // Server should handle negative values gracefully and return valid results
-        const sections = JSON.parse(content.text);
-        expect(Array.isArray(sections)).toBe(true);
-      } finally {
-        await helper.stopServer();
-      }
-    });
-
-    it('should handle non-numeric max_depth parameter gracefully', async () => {
-      const helper = new E2ETestHelper('TableOfContents', 'should-handle-non-numeric-max-depth-parameter-gracefully');
-      await helper.startServer();
-
-      try {
-        const request: JSONRPCRequest = {
-          jsonrpc: '2.0',
-          id: 14,
-          method: 'tools/call',
-          params: {
-            name: 'table_of_contents',
-            arguments: {
-              filename: 'simple-headers.md',
-              max_depth: 'invalid'
-            }
-          }
-        };
-
-        const response = await helper.sendRequest(request);
-
-        expect(response.error).toBeUndefined();
-        expect(response.result).toBeDefined();
-        expect(response.result.content).toBeDefined();
-
-        const content = response.result.content[0];
-        expect(content.type).toBe('text');
-
-        // Server should handle non-numeric values gracefully and return valid results
-        const sections = JSON.parse(content.text);
-        expect(Array.isArray(sections)).toBe(true);
-      } finally {
-        await helper.stopServer();
-      }
-    });
   });
 
   describe('max_headers configuration', () => {
@@ -665,12 +531,16 @@ describe('table_of_contents E2E Tests', () => {
       }
     });
 
-    it('should apply max_headers after max_depth filtering', async () => {
-      const helper = new E2ETestHelper('TableOfContents', 'should-apply-max-headers-after-max-depth');
+    it('should apply max_headers after max_toc_depth filtering', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-apply-max-headers-after-max-toc-depth');
       const docsPath = helper.getTestDocsPath();
 
-      // Spawn server with --max-headers 8
-      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-headers', '8']);
+      // Spawn server with --max-toc-depth 2 and --max-headers 8
+      const serverProcess = await helper.spawnServerWithArgs([
+        '--docs-path', docsPath,
+        '--max-toc-depth', '2',
+        '--max-headers', '8'
+      ]);
 
       try {
         const request: JSONRPCRequest = {
@@ -686,7 +556,7 @@ describe('table_of_contents E2E Tests', () => {
 
         await helper.sendRequestToServer(serverProcess, request);
 
-        // Request with max_depth: 2 (only level 1 and 2 headers)
+        // Request table of contents for deep nested document
         const toolRequest: JSONRPCRequest = {
           jsonrpc: '2.0',
           id: 2,
@@ -694,8 +564,7 @@ describe('table_of_contents E2E Tests', () => {
           params: {
             name: 'table_of_contents',
             arguments: {
-              filename: 'deep-nested.md',
-              max_depth: 2
+              filename: 'deep-nested.md'
             }
           }
         };
@@ -705,7 +574,7 @@ describe('table_of_contents E2E Tests', () => {
 
         const sections = helper.parseJsonContent(response);
 
-        // Should have max_depth applied first (only level 1-2)
+        // Should have max_toc_depth applied first (only level 1-2)
         const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
         expect(hasLevel3OrDeeper).toBe(false);
 
@@ -1374,6 +1243,212 @@ describe('table_of_contents E2E Tests', () => {
         // Should respect the limit
         expect(sections.length).toBeLessThanOrEqual(25);
         expect(sections.length).toBeGreaterThan(0);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+  });
+
+  describe('max_toc_depth configuration', () => {
+    it('should respect max_toc_depth from CLI argument', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-respect-max-toc-depth-from-cli');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn server with --max-toc-depth 2
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-toc-depth', '2']);
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'complex-nested.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should only have headers up to level 2
+        const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
+        expect(hasLevel3OrDeeper).toBe(false);
+
+        // Should still have level 1 and 2 headers
+        const hasLevel1Or2 = sections.some((s: any) => s.level <= 2);
+        expect(hasLevel1Or2).toBe(true);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should respect max_toc_depth from environment variable', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-respect-max-toc-depth-from-env');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn server with MAX_TOC_DEPTH=2 environment variable
+      const serverProcess = await helper.spawnServerWithArgsAndEnv(
+        ['--docs-path', docsPath],
+        { MAX_TOC_DEPTH: '2' }
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'complex-nested.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should only have headers up to level 2
+        const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
+        expect(hasLevel3OrDeeper).toBe(false);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should use default max_toc_depth of 3 when not configured', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-use-default-max-toc-depth');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn server without --max-toc-depth (should use default 3)
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath]);
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'complex-nested.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should have headers up to level 3 (default)
+        const levels = new Set(sections.map((s: any) => s.level));
+        expect(levels.has(1)).toBe(true);
+        expect(levels.has(2)).toBe(true);
+        expect(levels.has(3)).toBe(true);
+
+        // Should NOT have level 4 or deeper
+        const hasLevel4OrDeeper = sections.some((s: any) => s.level > 3);
+        expect(hasLevel4OrDeeper).toBe(false);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should allow CLI max_toc_depth to override environment variable', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-cli-override-env-max-toc-depth');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn with both CLI (4) and ENV (2) - CLI should win
+      const serverProcess = await helper.spawnServerWithArgsAndEnv(
+        ['--docs-path', docsPath, '--max-toc-depth', '4'],
+        { MAX_TOC_DEPTH: '2' }
+      );
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: {
+              filename: 'complex-nested.md'
+            }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // Should use CLI value of 4, not ENV value of 2
+        const levels = new Set(sections.map((s: any) => s.level));
+        expect(levels.has(4)).toBe(true);
+
+        // Should NOT have level 5 or deeper
+        const hasLevel5OrDeeper = sections.some((s: any) => s.level > 4);
+        expect(hasLevel5OrDeeper).toBe(false);
       } finally {
         serverProcess.kill();
       }

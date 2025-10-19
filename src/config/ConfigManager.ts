@@ -111,6 +111,14 @@ export class ConfigurationManager {
       }
     }
 
+    // Validate maxTocDepth if present
+    if (config.maxTocDepth !== undefined) {
+      if (typeof config.maxTocDepth !== 'number' || isNaN(config.maxTocDepth) || config.maxTocDepth < 1) {
+        // Remove invalid maxTocDepth, fall back to default
+        delete config.maxTocDepth;
+      }
+    }
+
     return config as Configuration;
   }
 
@@ -159,7 +167,7 @@ class CommandLineProviderWithArgs extends CommandLineProvider {
   }
 
   public isAvailable(): boolean {
-    return !!this.args.docsPaths || this.args.maxHeaders !== undefined;
+    return !!this.args.docsPaths || this.args.maxHeaders !== undefined || this.args.maxTocDepth !== undefined;
   }
 
   public load(): Partial<Configuration> {
@@ -171,6 +179,10 @@ class CommandLineProviderWithArgs extends CommandLineProvider {
 
     if (this.args.maxHeaders !== undefined) {
       config.maxHeaders = this.args.maxHeaders;
+    }
+
+    if (this.args.maxTocDepth !== undefined) {
+      config.maxTocDepth = this.args.maxTocDepth;
     }
 
     return config;

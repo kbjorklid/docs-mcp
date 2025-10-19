@@ -2,6 +2,7 @@
 export interface Configuration {
   documentationPaths: string[];
   maxHeaders?: number;
+  maxTocDepth?: number;
 }
 
 // Alias for backward compatibility
@@ -11,6 +12,7 @@ export interface DocumentationConfig extends Configuration {}
 export interface ParsedCommandLineArgs {
   docsPaths?: string[];
   maxHeaders?: number;
+  maxTocDepth?: number;
 }
 
 // File metadata interface
@@ -70,4 +72,5 @@ export interface FileListItem {
 export const DEFAULT_CONFIG: Configuration = {
   documentationPaths: [process.env.DOCS_PATH || './docs'],
   maxHeaders: 25,
+  maxTocDepth: 3,
 };

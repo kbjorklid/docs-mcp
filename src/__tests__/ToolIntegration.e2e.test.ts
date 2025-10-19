@@ -182,30 +182,30 @@ describe('Tool Integration E2E Tests', () => {
   });
 
   describe('Configuration Integration', () => {
-    it('should respect max-depth parameter in table_of_contents tool', async () => {
-      helper = await startServerWithCustomArgs('should-respect-max-depth-configuration-across-all-tools');
+    it('should respect default max-toc-depth in table_of_contents tool', async () => {
+      helper = await startServerWithCustomArgs('should-respect-max-toc-depth-configuration-across-all-tools');
 
-      // Test that table_of_contents respects max_depth parameter
+      // Test that table_of_contents respects default max-toc-depth setting
       const tocResponse = await helper.callTool('table_of_contents', {
-        filename: 'simple-guide.md',
-        max_depth: 2
+        filename: 'simple-guide.md'
       });
 
       helper.expectSuccessfulResponse(tocResponse);
       const sections = helper.parseJsonContent(tocResponse);
 
-      // Should only include sections up to depth 2
-      const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
-      expect(hasLevel3OrDeeper).toBe(false);
+      // Should only include sections up to depth 3 (default)
+      const hasLevel4OrDeeper = sections.some((s: any) => s.level > 3);
+      expect(hasLevel4OrDeeper).toBe(false);
 
-      // Search should still work normally regardless of max_depth
+      // Search should still work normally
       const searchResponse = await helper.callTool('search', {
-        query: 'installation',
+        query: 'feature',
         filename: 'simple-guide.md'
       });
 
       helper.expectSuccessfulResponse(searchResponse);
       const searchResult = helper.parseJsonContent(searchResponse);
+      expect(searchResult.results.length).toBeGreaterThan(0);
       expect(searchResult.results[0].matches.length).toBeGreaterThan(0);
     });
   });
