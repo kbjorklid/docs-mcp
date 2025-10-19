@@ -25,18 +25,17 @@ Do not re-execute the commands mentioned above; trust that the output is correct
 
 ## Your task
 
-If user has given instructions, follow them and create a git commit based on that.
+(a) If user has given instructions, follow them and create a git commit based on that.
 
-If there is no user input AND there are staged changes: create a commit of the staged changes.
+(b) If there is no user input AND there are staged changes: create a commit of the staged changes.
 
-If there is no user input AND there are no staged changes and/or untracked files AND there are unstaged changes: create a commit from the unstaged changes.
+(c) If there is no user input AND there are no staged changes and/or untracked files AND there are unstaged changes: Check the unstaged changes and consider what should be committed. If you think there are things that would not make sense to commit (for example, files that seem temporary), ask user. Provide user choice to commit everything, or commit what you suggest, or write an explanation what they expect to be committed.
 
 If there is nothing to commit (no changes at all and no untracked files): notify user that this is the case, do not create a commit.
 
 ## Commit message guidelines
 
 Use 'Conventional Commits' standard.
-
 Unless the commit header captures the change fully, you should add a succinct commit body.
 
 If you know the 'why' of the commit (e.g. user has previously asked to fix a bug, or user has provided information in the 'user inputs' section),
