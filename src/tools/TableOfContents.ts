@@ -85,6 +85,10 @@ export class TableOfContents {
       filtered = this.applyMaxHeadersLimit(filtered, this.config.maxHeaders);
     }
 
+    // Recalculate subsection counts based on filtered sections
+    // This ensures counts reflect only visible sections after filtering
+    MarkdownParser.calculateSubsectionCountsForSections(filtered, true);
+
     return filtered;
   }
 
@@ -301,8 +305,24 @@ export class TableOfContents {
   }
 
   /**
+   * Build an index of section indices by level for O(1) lookup
+   * Improves performance when filtering by level
+   */
+  private indexSectionsByLevel(sections: Section[]): Map<number, number[]> {
+    const levelIndex = new Map<number, number[]>();
+    sections.forEach((section, idx) => {
+      if (!levelIndex.has(section.level)) {
+        levelIndex.set(section.level, []);
+      }
+      levelIndex.get(section.level)!.push(idx);
+    });
+    return levelIndex;
+  }
+
+  /**
    * Group children at nextLevel by their parent sections at parentLevel
    * Returns array of { parentIdx, childIndices[] }
+   * Optimized using pre-indexed sections by level to avoid O(n*m) scanning
    */
   private groupChildrenByParent(
     sections: Section[],
@@ -317,16 +337,16 @@ export class TableOfContents {
       idx => sections[idx].level === parentLevel
     );
 
+    // Pre-index sections at childLevel for O(1) lookup instead of O(n*m) scanning
+    const childIndicesByLevel = this.indexSectionsByLevel(sections).get(childLevel) || [];
+
     parentIndices.forEach(parentIdx => {
       const parentSection = sections[parentIdx];
-      const childIndices: number[] = [];
 
-      // Find all direct children at childLevel
-      sections.forEach((section, idx) => {
-        if (section.level === childLevel && this.isDirectChild(section, parentSection)) {
-          childIndices.push(idx);
-        }
-      });
+      // Find direct children from pre-indexed list at childLevel
+      const childIndices = childIndicesByLevel.filter(childIdx =>
+        this.isDirectChild(sections[childIdx], parentSection)
+      );
 
       if (childIndices.length > 0) {
         groups.push({ parentIdx, childIndices });
@@ -338,19 +358,12 @@ export class TableOfContents {
 
   /**
    * Check if childSection is a direct child of parentSection based on ID hierarchy
+   * Uses MarkdownParser utilities for consistency and clarity
    */
   private isDirectChild(childSection: Section, parentSection: Section): boolean {
-    // Child ID format: "parent-id/child-id"
-    // Check if child starts with parent ID and has exactly one more level
-    if (!childSection.id.startsWith(parentSection.id + '/')) {
-      return false;
-    }
-
-    const childParts = childSection.id.split('/');
-    const parentParts = parentSection.id.split('/');
-
-    // Direct child has exactly one more level than parent
-    return childParts.length === parentParts.length + 1;
+    // A direct child's parent ID should match the parent section's ID
+    const childParentId = MarkdownParser.getParentSectionId(childSection.id);
+    return childParentId === parentSection.id;
   }
 
   /**
@@ -367,4 +380,5 @@ export class TableOfContents {
       return bCharCount - aCharCount; // Descending order (largest first)
     });
   }
+
 }

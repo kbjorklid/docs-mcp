@@ -693,5 +693,77 @@ describe('Search E2E Tests', () => {
       expect(matches[1].title).toBe('Bar');
       expect(matches[1].level).toBe(2);
     });
+
+    it('should include subsection_count in search results', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 32,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: 'feature',
+            filename: 'features-doc.md'
+          }
+        }
+      };
+
+      const response = await helper.sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      const matches = searchResult.results[0].matches;
+
+      // Find the "Key Features" section (level 1) - should have subsection_count
+      const keyFeaturesSection = matches.find((s: any) => s.level === 1);
+      expect(keyFeaturesSection).toBeDefined();
+      expect(keyFeaturesSection.title).toBe('Key Features');
+      // Should have 3 direct children (Feature One, Feature Two, Feature Three)
+      expect(keyFeaturesSection.subsection_count).toBe(3);
+
+      // Find "Feature One" section - leaf section, should not have subsection_count
+      const featureOneSection = matches.find((s: any) => s.title === 'Feature One');
+      expect(featureOneSection).toBeDefined();
+      expect(featureOneSection.subsection_count).toBeUndefined();
+    });
+
+    it('should omit subsection_count for leaf sections in search results', async () => {
+      const request: JSONRPCRequest = {
+        jsonrpc: '2.0',
+        id: 33,
+        method: 'tools/call',
+        params: {
+          name: 'search',
+          arguments: {
+            query: 'example',
+            filename: 'examples.md'
+          }
+        }
+      };
+
+      const response = await helper.sendRequest(request);
+      expect(response.error).toBeUndefined();
+      const content = response.result.content[0];
+      const searchResult = JSON.parse(content.text);
+      const matches = searchResult.results[0].matches;
+
+      // Leaf sections (Example 1, Example 2, Example 3) should not have subsection_count
+      const leafSections = matches.filter((s: any) => s.level === 3);
+      leafSections.forEach((section: any) => {
+        expect(section.subsection_count).toBeUndefined();
+      });
+
+      // Parent sections should have subsection_count
+      const parentSections = matches.filter((s: any) => s.level === 1 || s.level === 2);
+      parentSections.forEach((section: any) => {
+        if (section.level === 1) {
+          // Main Examples section
+          expect(section.subsection_count).toBeDefined();
+        } else if (section.title === 'Basic Examples' || section.title === 'Advanced Examples') {
+          // These sections have children (the examples)
+          expect(section.subsection_count).toBeDefined();
+        }
+      });
+    });
   });
 });

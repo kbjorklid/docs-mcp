@@ -37,6 +37,7 @@ export interface Section {
   title: string;
   level: number;
   character_count: number;
+  subsection_count?: number;
 }
 
 // Section content interface

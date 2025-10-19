@@ -136,7 +136,76 @@ export class MarkdownParser {
       }
     });
 
+    // Calculate subsection counts
+    this.calculateSubsectionCounts(sections);
+
     return { sections, sectionMap };
+  }
+
+  /**
+   * Extract parent section ID from a section ID (e.g., "1/2/3" -> "1/2")
+   * Returns null if section has no parent (top-level section)
+   */
+  static getParentSectionId(sectionId: string): string | null {
+    const parts = sectionId.split('/');
+    if (parts.length <= 1) {
+      return null;
+    }
+    return parts.slice(0, -1).join('/');
+  }
+
+  /**
+   * Get the nesting level of a section based on its ID
+   * (e.g., "1" -> level 1, "1/2" -> level 2, "1/2/3" -> level 3)
+   */
+  static getSectionLevel(sectionId: string): number {
+    return sectionId.split('/').length;
+  }
+
+  /**
+   * Calculate and apply subsection counts for all sections.
+   * Only counts direct children (next level headers).
+   * Uses O(n) algorithm with Map-based grouping for efficiency.
+   *
+   * @param sections - Array of sections to process (modified in-place)
+   * @param clearExisting - If true, clears subsection_count before calculation.
+   *                       Useful when recalculating from filtered sections.
+   */
+  static calculateSubsectionCountsForSections(
+    sections: Section[],
+    clearExisting: boolean = false
+  ): void {
+    // Clear existing counts if requested (useful for recalculation after filtering)
+    if (clearExisting) {
+      sections.forEach((section) => {
+        delete section.subsection_count;
+      });
+    }
+
+    // Group sections by parent ID for O(n) lookup
+    const childCountMap = new Map<string, number>();
+
+    sections.forEach((section) => {
+      const parentId = this.getParentSectionId(section.id);
+      if (parentId !== null) {
+        childCountMap.set(parentId, (childCountMap.get(parentId) || 0) + 1);
+      }
+    });
+
+    // Apply counts to sections (only if count > 0 to keep output clean)
+    sections.forEach((section) => {
+      const count = childCountMap.get(section.id) || 0;
+      if (count > 0) {
+        section.subsection_count = count;
+      }
+    });
+  }
+
+  /**
+   * Private wrapper for backward compatibility with internal usage
+   */
+  private static calculateSubsectionCounts(sections: Section[]): void {
+    this.calculateSubsectionCountsForSections(sections, false);
   }
 
   /**

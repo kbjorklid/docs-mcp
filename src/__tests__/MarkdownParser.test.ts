@@ -154,12 +154,14 @@ Content 3`;
         title: 'Title 1',
         level: 1,
         character_count: expect.any(Number),
+        subsection_count: 1,
       });
       expect(result.sections[1]).toEqual({
         id: '1/1',
         title: 'Title 2',
         level: 2,
         character_count: expect.any(Number),
+        subsection_count: 1,
       });
       expect(result.sections[2]).toEqual({
         id: '1/1/1',
@@ -318,6 +320,112 @@ Another content`;
 
       expect(result.sections).toHaveLength(6);
       expect(result.sections.map((s) => s.level)).toEqual([1, 2, 3, 4, 5, 6]);
+    });
+
+    it('should calculate subsection counts correctly', () => {
+      const content = `# Parent Section
+Content here.
+
+## Child 1
+More content.
+
+## Child 2
+Even more.
+
+### Grandchild 1
+Deep content.`;
+
+      const { sections } = MarkdownParser.parseMarkdownSections(content);
+
+      // Parent should have 2 direct children
+      const parent = sections.find((s) => s.level === 1);
+      expect(parent?.subsection_count).toBe(2);
+
+      // Child 2 should have 1 direct child
+      const child2 = sections.find((s) => s.level === 2 && s.id === '1/2');
+      expect(child2?.subsection_count).toBe(1);
+
+      // Grandchild should have no children
+      const grandchild = sections.find((s) => s.level === 3);
+      expect(grandchild?.subsection_count).toBeUndefined();
+    });
+
+    it('should omit subsection_count when there are no children', () => {
+      const content = `# Only Section
+No children here.`;
+
+      const { sections } = MarkdownParser.parseMarkdownSections(content);
+
+      expect(sections[0].subsection_count).toBeUndefined();
+    });
+
+    it('should handle multiple top-level sections correctly', () => {
+      const content = `# Section 1
+Content.
+
+## Section 1.1
+More.
+
+# Section 2
+Different content.
+
+## Section 2.1
+More content.
+
+## Section 2.2
+Even more.`;
+
+      const { sections } = MarkdownParser.parseMarkdownSections(content);
+
+      const section1 = sections.find((s) => s.id === '1');
+      expect(section1?.subsection_count).toBe(1);
+
+      const section2 = sections.find((s) => s.id === '2');
+      expect(section2?.subsection_count).toBe(2);
+    });
+
+    it('should only count direct children, not grandchildren', () => {
+      const content = `# Parent
+Content
+
+## Child 1
+Content
+
+## Child 2
+Content
+
+### Grandchild 1
+Content
+
+### Grandchild 2
+Content`;
+
+      const { sections } = MarkdownParser.parseMarkdownSections(content);
+
+      // Parent should only count direct level-2 children, not level-3 grandchildren
+      const parent = sections.find((s) => s.id === '1');
+      expect(parent?.subsection_count).toBe(2);
+
+      // Child 2 should count its direct level-3 children
+      const child2 = sections.find((s) => s.id === '1/2');
+      expect(child2?.subsection_count).toBe(2);
+    });
+
+    it('should handle non-sequential header levels', () => {
+      const content = `# Level 1
+Content
+
+### Level 3
+Content
+
+#### Level 4
+Content`;
+
+      const { sections } = MarkdownParser.parseMarkdownSections(content);
+
+      // Level 1 should have no level 2 children
+      const level1 = sections.find((s) => s.id === '1');
+      expect(level1?.subsection_count).toBeUndefined();
     });
   });
 

@@ -1454,4 +1454,140 @@ describe('table_of_contents E2E Tests', () => {
       }
     });
   });
+
+  describe('subsection_count field', () => {
+    it('should include subsection_count for sections with direct children', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-include-subsection-count');
+      await helper.startServer();
+
+      try {
+        const response = await helper.callTool('table_of_contents', {
+          filename: 'nested-sections.md'
+        });
+
+        helper.expectSuccessfulResponse(response);
+        const sections = helper.parseJsonContent(response);
+
+        // Find level-1 section (should have 3 level-2 children: 1.1, 1.2, 1.3)
+        const level1 = sections.find((s: any) => s.level === 1 && s.id === '1');
+        expect(level1).toBeDefined();
+        expect(level1.subsection_count).toBe(3);
+
+        // Find level-2 section 1.2 (should have 2 level-3 children: 1.2.1, 1.2.2)
+        const level2Section = sections.find((s: any) => s.level === 2 && s.id === '1/2');
+        expect(level2Section).toBeDefined();
+        expect(level2Section.subsection_count).toBe(2);
+
+        // Find level-1 section 2 (should have 1 level-2 child: 2.1)
+        const level1Second = sections.find((s: any) => s.level === 1 && s.id === '2');
+        expect(level1Second).toBeDefined();
+        expect(level1Second.subsection_count).toBe(1);
+      } finally {
+        await helper.stopServer();
+      }
+    });
+
+    it('should omit subsection_count for sections without children', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-omit-subsection-count-when-zero');
+      await helper.startServer();
+
+      try {
+        const response = await helper.callTool('table_of_contents', {
+          filename: 'no-children.md'
+        });
+
+        helper.expectSuccessfulResponse(response);
+        const sections = helper.parseJsonContent(response);
+
+        // Leaf sections should not have subsection_count
+        const leafSection = sections.find((s: any) => s.level === 3);
+        expect(leafSection).toBeDefined();
+        expect(leafSection.subsection_count).toBeUndefined();
+
+        // Parent level 1 should have subsection_count if it has children
+        const parentSection = sections.find((s: any) => s.level === 1);
+        expect(parentSection).toBeDefined();
+      } finally {
+        await helper.stopServer();
+      }
+    });
+
+    it('should only count direct children, not grandchildren', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-count-only-direct-children');
+      await helper.startServer();
+
+      try {
+        const response = await helper.callTool('table_of_contents', {
+          filename: 'deep-hierarchy.md'
+        });
+
+        helper.expectSuccessfulResponse(response);
+        const sections = helper.parseJsonContent(response);
+
+        // Level-1 section should only count level-2 children (1/1 and 1/2), not level-3 and 4 grandchildren/great-grandchildren
+        const level1 = sections.find((s: any) => s.level === 1);
+        expect(level1).toBeDefined();
+        expect(level1.subsection_count).toBe(2); // Only 2 direct level-2 children
+
+        // Level-2 section 1/2 should only count level-3 children (just 1/2/1)
+        const level2 = sections.find((s: any) => s.id === '1/2');
+        expect(level2).toBeDefined();
+        expect(level2.subsection_count).toBe(1); // Only 1 direct level-3 child, not level-4 grandchild
+      } finally {
+        await helper.stopServer();
+      }
+    });
+
+    it('should recalculate subsection_count based on filtered results when using max_toc_depth', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-work-with-max-toc-depth');
+      const docsPath = helper.getTestDocsPath();
+
+      const serverProcess = await helper.spawnServerWithArgs([
+        '--docs-path', docsPath,
+        '--max-toc-depth', '2'
+      ]);
+
+      try {
+        const request: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        };
+
+        await helper.sendRequestToServer(serverProcess, request);
+
+        const toolRequest: JSONRPCRequest = {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: { filename: 'deep-nested.md' }
+          }
+        };
+
+        const response = await helper.sendRequestToServer(serverProcess, toolRequest);
+        expect(response.error).toBeUndefined();
+
+        const sections = helper.parseJsonContent(response);
+
+        // With max_toc_depth = 2, level-3 sections should be filtered out
+        const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
+        expect(hasLevel3OrDeeper).toBe(false);
+
+        // Level-2 sections should have no subsection_count (because their children are filtered)
+        const level2Sections = sections.filter((s: any) => s.level === 2);
+        level2Sections.forEach((section: any) => {
+          expect(section.subsection_count).toBeUndefined();
+        });
+      } finally {
+        serverProcess.kill();
+      }
+    });
+  });
 });
