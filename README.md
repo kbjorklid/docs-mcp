@@ -15,10 +15,17 @@ A Model Context Protocol (MCP) server that provides tools for reading and naviga
 - **Flexible Configuration**: Support for command line, environment variables, and default paths
 - **Comprehensive Error Handling**: Clear error messages and validation
 
-## Requirements
+## Installation
 
-- **Node.js**: Version 16 or higher
-- **npm**: Version 7 or higher
+### Claude Code (Mac, Linux)
+```bash
+claude mcp add docs-reader -- npx local-dev-docs-reader-mcp@latest -d &lt;documentation_directory> 
+```
+
+### Claud Code (Windows)
+```bash
+claude mcp add docs-reader -- cmd /c -- npx local-dev-docs-reader-mcp@latest -d &lt;documentation_directory> 
+```
 
 ## Command Line Arguments
 
