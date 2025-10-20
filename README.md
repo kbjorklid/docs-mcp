@@ -69,7 +69,6 @@ This is how the agent should typically use this MCP server.
 6. Agent asks for the section contents with `read_sections`
 
 
-
 ## Available MCP Tools
 
 ### list_documentation_files
@@ -132,3 +131,25 @@ Searches for text patterns using regular expressions in documentation files, ret
 **Parameters:**
 - `query` (required) - The regular expression pattern to search for (case-insensitive). The pattern automatically includes the "i" and "s" flags for case-insensitive and multiline matching
 - `filename` (optional) - Specific file to search in. If not provided, searches all available documentation files
+
+## Document Metadata Support
+
+Markdown files can include optional YAML front matter metadata for better file discovery. The MCP server automatically parses and displays this metadata in the `list_documentation_files` tool results.
+
+### Supported Fields (all optional)
+
+- `title` (string) - Document title, displayed in file listings
+- `description` (string) - Brief description of the document's content
+- `keywords` (string or array) - Keywords for searchability and categorization
+
+### Format
+
+Add YAML front matter at the top of your markdown file, enclosed in `---` delimiters:
+
+```yaml
+---
+title: "User Guide"
+description: "Comprehensive guide for getting started with the application"
+keywords: ["tutorial", "setup", "configuration", "getting started"]
+---
+```
