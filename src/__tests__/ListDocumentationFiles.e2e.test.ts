@@ -27,11 +27,6 @@ describe('list_documentations E2E Tests', () => {
       // Check file ID
       expect(apiReferenceFile.fileId).toBe('f1'); // api-reference.md is 1st alphabetically
 
-      // Check file size information
-      expect(apiReferenceFile.size).toBeDefined();
-      expect(typeof apiReferenceFile.size).toBe('string');
-      expect(apiReferenceFile.size).toMatch(/\d+(kb|b)$/);
-
       await helper.stopServer();
     });
 
@@ -94,8 +89,6 @@ describe('list_documentations E2E Tests', () => {
 
       files.forEach((file: any) => {
         expect(file.filename).toMatch(/\.md$/);
-        expect(file.size).toBeDefined();
-        expect(typeof file.size).toBe('string');
         // Verify new File ID fields
         expect(file.fileId).toBeDefined();
         expect(file.fileId).toMatch(/^f[0-9]+$/);

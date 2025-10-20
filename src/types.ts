@@ -39,7 +39,7 @@ export interface ParsedCommandLineArgs {
 export interface FileMetadata {
   title?: string;
   description?: string;
-  keywords?: string[];
+  keywords?: string | string[];
 }
 
 // File info interface
@@ -48,7 +48,7 @@ export interface FileInfo {
   filename: string;
   title: string;
   description?: string;
-  keywords: string[];
+  keywords?: string;
   size: string;
   sourceDirectory?: string;
 }
@@ -59,8 +59,7 @@ export interface FileInfoWithId {
   filename: string;
   title?: string;
   description?: string;
-  keywords: string[];
-  size: string;
+  keywords?: string;
 }
 
 // Section interface
@@ -111,7 +110,7 @@ export interface FileListItem {
   filename: string;
   title: string;
   description?: string;
-  keywords: string[];
+  keywords?: string;
   size: string;
 }
 

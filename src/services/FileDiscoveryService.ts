@@ -96,13 +96,21 @@ export class FileDiscoveryService {
   async getFileInfoList(): Promise<FileInfo[]> {
     const discoveredFiles = await this.getAllFiles();
 
-    return discoveredFiles.map(file => ({
-      filename: file.filename,
-      title: file.metadata.title || path.basename(file.filename, '.md'),
-      description: file.metadata.description,
-      keywords: file.metadata.keywords || [],
-      size: file.size,
-    }));
+    return discoveredFiles.map(file => {
+      const fileInfo: FileInfo = {
+        filename: file.filename,
+        title: file.metadata.title || path.basename(file.filename, '.md'),
+        description: file.metadata.description,
+        size: file.size,
+      };
+
+      // Convert keywords array to comma-separated string
+      if (Array.isArray(file.metadata.keywords) && file.metadata.keywords.length > 0) {
+        fileInfo.keywords = file.metadata.keywords.join(', ');
+      }
+
+      return fileInfo;
+    });
   }
 
   /**
@@ -137,9 +145,12 @@ export class FileDiscoveryService {
         fileId: createFileId(index + 1),
         filename: file.filename,
         description: file.metadata.description,
-        keywords: file.metadata.keywords || [],
-        size: file.size,
       };
+
+      // Convert keywords array to comma-separated string
+      if (Array.isArray(file.metadata.keywords) && file.metadata.keywords.length > 0) {
+        fileInfo.keywords = file.metadata.keywords.join(', ');
+      }
 
       // Only include title if it's not redundant with the filename
       if (!isTitleRedundant(file.filename, title)) {
