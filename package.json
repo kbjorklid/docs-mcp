@@ -17,9 +17,17 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kbjorklid/docs-mcp.git"
+  },
+  "keywords": ["mcp", "model context protocol", "documentation mcp", "markdown", "documentation"],
+  "author": "Kalle Bjökrklid <kalle.bjorklid@gmail.com>",
+  "license": "MIT",
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
     "@types/node": "^24.7.0",
