@@ -1,8 +1,8 @@
-import { Section, Configuration, TableOfContentsResponse } from '../types';
+import { Section, Configuration, TableOfContentsResponse, FileId, parseFileId } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, parseToolError, getErrorMessage, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS, isValidFileId } from '../utils';
-import { ERROR_MESSAGES } from '../constants';
+import { createSuccessResponse, createErrorResponse, parseToolError, getErrorMessage, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS } from '../utils';
+import { ERROR_MESSAGES, MINIMUM_VIABLE_HEADER_COUNT, DEFAULT_MAX_TOC_DEPTH } from '../constants';
 
 export class TableOfContents {
   private config: Configuration;
@@ -24,7 +24,7 @@ export class TableOfContents {
         'Use the list_documentation_files tool to get file IDs. ' +
         'ALWAYS use this tool first before resorting to the \'search\' tool. ' +
         'After using this tool, use the read_sections tool with the section IDs to read specific sections. ' +
-        'The depth of headers returned is controlled by the server\'s max-toc-depth setting (default: 3 for ### headers).',
+        `The depth of headers returned is controlled by the server's max-toc-depth setting (default: ${DEFAULT_MAX_TOC_DEPTH} for ${'#'.repeat(DEFAULT_MAX_TOC_DEPTH)} headers).`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -42,10 +42,11 @@ export class TableOfContents {
   /**
    * Execute the table_of_contents tool
    */
-  async execute(fileId: string) {
-    // Validate fileId parameter
-    if (!isValidFileId(fileId)) {
-      return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId));
+  async execute(fileIdInput: string) {
+    // Parse and validate fileId parameter
+    const fileId = parseFileId(fileIdInput);
+    if (!fileId) {
+      return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileIdInput));
     }
 
     try {
@@ -61,7 +62,7 @@ export class TableOfContents {
   /**
    * Get table of contents for a markdown file
    */
-  private async getTableOfContents(fileId: string): Promise<TableOfContentsResponse> {
+  private async getTableOfContents(fileId: FileId): Promise<TableOfContentsResponse> {
     // Resolve fileId to file path
     const fileMapping = await this.fileDiscovery.getFileByFileId(fileId);
 
@@ -107,7 +108,7 @@ export class TableOfContents {
   /**
    * Apply maximum headers limit using a two-phase algorithm:
    * 1. Base greedy algorithm (always include level-1, then progressively deeper levels)
-   * 2. Phase 1: Minimum viability check (if < 3 headers, include next level entirely)
+   * 2. Phase 1: Minimum viability check (if < MINIMUM_VIABLE_HEADER_COUNT headers, include next level entirely)
    * 3. Phase 2: Greedy filling (fill remaining slots with character-count-prioritized sections)
    * Uses index-based filtering to preserve original document order.
    */
@@ -194,7 +195,7 @@ export class TableOfContents {
 
   /**
    * Phase 1: Minimum Viability Check
-   * If result < 3 headers AND document has >= 3 headers total:
+   * If result < MINIMUM_VIABLE_HEADER_COUNT headers AND document has >= MINIMUM_VIABLE_HEADER_COUNT headers total:
    * - Include the next sublevel completely, even if it exceeds max_headers
    *
    * @param sections - All sections from the document
@@ -215,8 +216,8 @@ export class TableOfContents {
     const currentlyIncluded = includedIndices.size;
 
     // Check if Phase 1 applies
-    // Condition: currentlyIncluded < 3 AND totalHeadersInDocument >= 3
-    if (currentlyIncluded >= 3 || totalHeadersInDocument < 3) {
+    // Condition: currentlyIncluded < MINIMUM_VIABLE_HEADER_COUNT AND totalHeadersInDocument >= MINIMUM_VIABLE_HEADER_COUNT
+    if (currentlyIncluded >= MINIMUM_VIABLE_HEADER_COUNT || totalHeadersInDocument < MINIMUM_VIABLE_HEADER_COUNT) {
       return includedIndices; // No action needed
     }
 

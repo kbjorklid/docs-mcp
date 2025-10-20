@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { MarkdownParser } from '../MarkdownParser';
-import { FileMetadata } from '../types';
+import { FileMetadata, createSectionId, SectionId } from '../types';
 
 // Mock dependencies
 jest.mock('fs');
@@ -150,21 +150,21 @@ Content 3`;
 
       expect(result.sections).toHaveLength(3);
       expect(result.sections[0]).toEqual({
-        id: '1',
+        id: createSectionId([1]),
         title: 'Title 1',
         level: 1,
         character_count: expect.any(Number),
         subsection_count: 1,
       });
       expect(result.sections[1]).toEqual({
-        id: '1/1',
+        id: createSectionId([1, 1]),
         title: 'Title 2',
         level: 2,
         character_count: expect.any(Number),
         subsection_count: 1,
       });
       expect(result.sections[2]).toEqual({
-        id: '1/1/1',
+        id: createSectionId([1, 1, 1]),
         title: 'Title 3',
         level: 3,
         character_count: expect.any(Number),
@@ -444,7 +444,7 @@ Content 3`;
       // to avoid duplication (the child is already included in the parent)
       const result = MarkdownParser.readSectionsFromContent(
         content,
-        ['1', '1/1'],
+        [createSectionId([1]), createSectionId([1, 1])],
         sectionMap
       );
 
@@ -472,7 +472,7 @@ Content 5`;
       // Sibling sections should both be returned (not filtered)
       const result = MarkdownParser.readSectionsFromContent(
         content,
-        ['1/1', '1/2'],
+        [createSectionId([1, 1]), createSectionId([1, 2])],
         sectionMap
       );
 
@@ -490,7 +490,7 @@ Content 1`;
       const { sectionMap } = MarkdownParser.parseMarkdownSections(content);
       const result = MarkdownParser.readSectionsFromContent(
         content,
-        ['non-existent-section'],
+        ['non-existent-section' as any],
         sectionMap
       );
 
@@ -524,15 +524,15 @@ Advanced content`;
       const { sectionMap } = MarkdownParser.parseMarkdownSections(content);
 
       // Manually create the section map to ensure proper line ranges
-      const customSectionMap = new Map([
-        ['1', { start: 0, end: 7 }], // Includes all subsections
-        ['1/1', { start: 3, end: 4 }],
-        ['1/2', { start: 6, end: 7 }],
+      const customSectionMap = new Map<SectionId, { start: number; end: number }>([
+        [createSectionId([1]), { start: 0, end: 7 }], // Includes all subsections
+        [createSectionId([1, 1]), { start: 3, end: 4 }],
+        [createSectionId([1, 2]), { start: 6, end: 7 }],
       ]);
 
       const result = MarkdownParser.readSectionsFromContent(
         content,
-        ['1', '1/1'],
+        [createSectionId([1]), createSectionId([1, 1])],
         customSectionMap
       );
 
@@ -684,7 +684,7 @@ Advanced content here.`;
       // Read specific sections
       const sectionContents = MarkdownParser.readSectionsFromContent(
         content,
-        ['1', '2'],
+        [createSectionId([1]), createSectionId([2])],
         sectionMap
       );
       expect(sectionContents).toHaveLength(2);

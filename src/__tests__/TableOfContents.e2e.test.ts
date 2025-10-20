@@ -1701,4 +1701,88 @@ describe('table_of_contents E2E Tests', () => {
       }
     });
   });
+
+  describe('SectionId format validation', () => {
+    it('should handle very deeply nested section IDs (5+ levels)', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-handle-very-deeply-nested-section-IDs-5-plus-levels');
+      const docsPath = helper.getTestDocsPath();
+
+      // Spawn server with --max-toc-depth 6 to get all levels
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-toc-depth', '6']);
+
+      try {
+        await helper.sendRequestToServer(serverProcess, {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' }
+          }
+        });
+
+        const response = await helper.sendRequestToServer(serverProcess, {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: 'table_of_contents',
+            arguments: { fileId: 'f1' }
+          }
+        });
+
+        helper.expectSuccessfulResponse(response);
+        const sections = helper.parseJsonSections(response);
+
+        // Find deeply nested sections (level 5+)
+        const deepSections = sections.filter((s: any) => s.level >= 5);
+        expect(deepSections.length).toBeGreaterThan(0);
+
+        // Verify section IDs follow the pattern: 1/2/3/4/5 (or deeper)
+        deepSections.forEach((section: any) => {
+          expect(section.id).toMatch(/^[0-9]+(\/[0-9]+){4,}$/);
+          const parts = section.id.split('/');
+          expect(parts.length).toBeGreaterThanOrEqual(5);
+          // Verify all parts are numeric
+          parts.forEach((part: string) => {
+            expect(parseInt(part, 10)).toBeGreaterThan(0);
+          });
+        });
+      } finally {
+        serverProcess.kill();
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    });
+
+    it('should handle numeric section IDs consistently', async () => {
+      const helper = new E2ETestHelper('TableOfContents', 'should-handle-numeric-section-IDs-consistently');
+      await helper.startServer();
+
+      try {
+        const response = await helper.callTool('table_of_contents', { fileId: 'f1' });
+        helper.expectSuccessfulResponse(response);
+        const sections = helper.parseJsonSections(response);
+
+        // Verify all section IDs follow the numeric pattern
+        sections.forEach((section: any) => {
+          // Section ID must match pattern: number or number/number/...
+          expect(section.id).toMatch(/^[0-9]+(\/[0-9]+)*$/);
+
+          // Verify the section ID parts are sequential and valid
+          const parts = section.id.split('/');
+          expect(parts.length).toBe(section.level);
+
+          // Each part should be a positive integer
+          parts.forEach((part: string) => {
+            const num = parseInt(part, 10);
+            expect(num).toBeGreaterThan(0);
+            expect(num.toString()).toBe(part); // No leading zeros
+          });
+        });
+      } finally {
+        await helper.stopServer();
+      }
+    });
+  });
 });

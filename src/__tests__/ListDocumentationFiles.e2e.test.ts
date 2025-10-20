@@ -104,5 +104,89 @@ describe('list_documentations E2E Tests', () => {
 
       await helper.stopServer();
     });
+
+    it('should return consistent fileId format across multiple calls', async () => {
+      const helper = new E2ETestHelper('ListDocumentationFiles', 'should-return-consistent-fileId-format-across-multiple-calls');
+      await helper.startServer();
+
+      // Call list_documentation_files twice
+      const response1 = await helper.callTool('list_documentation_files', {});
+      const response2 = await helper.callTool('list_documentation_files', {});
+
+      helper.expectSuccessfulResponse(response1);
+      helper.expectSuccessfulResponse(response2);
+
+      // Parse both responses
+      const content1 = helper.parseContentArray(response1);
+      const files1 = content1[0].text ? JSON.parse(content1[0].text) : content1[0];
+
+      const content2 = helper.parseContentArray(response2);
+      const files2 = content2[0].text ? JSON.parse(content2[0].text) : content2[0];
+
+      // Verify same number of files
+      expect(files1.length).toBe(files2.length);
+
+      // Verify each file has the same fileId in both responses
+      files1.forEach((file1: any) => {
+        const file2 = files2.find((f: any) => f.filename === file1.filename);
+        expect(file2).toBeDefined();
+        expect(file1.fileId).toBe(file2.fileId);
+      });
+
+      await helper.stopServer();
+    });
+
+    it('should maintain fileId stability across server restarts', async () => {
+      const helper = new E2ETestHelper('ListDocumentationFiles', 'should-maintain-fileId-stability-across-server-restarts');
+
+      // First server instance
+      await helper.startServer();
+      const response1 = await helper.callTool('list_documentation_files', {});
+      helper.expectSuccessfulResponse(response1);
+      const content1 = helper.parseContentArray(response1);
+      const files1 = content1[0].text ? JSON.parse(content1[0].text) : content1[0];
+      await helper.stopServer();
+
+      // Second server instance (restart)
+      await helper.startServer();
+      const response2 = await helper.callTool('list_documentation_files', {});
+      helper.expectSuccessfulResponse(response2);
+      const content2 = helper.parseContentArray(response2);
+      const files2 = content2[0].text ? JSON.parse(content2[0].text) : content2[0];
+      await helper.stopServer();
+
+      // Verify same files have same fileIds after restart
+      expect(files1.length).toBe(files2.length);
+      files1.forEach((file1: any) => {
+        const file2 = files2.find((f: any) => f.filename === file1.filename);
+        expect(file2).toBeDefined();
+        expect(file1.fileId).toBe(file2.fileId);
+      });
+    });
+
+    it('should generate sequential fileIds starting from f1', async () => {
+      const helper = new E2ETestHelper('ListDocumentationFiles', 'should-generate-sequential-fileIds-starting-from-f1');
+      await helper.startServer();
+
+      const response = await helper.callTool('list_documentation_files', {});
+      helper.expectSuccessfulResponse(response);
+
+      const content = helper.parseContentArray(response);
+      const files = content[0].text ? JSON.parse(content[0].text) : content[0];
+
+      // Sort files by fileId to check sequential order
+      const sortedFiles = [...files].sort((a: any, b: any) => {
+        const aNum = parseInt(a.fileId.substring(1), 10);
+        const bNum = parseInt(b.fileId.substring(1), 10);
+        return aNum - bNum;
+      });
+
+      // Verify first file has f1, second has f2, etc.
+      sortedFiles.forEach((file: any, index: number) => {
+        expect(file.fileId).toBe(`f${index + 1}`);
+      });
+
+      await helper.stopServer();
+    });
   });
 });

@@ -2,7 +2,13 @@
  * Constants exports
  */
 
-export { ERROR_MESSAGES } from './ErrorCodes';
+export { ERROR_MESSAGES, ErrorCode } from './ErrorCodes';
+export { ToolName, isToolName } from './ToolNames';
+export {
+  MAX_HEADER_LEVELS,
+  MINIMUM_VIABLE_HEADER_COUNT,
+  DEFAULT_MAX_TOC_DEPTH,
+} from './MarkdownConstants';
 export {
   HEADER_PATTERN,
   FRONT_MATTER_PATTERN,

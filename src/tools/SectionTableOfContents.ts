@@ -1,7 +1,7 @@
-import { Section, Configuration, TableOfContentsResponse } from '../types';
+import { Section, Configuration, TableOfContentsResponse, FileId, parseFileId, SectionId, parseSectionId } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, parseToolError, getErrorMessage, createSectionNotFoundError, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS, isValidFileId } from '../utils';
+import { createSuccessResponse, createErrorResponse, parseToolError, getErrorMessage, createSectionNotFoundError, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 /**
@@ -59,10 +59,11 @@ export class SectionTableOfContents {
   /**
    * Execute the section_table_of_contents tool
    */
-  async execute(fileId: string, sectionIds: string[]) {
-    // Validate fileId parameter
-    if (!isValidFileId(fileId)) {
-      return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId));
+  async execute(fileIdInput: string, sectionIds: string[]) {
+    // Parse and validate fileId parameter
+    const fileId = parseFileId(fileIdInput);
+    if (!fileId) {
+      return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileIdInput));
     }
 
     // Validate section_ids parameter
@@ -82,12 +83,32 @@ export class SectionTableOfContents {
   /**
    * Get table of contents for subsections of specified sections
    */
-  private async getSectionTableOfContents(fileId: string, sectionIds: string[]): Promise<TableOfContentsResponse> {
+  private async getSectionTableOfContents(fileId: FileId, sectionIdsInput: string[]): Promise<TableOfContentsResponse> {
     // Resolve fileId to file path
     const fileMapping = await this.fileDiscovery.getFileByFileId(fileId);
 
     if (!fileMapping) {
       throw new Error(ERROR_MESSAGES.FILE_ID_NOT_FOUND(fileId));
+    }
+
+    // Parse and validate section IDs
+    const sectionIds: SectionId[] = [];
+    const invalidSectionIds: string[] = [];
+
+    for (const idInput of sectionIdsInput) {
+      const parsedId = parseSectionId(idInput);
+      if (parsedId) {
+        sectionIds.push(parsedId);
+      } else {
+        invalidSectionIds.push(idInput);
+      }
+    }
+
+    // If any section IDs are invalid, treat them as "not found"
+    // This makes sense from a user perspective - whether the format is invalid
+    // or the section doesn't exist, they should use table_of_contents to get valid IDs
+    if (invalidSectionIds.length > 0) {
+      throw createSectionNotFoundError(fileMapping.filename, invalidSectionIds);
     }
 
     // Read and parse the file
@@ -141,7 +162,7 @@ export class SectionTableOfContents {
    * @param parentSectionIds - IDs of parent sections to retrieve children for
    * @returns Array of direct children from all parent sections, deduplicated
    */
-  private getDirectChildren(allSections: Section[], parentSectionIds: string[]): Section[] {
+  private getDirectChildren(allSections: Section[], parentSectionIds: SectionId[]): Section[] {
     const result: Section[] = [];
     const seenIds = new Set<string>();
 

@@ -1,3 +1,23 @@
+import { FileId } from './types/FileId';
+import { SectionId } from './types/SectionId';
+
+// Re-export FileId and related utilities for convenience
+export { FileId, createFileId, parseFileId, isValidFileId, getFileIdNumber, compareFileIds } from './types/FileId';
+
+// Re-export SectionId and related utilities for convenience
+export {
+  SectionId,
+  createSectionId,
+  parseSectionId,
+  isValidSectionId,
+  getSectionParts,
+  getSectionLevel,
+  getParentSectionId,
+  isChildOf,
+  isDirectChild,
+  compareSectionIds,
+} from './types/SectionId';
+
 // Configuration interface
 export interface Configuration {
   documentationPaths: string[];
@@ -24,7 +44,7 @@ export interface FileMetadata {
 
 // File info interface
 export interface FileInfo {
-  fileId?: string;
+  fileId?: FileId;
   filename: string;
   title: string;
   description?: string;
@@ -35,7 +55,7 @@ export interface FileInfo {
 
 // File info with ID interface (for list_documentation_files)
 export interface FileInfoWithId {
-  fileId: string;
+  fileId: FileId;
   filename: string;
   title: string;
   description?: string;
@@ -46,7 +66,7 @@ export interface FileInfoWithId {
 
 // Section interface
 export interface Section {
-  id: string;
+  id: SectionId;
   title: string;
   level: number;
   character_count: number;
@@ -61,7 +81,7 @@ export interface SectionContent {
 
 // Table of Contents response interface
 export interface TableOfContentsResponse {
-  fileId: string;
+  fileId: FileId;
   filename: string;
   sections: Section[];
   instructions?: string;
@@ -75,14 +95,14 @@ export interface SearchResult {
 }
 
 export interface FileSearchResult {
-  fileId: string;
+  fileId: FileId;
   filename: string;
   matches: Section[];
 }
 
 // Read sections response interface
 export interface ReadSectionsResponse {
-  fileId: string;
+  fileId: FileId;
   filename: string;
   sections: SectionContent[];
 }

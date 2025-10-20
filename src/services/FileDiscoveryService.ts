@@ -5,7 +5,7 @@
 
 import { glob } from 'glob';
 import * as path from 'path';
-import { Configuration, FileMetadata, FileInfo, FileInfoWithId } from '../types';
+import { Configuration, FileMetadata, FileInfo, FileInfoWithId, FileId, createFileId } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 
 /**
@@ -23,7 +23,7 @@ export interface DiscoveredFile {
  * File ID mapping for session-scoped file references
  */
 export interface FileIdMapping {
-  fileId: string;
+  fileId: FileId;
   filename: string;
   fullPath: string;
   sourceDirectory: string;
@@ -36,8 +36,8 @@ export interface FileIdMapping {
 export class FileDiscoveryService {
   private config: Configuration;
   private fileCache: DiscoveredFile[] | null = null;
-  private fileIdRegistry: Map<string, FileIdMapping> = new Map();
-  private filenameToFileId: Map<string, string> = new Map();
+  private fileIdRegistry: Map<FileId, FileIdMapping> = new Map();
+  private filenameToFileId: Map<string, FileId> = new Map();
   private isInitialized: boolean = false;
 
   constructor(config: Configuration) {
@@ -117,7 +117,7 @@ export class FileDiscoveryService {
   /**
    * Get file mapping by file ID
    */
-  async getFileByFileId(fileId: string): Promise<FileIdMapping | null> {
+  async getFileByFileId(fileId: FileId): Promise<FileIdMapping | null> {
     // Ensure files are discovered and IDs assigned
     await this.getAllFiles();
 
@@ -131,7 +131,7 @@ export class FileDiscoveryService {
     const files = await this.getAllFiles();
 
     return files.map((file, index) => ({
-      fileId: `f${index + 1}`,
+      fileId: createFileId(index + 1),
       filename: file.filename,
       title: file.metadata.title || path.basename(file.filename, '.md'),
       description: file.metadata.description,
@@ -178,7 +178,7 @@ export class FileDiscoveryService {
     this.filenameToFileId.clear();
 
     files.forEach((file, index) => {
-      const fileId = `f${index + 1}`;
+      const fileId = createFileId(index + 1);
 
       const mapping: FileIdMapping = {
         fileId,

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import { FileMetadata, Section, SectionContent } from './types';
+import { FileMetadata, Section, SectionContent, SectionId, createSectionId, getParentSectionId as getParentFromSectionId } from './types';
 import { normalizeLineEndings } from './utils/LineNormalizer';
 import {
   HEADER_PATTERN,
@@ -12,6 +12,7 @@ import {
   HYPHEN_PATTERN,
   TRIM_HYPHEN_PATTERN,
 } from './constants/MarkdownPatterns';
+import { MAX_HEADER_LEVELS } from './constants/MarkdownConstants';
 
 export class MarkdownParser {
   /**
@@ -54,22 +55,22 @@ export class MarkdownParser {
    */
   static parseMarkdownSections(content: string): {
     sections: Section[];
-    sectionMap: Map<string, { start: number; end: number }>;
+    sectionMap: Map<SectionId, { start: number; end: number }>;
   } {
     const normalizedContent = normalizeLineEndings(content);
     const lines = normalizedContent.split('\n');
     const sections: Section[] = [];
-    const sectionMap = new Map<string, { start: number; end: number }>();
+    const sectionMap = new Map<SectionId, { start: number; end: number }>();
 
     const sectionStack: {
-      id: string;
+      id: SectionId;
       title: string;
       level: number;
       startLine: number;
     }[] = [];
 
     // Track position counters for each header level (1-6)
-    const headerLevelCounters: number[] = [0, 0, 0, 0, 0, 0];
+    const headerLevelCounters: number[] = new Array(MAX_HEADER_LEVELS).fill(0);
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -124,8 +125,8 @@ export class MarkdownParser {
   /**
    * Build numeric section ID from header level counters.
    */
-  private static buildSectionId(counters: number[], level: number): string {
-    return counters.slice(0, level).join('/');
+  private static buildSectionId(counters: number[], level: number): SectionId {
+    return createSectionId(counters.slice(0, level));
   }
 
   /**
@@ -133,8 +134,8 @@ export class MarkdownParser {
    * Sections are closed when a new header of equal or higher level is encountered.
    */
   private static closeSectionsAtOrAboveLevel(
-    sectionStack: Array<{ id: string; title: string; level: number; startLine: number }>,
-    sectionMap: Map<string, { start: number; end: number }>,
+    sectionStack: Array<{ id: SectionId; title: string; level: number; startLine: number }>,
+    sectionMap: Map<SectionId, { start: number; end: number }>,
     level: number,
     endLine: number
   ): void {
@@ -153,8 +154,8 @@ export class MarkdownParser {
    * Close all remaining open sections at end of document.
    */
   private static closeRemainingSection(
-    sectionStack: Array<{ id: string; title: string; level: number; startLine: number }>,
-    sectionMap: Map<string, { start: number; end: number }>,
+    sectionStack: Array<{ id: SectionId; title: string; level: number; startLine: number }>,
+    sectionMap: Map<SectionId, { start: number; end: number }>,
     endLine: number
   ): void {
     while (sectionStack.length > 0) {
@@ -172,19 +173,15 @@ export class MarkdownParser {
    * Extract parent section ID from a section ID (e.g., "1/2/3" -> "1/2")
    * Returns null if section has no parent (top-level section)
    */
-  static getParentSectionId(sectionId: string): string | null {
-    const parts = sectionId.split('/');
-    if (parts.length <= 1) {
-      return null;
-    }
-    return parts.slice(0, -1).join('/');
+  static getParentSectionId(sectionId: SectionId): SectionId | null {
+    return getParentFromSectionId(sectionId);
   }
 
   /**
    * Get the nesting level of a section based on its ID
    * (e.g., "1" -> level 1, "1/2" -> level 2, "1/2/3" -> level 3)
    */
-  static getSectionLevel(sectionId: string): number {
+  static getSectionLevel(sectionId: SectionId): number {
     return sectionId.split('/').length;
   }
 
@@ -284,8 +281,8 @@ export class MarkdownParser {
    */
   static readSectionsFromContent(
     content: string,
-    sectionIds: string[],
-    sectionMap: Map<string, { start: number; end: number }>
+    sectionIds: SectionId[],
+    sectionMap: Map<SectionId, { start: number; end: number }>
   ): SectionContent[] {
     const lines = content.split('\n');
     const results: SectionContent[] = [];
@@ -319,10 +316,10 @@ export class MarkdownParser {
    * Filter out subsections that are already included in requested parent sections
    */
   private static filterSubsections(
-    sectionIds: string[],
-    sectionMap: Map<string, { start: number; end: number }>
-  ): string[] {
-    const filteredIds: string[] = [];
+    sectionIds: SectionId[],
+    sectionMap: Map<SectionId, { start: number; end: number }>
+  ): SectionId[] {
+    const filteredIds: SectionId[] = [];
 
     // Sort sections by hierarchy level (parents before children)
     const sortedIds = [...sectionIds].sort((a, b) => {

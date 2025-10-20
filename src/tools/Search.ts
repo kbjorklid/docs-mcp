@@ -1,7 +1,7 @@
-import { Section, Configuration, SearchResult, FileSearchResult } from '../types';
+import { Section, Configuration, SearchResult, FileSearchResult, FileId, parseFileId, createFileId } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, isNonEmptyString, isError, parseToolError, getErrorMessage, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS, isValidFileId, type ToolResponse } from '../utils';
+import { createSuccessResponse, createErrorResponse, isNonEmptyString, isError, parseToolError, getErrorMessage, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS, type ToolResponse } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 // Regular expression flags
@@ -48,20 +48,23 @@ export class Search {
   /**
    * Execute the search tool with improved type safety and validation
    * @param query - The regular expression pattern to search for
-   * @param fileId - Optional file ID to search in (if not provided, searches all files)
+   * @param fileIdInput - Optional file ID to search in (if not provided, searches all files)
    * @returns Promise<ToolResponse> - Search results or error response
    */
-  async execute(query: unknown, fileId?: unknown): Promise<ToolResponse> {
+  async execute(query: unknown, fileIdInput?: unknown): Promise<ToolResponse> {
     // Validate query parameter
     if (!isNonEmptyString(query)) {
       return createErrorResponse(ERROR_MESSAGES.INVALID_PARAMETER('query'));
     }
 
-    // Validate fileId if provided
-    if (fileId !== undefined && fileId !== null) {
-      if (!isValidFileId(fileId)) {
-        return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId as string));
+    // Parse and validate fileId if provided
+    let fileId: FileId | undefined;
+    if (fileIdInput !== undefined && fileIdInput !== null) {
+      const parsedFileId = parseFileId(fileIdInput);
+      if (!parsedFileId) {
+        return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileIdInput as string));
       }
+      fileId = parsedFileId;
     }
 
     // Compile and validate regular expression
@@ -72,11 +75,11 @@ export class Search {
 
     try {
       const searchResults = fileId
-        ? await this.searchInSpecificFile(regexResult.regex!, fileId as string)
+        ? await this.searchInSpecificFile(regexResult.regex!, fileId)
         : await this.searchInAllFiles(regexResult.regex!);
       return createSuccessResponse(searchResults);
     } catch (error) {
-      return this.handleSearchError(error, fileId as string | undefined);
+      return this.handleSearchError(error, fileId);
     }
   }
 
@@ -109,7 +112,7 @@ export class Search {
    * @param fileId - Optional file ID where the error occurred
    * @returns Formatted error response with helpful guidance
    */
-  private handleSearchError(error: unknown, fileId?: string): ToolResponse {
+  private handleSearchError(error: unknown, fileId?: FileId): ToolResponse {
     const parsedError = parseToolError(error);
 
     // If it's a specific tool error type, use the parsed message
@@ -133,7 +136,7 @@ export class Search {
 
     for (let index = 0; index < allFiles.length; index++) {
       const file = allFiles[index];
-      const fileId = `f${index + 1}`;
+      const fileId = createFileId(index + 1);
       const matches = await this.findMatchesInFile(regex, file.fullPath);
 
       if (matches.length > 0) {
@@ -166,7 +169,7 @@ export class Search {
    * @returns Promise<SearchResult> - Search results for the specific file
    * @throws Error if file validation fails or file cannot be processed
    */
-  private async searchInSpecificFile(regex: RegExp, fileId: string): Promise<SearchResult> {
+  private async searchInSpecificFile(regex: RegExp, fileId: FileId): Promise<SearchResult> {
     const fileMapping = await this.fileDiscovery.getFileByFileId(fileId);
 
     if (!fileMapping) {

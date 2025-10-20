@@ -16,7 +16,7 @@ import { SectionTableOfContents } from './tools/SectionTableOfContents';
 import { Search } from './tools/Search';
 import { createConfig } from './config/ConfigManager';
 import { createErrorResponse, isNonEmptyString, isStringArray, isValidFileId } from './utils';
-import { ERROR_MESSAGES } from './constants';
+import { ERROR_MESSAGES, ToolName, isToolName } from './constants';
 
 const config = createConfig();
 
@@ -43,12 +43,12 @@ interface ToolHandler {
   execute: (args: Record<string, unknown>) => ReturnType<typeof listDocumentationFiles.execute>;
 }
 
-const toolRegistry: Record<string, ToolHandler> = {
-  list_documentation_files: {
+const toolRegistry: Record<ToolName, ToolHandler> = {
+  [ToolName.LIST_DOCUMENTATION_FILES]: {
     definition: ListDocumentationFiles.getToolDefinition(),
     execute: async () => await listDocumentationFiles.execute(),
   },
-  table_of_contents: {
+  [ToolName.TABLE_OF_CONTENTS]: {
     definition: TableOfContents.getToolDefinition(),
     execute: async (args) => {
       const fileId = args.fileId;
@@ -65,7 +65,7 @@ const toolRegistry: Record<string, ToolHandler> = {
       return await tableOfContents.execute(fileId);
     },
   },
-  read_sections: {
+  [ToolName.READ_SECTIONS]: {
     definition: ReadSections.getToolDefinition(),
     execute: async (args) => {
       const fileId = args.fileId;
@@ -87,7 +87,7 @@ const toolRegistry: Record<string, ToolHandler> = {
       return await readSections.execute(fileId, sectionIds);
     },
   },
-  section_table_of_contents: {
+  [ToolName.SECTION_TABLE_OF_CONTENTS]: {
     definition: SectionTableOfContents.getToolDefinition(),
     execute: async (args) => {
       const fileId = args.fileId;
@@ -109,7 +109,7 @@ const toolRegistry: Record<string, ToolHandler> = {
       return await sectionTableOfContents.execute(fileId, sectionIds);
     },
   },
-  search: {
+  [ToolName.SEARCH]: {
     definition: Search.getToolDefinition(),
     execute: async (args) => {
       const query = args.query;
@@ -160,11 +160,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     const toolName = request.params.name;
-    const toolHandler = toolRegistry[toolName];
 
-    if (!toolHandler) {
+    // Validate tool name
+    if (!isToolName(toolName)) {
       return createErrorResponse(ERROR_MESSAGES.UNKNOWN_TOOL(toolName));
     }
+
+    const toolHandler = toolRegistry[toolName];
 
     return await toolHandler.execute(request.params.arguments || {});
   } catch (error) {

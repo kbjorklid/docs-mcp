@@ -4,6 +4,28 @@
  */
 
 /**
+ * Error codes enum for type-safe error handling
+ * Provides compile-time guarantees that error codes are valid
+ */
+export enum ErrorCode {
+  INVALID_PARAMETER = 'INVALID_PARAMETER',
+  FILE_NOT_FOUND = 'FILE_NOT_FOUND',
+  INVALID_REGEX = 'INVALID_REGEX',
+  SEARCH_ERROR = 'SEARCH_ERROR',
+  PARSE_ERROR = 'PARSE_ERROR',
+  FILE_SYSTEM_ERROR = 'FILE_SYSTEM_ERROR',
+  UNKNOWN_TOOL = 'UNKNOWN_TOOL',
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  SECTION_NOT_FOUND = 'SECTION_NOT_FOUND',
+  FILENAME_REQUIRED = 'FILENAME_REQUIRED',
+  SECTION_IDS_REQUIRED = 'SECTION_IDS_REQUIRED',
+  NO_FILES_FOUND = 'NO_FILES_FOUND',
+  INVALID_FILE_ID = 'INVALID_FILE_ID',
+  FILE_ID_NOT_FOUND = 'FILE_ID_NOT_FOUND',
+  FILE_ID_REQUIRED = 'FILE_ID_REQUIRED',
+}
+
+/**
  * Error messages for common error scenarios
  * Messages are conversational and guide AI agents on how to fix issues
  */

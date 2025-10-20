@@ -1,7 +1,7 @@
-import { ReadSectionsResponse, Configuration } from '../types';
+import { ReadSectionsResponse, Configuration, FileId, parseFileId, SectionId, parseSectionId } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, parseToolError, getErrorMessage, createSectionNotFoundError, isValidFileId } from '../utils';
+import { createSuccessResponse, createErrorResponse, parseToolError, getErrorMessage, createSectionNotFoundError } from '../utils';
 import { ERROR_MESSAGES } from '../constants';
 
 export class ReadSections {
@@ -47,10 +47,11 @@ export class ReadSections {
   /**
    * Execute the read_sections tool
    */
-  async execute(fileId: string, sectionIds: string[]) {
-    // Validate fileId parameter
-    if (!isValidFileId(fileId)) {
-      return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileId));
+  async execute(fileIdInput: string, sectionIds: string[]) {
+    // Parse and validate fileId parameter
+    const fileId = parseFileId(fileIdInput);
+    if (!fileId) {
+      return createErrorResponse(ERROR_MESSAGES.INVALID_FILE_ID(fileIdInput));
     }
 
     // Validate section_ids parameter
@@ -71,8 +72,8 @@ export class ReadSections {
    * Read specific sections from a markdown file
    */
   private async readSections(
-    fileId: string,
-    sectionIds: string[]
+    fileId: FileId,
+    sectionIdsInput: string[]
   ): Promise<ReadSectionsResponse> {
     // Resolve fileId to file path
     const fileMapping = await this.fileDiscovery.getFileByFileId(fileId);
@@ -82,12 +83,32 @@ export class ReadSections {
     }
 
     // Handle empty section_ids array - return empty result with file info
-    if (sectionIds.length === 0) {
+    if (sectionIdsInput.length === 0) {
       return {
         fileId,
         filename: fileMapping.filename,
         sections: [],
       };
+    }
+
+    // Parse and validate section IDs
+    const sectionIds: SectionId[] = [];
+    const invalidSectionIds: string[] = [];
+
+    for (const idInput of sectionIdsInput) {
+      const parsedId = parseSectionId(idInput);
+      if (parsedId) {
+        sectionIds.push(parsedId);
+      } else {
+        invalidSectionIds.push(idInput);
+      }
+    }
+
+    // If any section IDs are invalid, treat them as "not found"
+    // This makes sense from a user perspective - whether the format is invalid
+    // or the section doesn't exist, they should use table_of_contents to get valid IDs
+    if (invalidSectionIds.length > 0) {
+      throw createSectionNotFoundError(fileMapping.filename, invalidSectionIds);
     }
 
     // Read and parse the file
