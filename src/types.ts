@@ -61,7 +61,6 @@ export interface FileInfoWithId {
   description?: string;
   keywords: string[];
   size: string;
-  sourceDirectory: string;
 }
 
 // Section interface

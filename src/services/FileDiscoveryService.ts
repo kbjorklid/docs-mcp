@@ -137,7 +137,6 @@ export class FileDiscoveryService {
       description: file.metadata.description,
       keywords: file.metadata.keywords || [],
       size: file.size,
-      sourceDirectory: file.sourceDirectory,
     }));
   }
 
