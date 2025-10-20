@@ -21,7 +21,8 @@ describe('list_documentations E2E Tests', () => {
       const files = content[0].text ? JSON.parse(content[0].text) : content[0];
       const apiReferenceFile = files.find((file: any) => file.filename === 'api-reference.md');
       expect(apiReferenceFile).toBeDefined();
-      expect(apiReferenceFile.title).toBe('API Reference');
+      // api-reference.md with title "API Reference" has a redundant title, so it should be removed
+      expect(apiReferenceFile.title).toBeUndefined();
 
       // Check file ID
       expect(apiReferenceFile.fileId).toBe('f1'); // api-reference.md is 1st alphabetically
@@ -183,6 +184,37 @@ describe('list_documentations E2E Tests', () => {
       sortedFiles.forEach((file: any, index: number) => {
         expect(file.fileId).toBe(`f${index + 1}`);
       });
+
+      await helper.stopServer();
+    });
+
+    it('should remove redundant titles from response', async () => {
+      const helper = new E2ETestHelper('ListDocumentationFiles', 'should-remove-redundant-titles');
+      await helper.startServer();
+
+      const response = await helper.callTool('list_documentation_files', {});
+      helper.expectSuccessfulResponse(response);
+
+      const content = helper.parseContentArray(response);
+      const files = content[0].text ? JSON.parse(content[0].text) : content[0];
+
+      // Find files by filename
+      const apiConventionsFile = files.find((f: any) => f.filename === 'api-conventions.md');
+      const restConventionsFile = files.find((f: any) => f.filename === 'REST_CONVENTIONS.md');
+      const setupFile = files.find((f: any) => f.filename === 'setup.md');
+
+      expect(apiConventionsFile).toBeDefined();
+      expect(restConventionsFile).toBeDefined();
+      expect(setupFile).toBeDefined();
+
+      // api-conventions.md with title "API Conventions" should have title removed (redundant)
+      expect(apiConventionsFile.title).toBeUndefined();
+
+      // REST_CONVENTIONS.md with title "REST Conventions" should have title removed (redundant)
+      expect(restConventionsFile.title).toBeUndefined();
+
+      // setup.md with title "Complete Installation Guide" should keep title (not redundant)
+      expect(setupFile.title).toBe('Complete Installation Guide');
 
       await helper.stopServer();
     });

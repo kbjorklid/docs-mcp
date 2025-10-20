@@ -57,7 +57,7 @@ export interface FileInfo {
 export interface FileInfoWithId {
   fileId: FileId;
   filename: string;
-  title: string;
+  title?: string;
   description?: string;
   keywords: string[];
   size: string;

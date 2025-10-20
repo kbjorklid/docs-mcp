@@ -7,6 +7,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import { Configuration, FileMetadata, FileInfo, FileInfoWithId, FileId, createFileId } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
+import { isTitleRedundant } from '../utils';
 
 /**
  * Represents a discovered file with full metadata
@@ -130,14 +131,23 @@ export class FileDiscoveryService {
   async getAllFilesWithIds(): Promise<FileInfoWithId[]> {
     const files = await this.getAllFiles();
 
-    return files.map((file, index) => ({
-      fileId: createFileId(index + 1),
-      filename: file.filename,
-      title: file.metadata.title || path.basename(file.filename, '.md'),
-      description: file.metadata.description,
-      keywords: file.metadata.keywords || [],
-      size: file.size,
-    }));
+    return files.map((file, index) => {
+      const title = file.metadata.title || path.basename(file.filename, '.md');
+      const fileInfo: FileInfoWithId = {
+        fileId: createFileId(index + 1),
+        filename: file.filename,
+        description: file.metadata.description,
+        keywords: file.metadata.keywords || [],
+        size: file.size,
+      };
+
+      // Only include title if it's not redundant with the filename
+      if (!isTitleRedundant(file.filename, title)) {
+        fileInfo.title = title;
+      }
+
+      return fileInfo;
+    });
   }
 
   /**

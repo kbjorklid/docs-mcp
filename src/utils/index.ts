@@ -28,3 +28,4 @@ export {
   hasHiddenSubsections,
   INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS,
 } from './InstructionsHelper';
+export { isTitleRedundant } from './TitleComparator';

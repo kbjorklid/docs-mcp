@@ -172,7 +172,10 @@ describe('Multi-Directory E2E Tests', () => {
         // Verify file metadata
         files.forEach((file: any) => {
           expect(file).toHaveProperty('filename');
-          expect(file).toHaveProperty('title');
+          // title is optional (removed if redundant with filename)
+          if (file.title !== undefined) {
+            expect(typeof file.title).toBe('string');
+          }
           expect(file).toHaveProperty('keywords');
           expect(file).toHaveProperty('size');
           expect(Array.isArray(file.keywords)).toBe(true);
