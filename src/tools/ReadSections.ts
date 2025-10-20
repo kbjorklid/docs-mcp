@@ -21,6 +21,7 @@ export class ReadSections {
       name: 'read_sections',
       description:
         'Reads specific sections from a markdown file using numeric section IDs (e.g., "1/2/3" where each number represents the position of a header at each level). ' +
+        'Sections include therir subsections, e.g. reading section "1" includes "1/1", "1/2", etc.' +
         'Use the table_of_contents tool to see available sections and their IDs.',
       inputSchema: {
         type: 'object',
