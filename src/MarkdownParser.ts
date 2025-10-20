@@ -79,53 +79,21 @@ export class MarkdownParser {
         const level = headerMatch[1].length;
         const title = headerMatch[2].trim();
 
-        // Increment counter for current level
-        headerLevelCounters[level - 1]++;
-
-        // Reset all deeper level counters
-        for (let j = level; j < 6; j++) {
-          headerLevelCounters[j] = 0;
-        }
-
-        // Build numeric ID from active counters
-        const id = headerLevelCounters.slice(0, level).join('/');
-
-        // Close all sections at the same or higher level (when a new header of same/higher level is encountered)
-        // A section should only close when we encounter a header of the same or higher level (shallower nesting)
-        while (
-          sectionStack.length > 0 &&
-          sectionStack[sectionStack.length - 1].level >= level
-        ) {
-          const closedSection = sectionStack.pop();
-          if (closedSection) {
-            sectionMap.set(closedSection.id, {
-              start: closedSection.startLine,
-              end: i - 1,
-            });
-          }
-        }
+        this.updateHeaderLevelCounters(headerLevelCounters, level);
+        const id = this.buildSectionId(headerLevelCounters, level);
+        this.closeSectionsAtOrAboveLevel(sectionStack, sectionMap, level, i - 1);
 
         sectionStack.push({ id, title, level, startLine: i });
-
         sections.push({
           id,
           title,
           level,
-          character_count: 0, // Will be calculated later
+          character_count: 0,
         });
       }
     }
 
-    // Close all remaining sections at end of file
-    while (sectionStack.length > 0) {
-      const closedSection = sectionStack.pop();
-      if (closedSection) {
-        sectionMap.set(closedSection.id, {
-          start: closedSection.startLine,
-          end: lines.length - 1,
-        });
-      }
-    }
+    this.closeRemainingSection(sectionStack, sectionMap, lines.length - 1);
 
     // Calculate character counts
     sections.forEach((section) => {
@@ -140,6 +108,64 @@ export class MarkdownParser {
     this.calculateSubsectionCounts(sections);
 
     return { sections, sectionMap };
+  }
+
+  /**
+   * Update header level counters: increment current level, reset deeper levels.
+   */
+  private static updateHeaderLevelCounters(counters: number[], currentLevel: number): void {
+    counters[currentLevel - 1]++;
+
+    for (let j = currentLevel; j < 6; j++) {
+      counters[j] = 0;
+    }
+  }
+
+  /**
+   * Build numeric section ID from header level counters.
+   */
+  private static buildSectionId(counters: number[], level: number): string {
+    return counters.slice(0, level).join('/');
+  }
+
+  /**
+   * Close all sections at or above the specified level.
+   * Sections are closed when a new header of equal or higher level is encountered.
+   */
+  private static closeSectionsAtOrAboveLevel(
+    sectionStack: Array<{ id: string; title: string; level: number; startLine: number }>,
+    sectionMap: Map<string, { start: number; end: number }>,
+    level: number,
+    endLine: number
+  ): void {
+    while (sectionStack.length > 0 && sectionStack[sectionStack.length - 1].level >= level) {
+      const closedSection = sectionStack.pop();
+      if (closedSection) {
+        sectionMap.set(closedSection.id, {
+          start: closedSection.startLine,
+          end: endLine,
+        });
+      }
+    }
+  }
+
+  /**
+   * Close all remaining open sections at end of document.
+   */
+  private static closeRemainingSection(
+    sectionStack: Array<{ id: string; title: string; level: number; startLine: number }>,
+    sectionMap: Map<string, { start: number; end: number }>,
+    endLine: number
+  ): void {
+    while (sectionStack.length > 0) {
+      const closedSection = sectionStack.pop();
+      if (closedSection) {
+        sectionMap.set(closedSection.id, {
+          start: closedSection.startLine,
+          end: endLine,
+        });
+      }
+    }
   }
 
   /**

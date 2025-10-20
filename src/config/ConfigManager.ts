@@ -82,44 +82,73 @@ export class ConfigurationManager {
    * Ensures all required fields are present and valid.
    */
   private validateAndNormalize(config: Partial<Configuration>): Configuration {
-    // Convert single documentationPath to array if present (backward compatibility)
-    if ((config as any).documentationPath && !config.documentationPaths) {
-      config.documentationPaths = [(config as any).documentationPath];
-      delete (config as any).documentationPath; // Remove old property
+    this.normalizeDocumentationPaths(config);
+    this.validateMaxHeaders(config);
+    this.validateMaxTocDepth(config);
+
+    return config as Configuration;
+  }
+
+  /**
+   * Normalize documentation paths: convert legacy single path to array,
+   * ensure array exists, trim whitespace, and filter empty values.
+   */
+  private normalizeDocumentationPaths(config: Partial<Configuration>): void {
+    const configWithLegacy = config as any;
+
+    if (configWithLegacy.documentationPath && !config.documentationPaths) {
+      config.documentationPaths = [configWithLegacy.documentationPath];
+      delete configWithLegacy.documentationPath;
     }
 
-    // Ensure documentationPaths is always present and is an array
     if (!config.documentationPaths || !Array.isArray(config.documentationPaths)) {
       config.documentationPaths = ['./docs'];
+      return;
     }
 
-    // Filter out empty/invalid paths and trim whitespace
     config.documentationPaths = config.documentationPaths
       .map(path => path.trim())
       .filter(path => path && path.length > 0);
 
-    // Ensure at least one valid path
     if (config.documentationPaths.length === 0) {
       config.documentationPaths = ['./docs'];
     }
+  }
 
-    // Validate maxHeaders if present
-    if (config.maxHeaders !== undefined) {
-      if (typeof config.maxHeaders !== 'number' || isNaN(config.maxHeaders) || config.maxHeaders < 1) {
-        // Remove invalid maxHeaders, fall back to default
-        delete config.maxHeaders;
-      }
+  /**
+   * Validate maxHeaders is a positive integer.
+   * Removes invalid values to allow fallback to default.
+   */
+  private validateMaxHeaders(config: Partial<Configuration>): void {
+    if (config.maxHeaders === undefined) {
+      return;
     }
 
-    // Validate maxTocDepth if present
-    if (config.maxTocDepth !== undefined) {
-      if (typeof config.maxTocDepth !== 'number' || isNaN(config.maxTocDepth) || config.maxTocDepth < 1) {
-        // Remove invalid maxTocDepth, fall back to default
-        delete config.maxTocDepth;
-      }
+    const isInvalid = typeof config.maxHeaders !== 'number' ||
+                     isNaN(config.maxHeaders) ||
+                     config.maxHeaders < 1;
+
+    if (isInvalid) {
+      delete config.maxHeaders;
+    }
+  }
+
+  /**
+   * Validate maxTocDepth is a positive integer.
+   * Removes invalid values to allow fallback to default.
+   */
+  private validateMaxTocDepth(config: Partial<Configuration>): void {
+    if (config.maxTocDepth === undefined) {
+      return;
     }
 
-    return config as Configuration;
+    const isInvalid = typeof config.maxTocDepth !== 'number' ||
+                     isNaN(config.maxTocDepth) ||
+                     config.maxTocDepth < 1;
+
+    if (isInvalid) {
+      delete config.maxTocDepth;
+    }
   }
 
   /**

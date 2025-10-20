@@ -28,8 +28,18 @@ const sectionTableOfContents = new SectionTableOfContents(config);
 const search = new Search(config);
 
 // Tool registry for declarative tool management
+interface ToolDefinition {
+  name: string;
+  description: string;
+  inputSchema: {
+    type: string;
+    properties: Record<string, any>;
+    required: string[];
+  };
+}
+
 interface ToolHandler {
-  definition: any;
+  definition: ToolDefinition;
   execute: (args: Record<string, unknown>) => ReturnType<typeof listDocumentationFiles.execute>;
 }
 

@@ -295,40 +295,63 @@ export class Search {
     sections: Section[]
   ): string {
     const contentLines = content.split('\n');
+    const directChildren = this.findDirectChildSections(section, sections);
+    const childRangesSorted = this.sortChildSectionsByPosition(directChildren, sectionMap);
+    const linesToInclude = this.buildLineRangesExcludingChildren(range, childRangesSorted);
 
-    // Find direct child sections (sections whose IDs start with this section's ID followed by /)
-    const childSections = sections.filter(s =>
-      s.id.startsWith(section.id + '/') &&
-      s.id.split('/').length === section.id.split('/').length + 1
+    return linesToInclude
+      .flatMap(r => contentLines.slice(r.start, r.end + 1))
+      .join('\n');
+  }
+
+  /**
+   * Find all direct child sections of the given section.
+   * A direct child's ID starts with the parent's ID followed by exactly one more path segment.
+   */
+  private findDirectChildSections(section: Section, sections: Section[]): Section[] {
+    const parentIdPrefix = section.id + '/';
+    const parentDepth = section.id.split('/').length;
+
+    return sections.filter(s =>
+      s.id.startsWith(parentIdPrefix) &&
+      s.id.split('/').length === parentDepth + 1
     );
+  }
 
-    // Build line ranges to include, excluding child sections
-    const linesToInclude: { start: number; end: number }[] = [];
-    let currentPos = range.start;
-
-    // Sort child sections by their start line
-    const sortedChildren = childSections
+  /**
+   * Sort child sections by their starting line position in the document.
+   */
+  private sortChildSectionsByPosition(
+    children: Section[],
+    sectionMap: Map<string, { start: number; end: number }>
+  ): Array<{ section: Section; range: { start: number; end: number } }> {
+    return children
       .map(child => ({ section: child, range: sectionMap.get(child.id)! }))
       .sort((a, b) => a.range.start - b.range.start);
+  }
 
-    for (const { section: childSection, range: childRange } of sortedChildren) {
+  /**
+   * Build line ranges that include parent content but exclude child section ranges.
+   * Returns array of {start, end} line ranges to include in final content.
+   */
+  private buildLineRangesExcludingChildren(
+    parentRange: { start: number; end: number },
+    sortedChildren: Array<{ section: Section; range: { start: number; end: number } }>
+  ): Array<{ start: number; end: number }> {
+    const linesToInclude: { start: number; end: number }[] = [];
+    let currentPos = parentRange.start;
+
+    for (const { range: childRange } of sortedChildren) {
       if (childRange.start > currentPos) {
-        // Include content before this child
         linesToInclude.push({ start: currentPos, end: childRange.start - 1 });
       }
-      // Skip the child section entirely
       currentPos = childRange.end + 1;
     }
 
-    // Include remaining content after last child
-    if (currentPos <= range.end) {
-      linesToInclude.push({ start: currentPos, end: range.end });
+    if (currentPos <= parentRange.end) {
+      linesToInclude.push({ start: currentPos, end: parentRange.end });
     }
 
-    // Extract the content from the identified ranges
-    const sectionLines = linesToInclude
-      .flatMap(r => contentLines.slice(r.start, r.end + 1));
-
-    return sectionLines.join('\n');
+    return linesToInclude;
   }
 }
