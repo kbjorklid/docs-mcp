@@ -1,13 +1,14 @@
 {
-  "name": "docs-mcp",
-  "version": "1.0.0",
-  "description": "",
+  "name": "develper-docs-reader-mcp",
+  "version": "0.1.0",
+  "description": "MCP Server for intelligently and token-consciously reading .md files on local filesystem.",
   "main": "dist/index.js",
   "bin": {
     "docs-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "test": "jest",
