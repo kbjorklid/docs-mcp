@@ -35,7 +35,7 @@ describe('NumericSectionIds', () => {
 
       expect(sections).toHaveLength(2);
       expect(sections[0].id).toBe('1');
-      expect(sections[1].id).toBe('1/1');
+      expect(sections[1].id).toBe('1.1');
     });
 
     it('should generate numeric IDs for three-level nesting', () => {
@@ -47,8 +47,8 @@ describe('NumericSectionIds', () => {
 
       expect(sections).toHaveLength(3);
       expect(sections[0].id).toBe('1');
-      expect(sections[1].id).toBe('1/1');
-      expect(sections[2].id).toBe('1/1/1');
+      expect(sections[1].id).toBe('1.1');
+      expect(sections[2].id).toBe('1.1.1');
     });
   });
 
@@ -63,9 +63,9 @@ describe('NumericSectionIds', () => {
 
       expect(sections).toHaveLength(4);
       expect(sections[0].id).toBe('1');
-      expect(sections[1].id).toBe('1/1');
-      expect(sections[2].id).toBe('1/2');
-      expect(sections[3].id).toBe('1/3');
+      expect(sections[1].id).toBe('1.1');
+      expect(sections[2].id).toBe('1.2');
+      expect(sections[3].id).toBe('1.3');
     });
 
     it('should increment numeric IDs for sibling level-3 headers', () => {
@@ -80,11 +80,11 @@ describe('NumericSectionIds', () => {
 
       expect(sections).toHaveLength(6);
       expect(sections[0].id).toBe('1');
-      expect(sections[1].id).toBe('1/1');
-      expect(sections[2].id).toBe('1/1/1');
-      expect(sections[3].id).toBe('1/1/2');
-      expect(sections[4].id).toBe('1/1/3');
-      expect(sections[5].id).toBe('1/1/4');
+      expect(sections[1].id).toBe('1.1');
+      expect(sections[2].id).toBe('1.1.1');
+      expect(sections[3].id).toBe('1.1.2');
+      expect(sections[4].id).toBe('1.1.3');
+      expect(sections[5].id).toBe('1.1.4');
     });
 
     it('should handle multiple siblings across different parent sections', () => {
@@ -101,12 +101,12 @@ describe('NumericSectionIds', () => {
       expect(sections).toHaveLength(7);
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/2',
+        '1.1',
+        '1.2',
         '2',
-        '2/1',
-        '2/2',
-        '2/3',
+        '2.1',
+        '2.2',
+        '2.3',
       ]);
     });
   });
@@ -123,10 +123,10 @@ describe('NumericSectionIds', () => {
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/2',
+        '1.1',
+        '1.2',
         '2',
-        '2/1',
+        '2.1',
       ]);
     });
 
@@ -143,12 +143,12 @@ describe('NumericSectionIds', () => {
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
-        '1/1/2',
-        '1/2',
-        '1/2/1',
-        '1/2/2',
+        '1.1',
+        '1.1.1',
+        '1.1.2',
+        '1.2',
+        '1.2.1',
+        '1.2.2',
       ]);
     });
 
@@ -164,11 +164,11 @@ describe('NumericSectionIds', () => {
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
-        '1/1/1/1',
+        '1.1',
+        '1.1.1',
+        '1.1.1.1',
         '2',
-        '2/1',
+        '2.1',
       ]);
     });
 
@@ -184,11 +184,11 @@ describe('NumericSectionIds', () => {
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
-        '1/1/1/1',
-        '1/1/1/1/1',
-        '1/2',
+        '1.1',
+        '1.1.1',
+        '1.1.1.1',
+        '1.1.1.1.1',
+        '1.2',
       ]);
     });
   });
@@ -211,15 +211,15 @@ describe('NumericSectionIds', () => {
 
       expect(sections.map(s => s.id)).toEqual([
         '1',       // Introduction
-        '1/1',     // Overview
-        '1/2',     // Prerequisites
-        '1/2/1',   // Software Requirements
-        '1/2/2',   // Hardware Requirements
+        '1.1',     // Overview
+        '1.2',     // Prerequisites
+        '1.2.1',   // Software Requirements
+        '1.2.2',   // Hardware Requirements
         '2',       // Setup
-        '2/1',     // Installation
-        '2/1/1',   // Step 1
-        '2/1/2',   // Step 2
-        '2/2',     // Configuration
+        '2.1',     // Installation
+        '2.1.1',   // Step 1
+        '2.1.2',   // Step 2
+        '2.2',     // Configuration
         '3',       // Advanced Topics
       ]);
     });
@@ -240,15 +240,15 @@ describe('NumericSectionIds', () => {
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
-        '1/1/2',
-        '1/2',
-        '1/2/1',
-        '1/2/2',
-        '1/2/3',
-        '1/3',
-        '1/3/1',
+        '1.1',
+        '1.1.1',
+        '1.1.2',
+        '1.2',
+        '1.2.1',
+        '1.2.2',
+        '1.2.3',
+        '1.3',
+        '1.3.1',
       ]);
     });
 
@@ -264,11 +264,11 @@ describe('NumericSectionIds', () => {
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
+        '1.1',
         '2',
-        '2/0/1',  // Level 3 under second Level 1 (level 2 counter was reset, so it's 0)
+        '2.0.1',  // Level 3 under second Level 1 (level 2 counter was reset, so it's 0)
         '3',
-        '3/1',
+        '3.1',
       ]);
     });
   });
@@ -290,7 +290,7 @@ Just regular content.`;
       const { sections } = MarkdownParser.parseMarkdownSections(content);
 
       expect(sections).toHaveLength(1);
-      expect(sections[0].id).toBe('0/1'); // Level 1 counter is 0, level 2 counter is 1
+      expect(sections[0].id).toBe('0.1'); // Level 1 counter is 0, level 2 counter is 1
       expect(sections[0].level).toBe(2);
     });
 
@@ -300,7 +300,7 @@ Just regular content.`;
       const { sections } = MarkdownParser.parseMarkdownSections(content);
 
       expect(sections).toHaveLength(1);
-      expect(sections[0].id).toBe('0/0/1'); // Level 1 and 2 counters are 0, level 3 counter is 1
+      expect(sections[0].id).toBe('0.0.1'); // Level 1 and 2 counters are 0, level 3 counter is 1
       expect(sections[0].level).toBe(3);
     });
 
@@ -313,8 +313,8 @@ Just regular content.`;
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/0/1',  // Level 3: level 2 counter was reset to 0 by level 1, then level 3 increments to 1
-        '1/1',    // Level 2: comes after, level 2 counter increments to 1
+        '1.0.1',  // Level 3: level 2 counter was reset to 0 by level 1, then level 3 increments to 1
+        '1.1',    // Level 2: comes after, level 2 counter increments to 1
       ]);
     });
 
@@ -327,8 +327,8 @@ Just regular content.`;
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/0/0/0/1',  // Level 5: intermediate counters (2,3,4) are 0, level 5 is 1
-        '1/1',        // Level 2: comes after, level 2 counter increments to 1
+        '1.0.0.0.1',  // Level 5: intermediate counters (2,3,4) are 0, level 5 is 1
+        '1.1',        // Level 2: comes after, level 2 counter increments to 1
       ]);
     });
 
@@ -350,8 +350,8 @@ Just regular content.`;
       expect(sections).toHaveLength(3);
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
+        '1.1',
+        '1.1.1',
       ]);
     });
 
@@ -365,8 +365,8 @@ Just regular content.`;
       expect(sections).toHaveLength(3);
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
+        '1.1',
+        '1.1.1',
       ]);
       expect(sections[0].title).toBe('Header with !@#$%');
       expect(sections[1].title).toBe('Header with (parentheses)');
@@ -388,11 +388,11 @@ Just regular content.`;
       expect(sections).toHaveLength(6);
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
-        '1/1/1/1',
-        '1/1/1/1/1',
-        '1/1/1/1/1/1',
+        '1.1',
+        '1.1.1',
+        '1.1.1.1',
+        '1.1.1.1.1',
+        '1.1.1.1.1.1',
       ]);
       expect(sections.map(s => s.level)).toEqual([1, 2, 3, 4, 5, 6]);
     });
@@ -415,17 +415,17 @@ Just regular content.`;
 
       expect(sections.map(s => s.id)).toEqual([
         '1',           // Root
-        '1/1',         // A
-        '1/1/1',       // A1
-        '1/1/1/1',     // A1a
-        '1/1/1/1/1',   // A1a1
-        '1/1/1/1/1/1', // A1a1i
-        '1/1/1/1/1/2', // A1a1ii
-        '1/2',         // B
-        '1/2/1',       // B1
-        '1/2/1/1',     // B1a
-        '1/2/1/1/1',   // B1a1
-        '1/2/1/1/1/1', // B1a1i
+        '1.1',         // A
+        '1.1.1',       // A1
+        '1.1.1.1',     // A1a
+        '1.1.1.1.1',   // A1a1
+        '1.1.1.1.1.1', // A1a1i
+        '1.1.1.1.1.2', // A1a1ii
+        '1.2',         // B
+        '1.2.1',       // B1
+        '1.2.1.1',     // B1a
+        '1.2.1.1.1',   // B1a1
+        '1.2.1.1.1.1', // B1a1i
       ]);
     });
 
@@ -444,14 +444,14 @@ Just regular content.`;
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
-        '1/1/1/1',
-        '1/1/1/1/1',
-        '1/1/1/1/1/1',
-        '1/2',         // Counter reset for level 2
-        '1/2/1',       // Counter reset for level 3
-        '1/2/1/1',     // Counter reset for level 4
+        '1.1',
+        '1.1.1',
+        '1.1.1.1',
+        '1.1.1.1.1',
+        '1.1.1.1.1.1',
+        '1.2',         // Counter reset for level 2
+        '1.2.1',       // Counter reset for level 3
+        '1.2.1.1',     // Counter reset for level 4
       ]);
     });
   });
@@ -486,9 +486,9 @@ Complex material here.`;
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
-        '1/2',
+        '1.1',
+        '1.1.1',
+        '1.2',
         '2',
       ]);
     });
@@ -523,8 +523,8 @@ def test():
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/2',
+        '1.1',
+        '1.2',
       ]);
     });
 
@@ -540,8 +540,8 @@ def test():
       expect(sections).toHaveLength(3);
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
+        '1.1',
+        '1.1.1',
       ]);
       expect(sections[0].title).toBe('Using `code` in headers');
     });
@@ -562,14 +562,14 @@ def test():
       const child2 = sections[3];
 
       // Verify parent-child relationships through ID structure
-      expect(child1.id.startsWith(parent.id + '/')).toBe(true);
-      expect(grandchild1.id.startsWith(child1.id + '/')).toBe(true);
-      expect(child2.id.startsWith(parent.id + '/')).toBe(true);
+      expect(child1.id.startsWith(parent.id + '.')).toBe(true);
+      expect(grandchild1.id.startsWith(child1.id + '.')).toBe(true);
+      expect(child2.id.startsWith(parent.id + '.')).toBe(true);
 
       // Verify grandchild is not direct child of parent
-      expect(grandchild1.id.startsWith(parent.id + '/')).toBe(true);
-      const grandchildParts = grandchild1.id.split('/');
-      const parentParts = parent.id.split('/');
+      expect(grandchild1.id.startsWith(parent.id + '.')).toBe(true);
+      const grandchildParts = grandchild1.id.split('.');
+      const parentParts = parent.id.split('.');
       expect(grandchildParts.length).toBe(parentParts.length + 2);
     });
 
@@ -585,7 +585,7 @@ def test():
 
       sections.forEach((section, index) => {
         const expectedDepth = index + 1;
-        const actualDepth = section.id.split('/').length;
+        const actualDepth = section.id.split('.').length;
         expect(actualDepth).toBe(expectedDepth);
         expect(section.level).toBe(expectedDepth);
       });
@@ -595,12 +595,12 @@ def test():
   describe('isDirectChild Compatibility with Numeric IDs', () => {
     // Helper function to test isDirectChild logic with numeric IDs
     const isDirectChild = (childSection: Section, parentSection: Section): boolean => {
-      if (!childSection.id.startsWith(parentSection.id + '/')) {
+      if (!childSection.id.startsWith(parentSection.id + '.')) {
         return false;
       }
 
-      const childParts = childSection.id.split('/');
-      const parentParts = parentSection.id.split('/');
+      const childParts = childSection.id.split('.');
+      const parentParts = parentSection.id.split('.');
 
       return childParts.length === parentParts.length + 1;
     };
@@ -699,8 +699,8 @@ def test():
       const child10 = sections[10];
       const child11 = sections[11];
 
-      expect(child10.id).toBe('1/10');
-      expect(child11.id).toBe('1/11');
+      expect(child10.id).toBe('1.10');
+      expect(child11.id).toBe('1.11');
       expect(isDirectChild(child10, root)).toBe(true);
       expect(isDirectChild(child11, root)).toBe(true);
       expect(isDirectChild(child11, child10)).toBe(false);
@@ -725,7 +725,7 @@ More content.`;
 
       expect(sections.every(s => s.character_count > 0)).toBe(true);
       expect(sections[0].id).toBe('1');
-      expect(sections[1].id).toBe('1/1');
+      expect(sections[1].id).toBe('1.1');
       expect(sections[2].id).toBe('2');
 
       // Parent section should include subsection content
@@ -746,9 +746,9 @@ Content 4`;
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
-        '1/1/1/1',
+        '1.1',
+        '1.1.1',
+        '1.1.1.1',
       ]);
 
       // Each parent should have larger character count than its child
@@ -766,8 +766,8 @@ Content 4`;
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
+        '1.1',
+        '1.1.1',
       ]);
     });
 
@@ -778,8 +778,8 @@ Content 4`;
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
+        '1.1',
+        '1.1.1',
       ]);
     });
 
@@ -790,8 +790,8 @@ Content 4`;
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
+        '1.1',
+        '1.1.1',
       ]);
     });
 
@@ -802,9 +802,9 @@ Content 4`;
 
       expect(sections.map(s => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
-        '1/1/1/1',
+        '1.1',
+        '1.1.1',
+        '1.1.1.1',
       ]);
     });
   });

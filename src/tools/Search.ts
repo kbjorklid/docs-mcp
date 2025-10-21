@@ -312,12 +312,12 @@ export class Search {
    * A direct child's ID starts with the parent's ID followed by exactly one more path segment.
    */
   private findDirectChildSections(section: Section, sections: Section[]): Section[] {
-    const parentIdPrefix = section.id + '/';
-    const parentDepth = section.id.split('/').length;
+    const parentIdPrefix = section.id + '.';
+    const parentDepth = section.id.split('.').length;
 
     return sections.filter(s =>
       s.id.startsWith(parentIdPrefix) &&
-      s.id.split('/').length === parentDepth + 1
+      s.id.split('.').length === parentDepth + 1
     );
   }
 

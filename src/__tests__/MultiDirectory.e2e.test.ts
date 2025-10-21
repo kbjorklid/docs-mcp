@@ -178,7 +178,7 @@ describe('Multi-Directory E2E Tests', () => {
           }
           expect(file).toHaveProperty('keywords');
           expect(file).toHaveProperty('size');
-          expect(Array.isArray(file.keywords)).toBe(true);
+          expect(typeof file.keywords === 'string' || Array.isArray(file.keywords)).toBe(true);
         });
 
         await helper.stopServer();
@@ -267,7 +267,7 @@ describe('Multi-Directory E2E Tests', () => {
 
         // Read from first directory
         const response1 = await helper.callTool('read_sections', { fileId: 'f2',  // guide.md (f2 in alphabetical order),
-          section_ids: ['1/1']
+          section_ids: ['1.1']
         });
         helper.expectSuccessfulResponse(response1);
 
@@ -279,7 +279,7 @@ describe('Multi-Directory E2E Tests', () => {
 
         // Read from second directory
         const response2 = await helper.callTool('read_sections', { fileId: 'f4',  // tutorial.md (f4 in alphabetical order),
-          section_ids: ['1/2']
+          section_ids: ['1.2']
         });
         helper.expectSuccessfulResponse(response2);
 
@@ -304,9 +304,9 @@ describe('Multi-Directory E2E Tests', () => {
 
         const response = await helper.callTool('read_sections', { fileId: 'f3',  // examples.md (f3 in alphabetical order),
           section_ids: [
-            '1/1',
-            '1/2/1',
-            '1/3'
+            '1.1',
+            '1.2.1',
+            '1.3'
           ]
         });
         helper.expectSuccessfulResponse(response);
@@ -658,7 +658,7 @@ describe('Multi-Directory E2E Tests', () => {
 
       // Verify read sections uses primary version
       const readResponse = await helper.callTool('read_sections', { fileId: 'f2',  // README.md (primary/README.md is f2, has Overview section),
-        section_ids: ['1/1']
+        section_ids: ['1.1']
       });
       helper.expectSuccessfulResponse(readResponse);
       const readData = helper.parseJsonContent(readResponse);

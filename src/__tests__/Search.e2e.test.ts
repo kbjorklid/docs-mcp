@@ -672,9 +672,9 @@ describe('Search E2E Tests', () => {
       const searchResult = JSON.parse(content.text);
       const matches = searchResult.results[0].matches;
 
-      // Should only find the ## Bar section (1/1), not the # Foo section (1)
+      // Should only find the ## Bar section (1.1), not the # Foo section (1)
       expect(matches.length).toBe(1);
-      expect(matches[0].id).toBe('1/1');
+      expect(matches[0].id).toBe('1.1');
       expect(matches[0].title).toBe('Bar');
       expect(matches[0].level).toBe(2);
     });
@@ -704,7 +704,7 @@ describe('Search E2E Tests', () => {
       expect(matches[0].id).toBe('1');
       expect(matches[0].title).toBe('Foo');
       expect(matches[0].level).toBe(1);
-      expect(matches[1].id).toBe('1/1');
+      expect(matches[1].id).toBe('1.1');
       expect(matches[1].title).toBe('Bar');
       expect(matches[1].level).toBe(2);
     });

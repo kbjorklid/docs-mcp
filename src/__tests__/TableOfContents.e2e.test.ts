@@ -1480,7 +1480,7 @@ describe('table_of_contents E2E Tests', () => {
 
         // Find level-2 section 1.2 (should have 2 level-3 children: 1.2.1, 1.2.2)
         // When all children are visible, subsection_count should be undefined (not redundant)
-        const level2Section = sections.find((s: any) => s.level === 2 && s.id === '1/2');
+        const level2Section = sections.find((s: any) => s.level === 2 && s.id === '1.2');
         expect(level2Section).toBeDefined();
         expect(level2Section.subsection_count).toBeUndefined();
 
@@ -1531,15 +1531,15 @@ describe('table_of_contents E2E Tests', () => {
         helper.expectSuccessfulResponse(response);
         const sections = helper.parseJsonSections(response);
 
-        // Level-1 section should only count level-2 children (1/1 and 1/2), not level-3 and 4 grandchildren/great-grandchildren
+        // Level-1 section should only count level-2 children (1.1 and 1.2), not level-3 and 4 grandchildren/great-grandchildren
         // When all children are visible, subsection_count should be undefined (not redundant)
         const level1 = sections.find((s: any) => s.level === 1);
         expect(level1).toBeDefined();
         expect(level1.subsection_count).toBeUndefined(); // All 2 direct level-2 children are visible
 
-        // Level-2 section 1/2 should only count level-3 children (just 1/2/1)
+        // Level-2 section 1/2 should only count level-3 children (just 1.2.1)
         // When all children are visible, subsection_count should be undefined (not redundant)
-        const level2 = sections.find((s: any) => s.id === '1/2');
+        const level2 = sections.find((s: any) => s.id === '1.2');
         expect(level2).toBeDefined();
         expect(level2.subsection_count).toBeUndefined(); // All 1 direct level-3 child is visible
       } finally {
@@ -1590,12 +1590,12 @@ describe('table_of_contents E2E Tests', () => {
         expect(hasLevel3OrDeeper).toBe(false);
 
         // Level-2 sections with hidden children should show subsection_count
-        const section11 = sections.find((s: any) => s.id === '1/1');
+        const section11 = sections.find((s: any) => s.id === '1.1');
         expect(section11).toBeDefined();
         expect(section11.subsection_count).toBe(1); // Has 1 hidden level-3 child
 
         // Level-2 sections without children should not show subsection_count
-        const section21 = sections.find((s: any) => s.id === '2/1');
+        const section21 = sections.find((s: any) => s.id === '2.1');
         expect(section21).toBeDefined();
         expect(section21.subsection_count).toBeUndefined(); // No children at all
       } finally {
@@ -1739,10 +1739,10 @@ describe('table_of_contents E2E Tests', () => {
         const deepSections = sections.filter((s: any) => s.level >= 5);
         expect(deepSections.length).toBeGreaterThan(0);
 
-        // Verify section IDs follow the pattern: 1/2/3/4/5 (or deeper)
+        // Verify section IDs follow the pattern: 1.2.3.4.5 (or deeper)
         deepSections.forEach((section: any) => {
-          expect(section.id).toMatch(/^[0-9]+(\/[0-9]+){4,}$/);
-          const parts = section.id.split('/');
+          expect(section.id).toMatch(/^[0-9]+(\.[0-9]+){4,}$/);
+          const parts = section.id.split('.');
           expect(parts.length).toBeGreaterThanOrEqual(5);
           // Verify all parts are numeric
           parts.forEach((part: string) => {
@@ -1767,10 +1767,10 @@ describe('table_of_contents E2E Tests', () => {
         // Verify all section IDs follow the numeric pattern
         sections.forEach((section: any) => {
           // Section ID must match pattern: number or number/number/...
-          expect(section.id).toMatch(/^[0-9]+(\/[0-9]+)*$/);
+          expect(section.id).toMatch(/^[0-9]+(\.[0-9]+)*$/);
 
           // Verify the section ID parts are sequential and valid
-          const parts = section.id.split('/');
+          const parts = section.id.split('.');
           expect(parts.length).toBe(section.level);
 
           // Each part should be a positive integer

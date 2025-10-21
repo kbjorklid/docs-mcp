@@ -8,11 +8,12 @@ This is a TypeScript-based Model Context Protocol (MCP) server that provides doc
 
 ## Features
 
-The server implements three core tools for documentation management:
+The server implements four core tools for documentation management:
 
 1. **list_documentation_files** - Lists all available documentation files with metadata
 2. **table_of_contents** - Provides structured table of contents for markdown files
 3. **read_sections** - Reads specific sections from markdown files
+4. **search** - Searches for text patterns across documentation files using regular expressions
 
 ## Configuration
 
@@ -84,7 +85,7 @@ echo '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"table_of_c
 Read specific sections:
 
 ```bash
-echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"read_sections","arguments":{"filename":"your-file.md","section_ids":["section-id"]}}' | npm start
+echo '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"read_sections","arguments":{"filename":"your-file.md","section_ids":["1.2.3"]}}' | npm start
 ```
 
 ## Architecture
@@ -207,7 +208,7 @@ All errors follow the JSON format specified in SPECIFICATION.md.
 
 - Tool classes use dependency injection with `DocumentationConfig`
 - Markdown parsing supports ATX-style headers (`#`, `##`, etc.) but not Setext-style headers
-- Section IDs are generated using path-based conventions (lowercase, hyphens, forward slashes)
+- Section IDs use dot-separated format (e.g., "1.2.3") for nested sections
 - File size is displayed with 'kb' or 'b' suffixes for readability
 
 ### TypeScript Import Conventions

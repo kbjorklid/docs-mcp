@@ -258,7 +258,7 @@ describe('Tool Integration E2E Tests', () => {
       // Test read_sections with non-existent section
       const readResponse = await helper.callTool('read_sections', {
         fileId: fileId,
-        section_ids: ['999/999/999']
+        section_ids: ['999.999.999']
       });
       helper.expectErrorWithCode(readResponse, 'SECTION_NOT_FOUND');
       const readError = helper.parseErrorContent(readResponse);
@@ -266,7 +266,7 @@ describe('Tool Integration E2E Tests', () => {
       // Test section_table_of_contents with non-existent section
       const sectionTocResponse = await helper.callTool('section_table_of_contents', {
         fileId: fileId,
-        section_ids: ['999/999/999']
+        section_ids: ['999.999.999']
       });
       helper.expectErrorWithCode(sectionTocResponse, 'SECTION_NOT_FOUND');
       const sectionTocError = helper.parseErrorContent(sectionTocResponse);
@@ -276,8 +276,8 @@ describe('Tool Integration E2E Tests', () => {
       expect(sectionTocError.error.message).toBeDefined();
 
       // Error messages should reference the missing section ID
-      expect(readError.error.message).toContain('999/999/999');
-      expect(sectionTocError.error.message).toContain('999/999/999');
+      expect(readError.error.message).toContain('999.999.999');
+      expect(sectionTocError.error.message).toContain('999.999.999');
     });
 
     it('should return INVALID_FILE_ID with same format from all tools', async () => {

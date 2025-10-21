@@ -63,9 +63,9 @@ This is how the agent should typically use this MCP server.
 
 1. Agent calls `list_documentation_files` to see which .md files are available for reading
 2. Agent deduces which file(s) it would like to read based on file name and metadata (if metadata provided)
-3. Agnet calls `table_of_contents` for the file it wants to read
-4. (optional) Agent sees a section that might contain what it wants to read, but is not sure. The section has hidden subsections. Therefore, Agent calls `section_table_of_contents` for the file and section.
-5. Agent deduces whihc sections (header + text under it) it wants to read.
+3. Agent calls `table_of_contents` for the file it wants to read
+4. (optional) Agent sees a section that might contain what it wants to read, but is not sure. The section has hidden subsections. Therefore, Agent calls `section_table_of_contents` for the file and section using dot-separated section IDs (e.g., "2.1").
+5. Agent deduces which sections (header + text under it) it wants to read using dot-separated section IDs (e.g., "1", "2.1", "3.4.1").
 6. Agent asks for the section contents with `read_sections`
 
 
@@ -99,6 +99,8 @@ The tool returns a response object with the following structure:
 }
 ```
 
+Section IDs use a dot-separated format (e.g., "1.2.3") for nested sections. The first number represents the first-level header, the second number represents the second-level header under that first level, and so on.
+
 The `--max-toc-depth` and `--max-headers` command line parameters control what is shown in the table of contents.
 
 
@@ -123,7 +125,15 @@ Reads specific sections from a markdown file by their IDs.
 
 **Parameters:**
 - `filename` (required) - The documentation file to read from
-- `section_ids` (required) - Array of section identifiers to read
+- `section_ids` (required) - Array of section identifiers to read (use dot-separated format like "1.2.3" for nested sections)
+
+**Example:**
+```json
+{
+  "filename": "guide.md",
+  "section_ids": ["1", "2.1", "3.4.1"]
+}
+```
 
 ### search
 Searches for text patterns using regular expressions in documentation files, returning headers and section IDs where the search pattern is found. Supports full regular expression syntax with multiline matching (the "s" flag is enabled automatically for dotAll behavior).

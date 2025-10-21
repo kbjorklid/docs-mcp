@@ -44,7 +44,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               fileId: 'f1',
-              section_ids: ['1/1']
+              section_ids: ['1.1']
             }
           }
         };
@@ -89,7 +89,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               fileId: 'f1',
-              section_ids: ['1/1/1', '1/1/2']
+              section_ids: ['1.1.1', '1.1.2']
             }
           }
         };
@@ -137,7 +137,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               fileId: 'f1',
-              section_ids: ['1/2/1/1', '1/2/1/2']
+              section_ids: ['1.2.1.1', '1.2.1.2']
             }
           }
         };
@@ -179,7 +179,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               fileId: 'f1',
-              section_ids: ['1/2/1']
+              section_ids: ['1.2.1']
             }
           }
         };
@@ -216,7 +216,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               fileId: 'f1',
-              section_ids: ['2/2/2']
+              section_ids: ['2.2.2']
             }
           }
         };
@@ -251,7 +251,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               fileId: 'f1',
-              section_ids: ['1/1']
+              section_ids: ['1.1']
             }
           }
         };
@@ -289,7 +289,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               fileId: 'f1',
-              section_ids: ['1/2/1']
+              section_ids: ['1.2.1']
             }
           }
         };
@@ -324,7 +324,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               fileId: 'f1',
-              section_ids: ['1/3/1/1', '1/4/2']
+              section_ids: ['1.3.1.1', '1.4.2']
             }
           }
         };
@@ -364,7 +364,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               fileId: 'f1',
-              section_ids: ['1/7/1']
+              section_ids: ['1.7.1']
             }
           }
         };
@@ -591,7 +591,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               fileId: 'f1',
-              section_ids: ['1/3/1/1']
+              section_ids: ['1.3.1.1']
             }
           }
         };
@@ -679,7 +679,7 @@ describe('read_sections E2E Tests', () => {
             name: 'read_sections',
             arguments: {
               fileId: 'f1',
-              section_ids: ['3/4']
+              section_ids: ['3.4']
             }
           }
         };

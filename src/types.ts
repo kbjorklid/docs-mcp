@@ -59,7 +59,8 @@ export interface FileInfoWithId {
   filename: string;
   title?: string;
   description?: string;
-  keywords?: string;
+  keywords?: string | string[];
+  size: string;
 }
 
 // Section interface

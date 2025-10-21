@@ -51,7 +51,7 @@ export class MarkdownParser {
 
   /**
    * Parse markdown sections and generate table of contents
-   * Uses numeric IDs in format "1/2/3" where numbers represent header positions at each level
+   * Uses numeric IDs in format "1.2.3" where numbers represent header positions at each level
    */
   static parseMarkdownSections(content: string): {
     sections: Section[];
@@ -170,7 +170,7 @@ export class MarkdownParser {
   }
 
   /**
-   * Extract parent section ID from a section ID (e.g., "1/2/3" -> "1/2")
+   * Extract parent section ID from a section ID (e.g., "1.2.3" -> "1.2")
    * Returns null if section has no parent (top-level section)
    */
   static getParentSectionId(sectionId: SectionId): SectionId | null {
@@ -179,10 +179,10 @@ export class MarkdownParser {
 
   /**
    * Get the nesting level of a section based on its ID
-   * (e.g., "1" -> level 1, "1/2" -> level 2, "1/2/3" -> level 3)
+   * (e.g., "1" -> level 1, "1.2" -> level 2, "1.2.3" -> level 3)
    */
   static getSectionLevel(sectionId: SectionId): number {
-    return sectionId.split('/').length;
+    return sectionId.split('.').length;
   }
 
   /**
@@ -323,8 +323,8 @@ export class MarkdownParser {
 
     // Sort sections by hierarchy level (parents before children)
     const sortedIds = [...sectionIds].sort((a, b) => {
-      const aLevel = a.split('/').length;
-      const bLevel = b.split('/').length;
+      const aLevel = a.split('.').length;
+      const bLevel = b.split('.').length;
       return aLevel - bLevel;
     });
 
@@ -344,7 +344,7 @@ export class MarkdownParser {
           acceptedRange &&
           range.start >= acceptedRange.start &&
           range.end <= acceptedRange.end &&
-          sectionId.startsWith(acceptedId + '/')
+          sectionId.startsWith(acceptedId + '.')
         ) {
           isAlreadyIncluded = true;
           break;

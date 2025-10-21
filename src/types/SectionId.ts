@@ -1,12 +1,12 @@
 /**
  * Branded type for Section IDs
  *
- * SectionId is a string that follows the numeric format "1/2/3" where each number
+ * SectionId is a string that follows the numeric format "1.2.3" where each number
  * represents the position of a header at each level in the document hierarchy.
  * Using a branded type prevents mixing section IDs with arbitrary strings at compile-time.
  *
  * @example
- * const sectionId = createSectionId([1, 2, 3]); // SectionId: "1/2/3"
+ * const sectionId = createSectionId([1, 2, 3]); // SectionId: "1.2.3"
  * const parts = getSectionParts(sectionId); // [1, 2, 3]
  * const level = getSectionLevel(sectionId); // 3
  */
@@ -16,12 +16,12 @@ export type SectionId = string & { readonly __brand: 'SectionId' };
  * Create a SectionId from numeric parts
  *
  * @param parts - Array of positive integers representing the section hierarchy
- * @returns SectionId in format "1/2/3"
+ * @returns SectionId in format "1.2.3"
  * @throws Error if parts array is empty or contains invalid values
  *
  * @example
  * createSectionId([1]) // Returns "1" as SectionId
- * createSectionId([1, 2, 3]) // Returns "1/2/3" as SectionId
+ * createSectionId([1, 2, 3]) // Returns "1.2.3" as SectionId
  */
 export function createSectionId(parts: number[]): SectionId {
   if (parts.length === 0) {
@@ -34,7 +34,7 @@ export function createSectionId(parts: number[]): SectionId {
     }
   }
 
-  return parts.join('/') as SectionId;
+  return parts.join('.') as SectionId;
 }
 
 /**
@@ -45,7 +45,7 @@ export function createSectionId(parts: number[]): SectionId {
  *
  * @example
  * parseSectionId("1") // Returns "1" as SectionId
- * parseSectionId("1/2/3") // Returns "1/2/3" as SectionId
+ * parseSectionId("1.2.3") // Returns "1.2.3" as SectionId
  * parseSectionId("invalid") // Returns null
  * parseSectionId(123) // Returns null
  */
@@ -69,10 +69,10 @@ export function parseSectionId(value: unknown): SectionId | null {
  *
  * @example
  * isValidSectionId("1") // true
- * isValidSectionId("1/2/3") // true
+ * isValidSectionId("1.2.3") // true
  * isValidSectionId("invalid") // false
- * isValidSectionId("1/0") // false (must be positive)
- * isValidSectionId("1/2/") // false (trailing slash)
+ * isValidSectionId("1.0") // false (must be positive)
+ * isValidSectionId("1.2.") // false (trailing dot)
  */
 export function isValidSectionId(value: unknown): value is SectionId {
   if (typeof value !== 'string') {
@@ -84,14 +84,14 @@ export function isValidSectionId(value: unknown): value is SectionId {
     return false;
   }
 
-  // Match pattern: one or more digits, optionally followed by "/" and more digits
-  const match = value.match(/^(\d+)(\/\d+)*$/);
+  // Match pattern: one or more digits, optionally followed by "." and more digits
+  const match = value.match(/^(\d+)(\.\d+)*$/);
   if (!match) {
     return false;
   }
 
   // Ensure all numbers are non-negative (allow 0 for edge cases)
-  const parts = value.split('/');
+  const parts = value.split('.');
   return parts.every(part => {
     const num = parseInt(part, 10);
     return num >= 0;
@@ -110,7 +110,7 @@ export function isValidSectionId(value: unknown): value is SectionId {
  * getSectionParts(createSectionId([5])) // Returns [5]
  */
 export function getSectionParts(sectionId: SectionId): number[] {
-  const parts = sectionId.split('/').map(part => parseInt(part, 10));
+  const parts = sectionId.split('.').map(part => parseInt(part, 10));
 
   // Validate that all parts are valid non-negative integers
   if (parts.some(part => !Number.isInteger(part) || part < 0)) {
@@ -124,7 +124,7 @@ export function getSectionParts(sectionId: SectionId): number[] {
  * Get the nesting level of a section (number of parts in the ID)
  *
  * @param sectionId - The SectionId to check
- * @returns The nesting level (1 for "1", 2 for "1/2", 3 for "1/2/3", etc.)
+ * @returns The nesting level (1 for "1", 2 for "1.2", 3 for "1.2.3", etc.)
  *
  * @example
  * getSectionLevel(createSectionId([1])) // Returns 1
@@ -132,7 +132,7 @@ export function getSectionParts(sectionId: SectionId): number[] {
  * getSectionLevel(createSectionId([1, 2, 3])) // Returns 3
  */
 export function getSectionLevel(sectionId: SectionId): number {
-  return sectionId.split('/').length;
+  return sectionId.split('.').length;
 }
 
 /**
@@ -142,7 +142,7 @@ export function getSectionLevel(sectionId: SectionId): number {
  * @returns Parent SectionId, or null if this is a root-level section
  *
  * @example
- * getParentSectionId(createSectionId([1, 2, 3])) // Returns "1/2" as SectionId
+ * getParentSectionId(createSectionId([1, 2, 3])) // Returns "1.2" as SectionId
  * getParentSectionId(createSectionId([1])) // Returns null (root level)
  */
 export function getParentSectionId(sectionId: SectionId): SectionId | null {
@@ -168,8 +168,8 @@ export function getParentSectionId(sectionId: SectionId): SectionId | null {
  * isChildOf(createSectionId([2, 1]), createSectionId([1])) // false
  */
 export function isChildOf(child: SectionId, parent: SectionId): boolean {
-  // Child must start with parent's ID followed by a "/"
-  return child.startsWith(parent + '/');
+  // Child must start with parent's ID followed by a "."
+  return child.startsWith(parent + '.');
 }
 
 /**
@@ -207,7 +207,7 @@ export function isDirectChild(child: SectionId, parent: SectionId): boolean {
  *
  * @example
  * const ids = [createSectionId([1, 10]), createSectionId([1, 2]), createSectionId([2, 1])];
- * ids.sort(compareSectionIds); // [1/2, 1/10, 2/1]
+ * ids.sort(compareSectionIds); // [1.2, 1.10, 2.1]
  */
 export function compareSectionIds(a: SectionId, b: SectionId): number {
   const aParts = getSectionParts(a);

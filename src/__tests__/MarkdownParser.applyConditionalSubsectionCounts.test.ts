@@ -20,7 +20,7 @@ describe('MarkdownParser.applyConditionalSubsectionCounts', () => {
       const sections: Section[] = [
         { id: createSectionId([1]), title: 'Parent', level: 1, character_count: 100, subsection_count: 3 },
         { id: createSectionId([1, 1]), title: 'Child 1', level: 2, character_count: 50 },
-        // Child 1/2 missing (filtered out)
+        // Child 1.2 missing (filtered out)
         { id: createSectionId([1, 3]), title: 'Child 3', level: 2, character_count: 50 },
       ];
 
@@ -126,7 +126,7 @@ describe('MarkdownParser.applyConditionalSubsectionCounts', () => {
 
         { id: createSectionId([2]), title: 'Section 2', level: 1, character_count: 100, subsection_count: 2 },
         { id: createSectionId([2, 1]), title: 'Child 2.1', level: 2, character_count: 50 },
-        // Child 2/2 missing
+        // Child 2.2 missing
       ];
 
       MarkdownParser.applyConditionalSubsectionCounts(sections);
@@ -191,7 +191,7 @@ describe('MarkdownParser.applyConditionalSubsectionCounts', () => {
       const allSections: Section[] = [
         { id: createSectionId([1]), title: 'Features', level: 1, character_count: 100, subsection_count: 3 },
         { id: createSectionId([1, 1]), title: 'Feature One', level: 2, character_count: 33 },
-        // 1/2 not matched
+        // 1.2 not matched
         { id: createSectionId([1, 3]), title: 'Feature Three', level: 2, character_count: 33 },
       ];
 

@@ -182,9 +182,9 @@ Content 3`;
 
       expect(result.sections.map((s) => s.id)).toEqual([
         '1',
-        '1/1',
-        '1/1/1',
-        '1/2',
+        '1.1',
+        '1.1.1',
+        '1.2',
         '2',
       ]);
     });
@@ -211,7 +211,7 @@ More content.`;
 
       const titleSection = result.sections.find((s) => s.id === '1');
       const subtitleSection = result.sections.find(
-        (s) => s.id === '1/1'
+        (s) => s.id === '1.1'
       );
 
       expect(titleSection?.character_count).toBeGreaterThan(0);
@@ -240,8 +240,8 @@ Content for other section.`;
       const result = MarkdownParser.parseMarkdownSections(content);
 
       const mainSection = result.sections.find((s) => s.id === '1');
-      const subA = result.sections.find((s) => s.id === '1/1');
-      const subB = result.sections.find((s) => s.id === '1/2');
+      const subA = result.sections.find((s) => s.id === '1.1');
+      const subB = result.sections.find((s) => s.id === '1.2');
       const otherSection = result.sections.find((s) => s.id === '2');
 
       // Parent section should include all subsection content
@@ -282,9 +282,9 @@ Another content`;
       const result = MarkdownParser.parseMarkdownSections(content);
 
       const level1 = result.sections.find((s) => s.id === '1');
-      const level2 = result.sections.find((s) => s.id === '1/1');
-      const level3 = result.sections.find((s) => s.id === '1/1/1');
-      const level4 = result.sections.find((s) => s.id === '1/1/1/1');
+      const level2 = result.sections.find((s) => s.id === '1.1');
+      const level3 = result.sections.find((s) => s.id === '1.1.1');
+      const level4 = result.sections.find((s) => s.id === '1.1.1.1');
 
       // Each parent should be larger than or equal to its children combined
       expect(level1?.character_count).toBeGreaterThan(0);
@@ -342,7 +342,7 @@ Deep content.`;
       expect(parent?.subsection_count).toBe(2);
 
       // Child 2 should have 1 direct child
-      const child2 = sections.find((s) => s.level === 2 && s.id === '1/2');
+      const child2 = sections.find((s) => s.level === 2 && s.id === '1.2');
       expect(child2?.subsection_count).toBe(1);
 
       // Grandchild should have no children
@@ -407,7 +407,7 @@ Content`;
       expect(parent?.subsection_count).toBe(2);
 
       // Child 2 should count its direct level-3 children
-      const child2 = sections.find((s) => s.id === '1/2');
+      const child2 = sections.find((s) => s.id === '1.2');
       expect(child2?.subsection_count).toBe(2);
     });
 

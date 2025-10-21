@@ -47,7 +47,7 @@ export class SectionTableOfContents {
             items: {
               type: 'string',
             },
-            description: 'Non-empty array of numeric section identifiers to get subsections for (e.g., ["1", "1/2"])',
+            description: 'Non-empty array of numeric section identifiers to get subsections for (e.g., ["1", "1.2"])',
             minItems: 1,
           },
         },

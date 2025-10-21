@@ -144,7 +144,9 @@ export class FileDiscoveryService {
       const fileInfo: FileInfoWithId = {
         fileId: createFileId(index + 1),
         filename: file.filename,
+        title: undefined, // Start with undefined, only set if not redundant
         description: file.metadata.description,
+        size: file.size,
       };
 
       // Convert keywords array to comma-separated string

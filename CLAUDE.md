@@ -356,7 +356,7 @@ describe('ToolName Unit Tests', () => {
 
 - Tool classes use dependency injection with `DocumentationConfig`
 - Markdown parsing supports ATX-style headers (`#`, `##`, etc.) but not Setext-style headers
-- Section IDs are generated using path-based conventions (lowercase, hyphens, forward slashes)
+- Section IDs use dot-separated format (e.g., "1.2.3") for nested sections
 - File size is displayed with 'kb' or 'b' suffixes for readability
 
 ### TypeScript Configuration

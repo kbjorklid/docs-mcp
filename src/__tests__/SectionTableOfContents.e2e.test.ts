@@ -46,11 +46,11 @@ describe('section_table_of_contents E2E Tests', () => {
         const sections = helper.parseJsonSections(response);
         expect(Array.isArray(sections)).toBe(true);
 
-        // Section "1" has direct children: "1/1", "1/2", "1/3"
+        // Section "1" has direct children: "1.1", "1.2", "1.3"
         expect(sections.length).toBeGreaterThan(0);
         sections.forEach((section: any) => {
           // All returned sections should be direct children of "1"
-          expect(section.id).toMatch(/^1\/\d+$/);
+          expect(section.id).toMatch(/^1\.\d+$/);
           expect(section.level).toBe(2);
         });
       } finally {
@@ -74,8 +74,8 @@ describe('section_table_of_contents E2E Tests', () => {
 
         // Should return children from both sections
         const ids = sections.map((s: any) => s.id);
-        const hasSection1Children = ids.some((id: string) => id.startsWith('1/'));
-        const hasSection2Children = ids.some((id: string) => id.startsWith('2/'));
+        const hasSection1Children = ids.some((id: string) => id.startsWith('1.'));
+        const hasSection2Children = ids.some((id: string) => id.startsWith('2.'));
         expect(hasSection1Children).toBe(true);
         expect(hasSection2Children).toBe(true);
       } finally {
@@ -90,7 +90,7 @@ describe('section_table_of_contents E2E Tests', () => {
       try {
         const response = await helper.callTool('section_table_of_contents', {
           fileId: 'f1',
-          section_ids: ['1/1/1'] // Leaf section with no children
+          section_ids: ['1.1.1'] // Leaf section with no children
         });
 
         helper.expectSuccessfulResponse(response);
@@ -182,7 +182,7 @@ describe('section_table_of_contents E2E Tests', () => {
       try {
         const response = await helper.callTool('section_table_of_contents', {
           fileId: 'f1',
-          section_ids: ['99/99/99']
+          section_ids: ['99.99.99']
         });
 
         helper.expectNoError(response);
@@ -252,7 +252,7 @@ describe('section_table_of_contents E2E Tests', () => {
       try {
         const response = await helper.callTool('section_table_of_contents', {
           fileId: 'f1',
-          section_ids: ['1', '99/99', '88/88']
+          section_ids: ['1', '99.99', '88.88']
         });
 
         helper.expectNoError(response);
@@ -378,7 +378,7 @@ describe('section_table_of_contents E2E Tests', () => {
       try {
         const request = helper.createToolCallRequest('section_table_of_contents', {
           fileId: 'f1',
-          section_ids: ['1/1'] // Get children of a level-2 section
+          section_ids: ['1.1'] // Get children of a level-2 section
         });
 
         const response = await helper.sendRequestToServer(serverProcess, request);
@@ -431,7 +431,7 @@ describe('section_table_of_contents E2E Tests', () => {
       try {
         const response = await helper.callTool('section_table_of_contents', {
           fileId: 'f1',
-          section_ids: ['1/1/1'] // Leaf section - no children
+          section_ids: ['1.1.1'] // Leaf section - no children
         });
 
         helper.expectSuccessfulResponse(response);
@@ -453,13 +453,13 @@ describe('section_table_of_contents E2E Tests', () => {
       try {
         const response = await helper.callTool('section_table_of_contents', {
           fileId: 'f1',
-          section_ids: ['1', '1/1'] // 1/1 is a child of 1
+          section_ids: ['1', '1.1'] // 1/1 is a child of 1
         });
 
         helper.expectSuccessfulResponse(response);
         const sections = helper.parseJsonSections(response);
 
-        // Should return children of both "1" and "1/1"
+        // Should return children of both "1" and "1.1"
         // but no duplicates
         const ids = sections.map((s: any) => s.id);
         const uniqueIds = new Set(ids);
@@ -516,7 +516,7 @@ describe('section_table_of_contents E2E Tests', () => {
       try {
         const response = await helper.callTool('section_table_of_contents', {
           fileId: 'f1',
-          section_ids: ['1', '2', '3/1']
+          section_ids: ['1', '2', '3.1']
         });
 
         helper.expectSuccessfulResponse(response);
@@ -596,7 +596,7 @@ describe('section_table_of_contents E2E Tests', () => {
       try {
         const response = await helper.callTool('section_table_of_contents', {
           fileId: 'f1',
-          section_ids: ['1/1/1'] // Leaf section with no children
+          section_ids: ['1.1.1'] // Leaf section with no children
         });
 
         helper.expectSuccessfulResponse(response);
