@@ -202,8 +202,8 @@ describe('Multi-Directory E2E Tests', () => {
         });
         helper.expectSuccessfulResponse(tocResponse1);
 
-        const toc1Data = helper.parseJsonContent(tocResponse1);
-      const toc1 = toc1Data.sections;
+        const toc1 = helper.parseTableOfContentsText(tocResponse1);
+      
         expect(toc1.length).toBeGreaterThan(0);
         expect(toc1[0].title).toBe('Documentation Guide');
 
@@ -212,8 +212,8 @@ describe('Multi-Directory E2E Tests', () => {
         });
         helper.expectSuccessfulResponse(tocResponse2);
 
-        const toc2Data = helper.parseJsonContent(tocResponse2);
-      const toc2 = toc2Data.sections;
+        const toc2 = helper.parseTableOfContentsText(tocResponse2);
+      
         expect(toc2.length).toBeGreaterThan(0);
         expect(toc2[0].title).toBe('Tutorial');
 
@@ -237,17 +237,16 @@ describe('Multi-Directory E2E Tests', () => {
         });
         helper.expectSuccessfulResponse(response);
 
-        const tocData = helper.parseJsonContent(response);
-        const toc = tocData.sections;
+        const toc = helper.parseTableOfContentsText(response);
 
         // Verify hierarchical structure
         const mainSection = toc.find((section: any) => section.id === '1');
         expect(mainSection).toBeDefined();
 
         // Look for any subsection under the main section
-        const subSection = toc.find((section: any) => section.level === 2);
+        const subSection = toc.find((section: any) => helper.getSectionLevel(section.id) === 2);
         expect(subSection).toBeDefined();
-        expect(subSection.level).toBe(2);
+        expect(helper.getSectionLevel(subSection!.id)).toBe(2);
 
         await helper.stopServer();
       });
@@ -589,8 +588,7 @@ describe('Multi-Directory E2E Tests', () => {
       const tocResponse = await helper.callTool('table_of_contents', { fileId: 'f2'  // guide.md (f2 in alphabetical order)
       });
       helper.expectSuccessfulResponse(tocResponse);
-      const tocData = helper.parseJsonContent(tocResponse);
-      const toc = tocData.sections;
+      const toc = helper.parseTableOfContentsText(tocResponse);
       expect(toc.length).toBeGreaterThan(0);
 
       // Step 3: Read specific sections
@@ -651,8 +649,7 @@ describe('Multi-Directory E2E Tests', () => {
       const tocResponse = await helper.callTool('table_of_contents', { fileId: 'f2'  // README.md (primary/README.md is f2, has Overview section)
       });
       helper.expectSuccessfulResponse(tocResponse);
-      const tocData = helper.parseJsonContent(tocResponse);
-      const toc = tocData.sections;
+      const toc = helper.parseTableOfContentsText(tocResponse);
       const overviewSection = toc.find((s: any) => s.title === 'Overview');
       expect(overviewSection).toBeDefined();
 

@@ -74,8 +74,8 @@ describe('Tool Integration E2E Tests', () => {
       });
 
       helper.expectSuccessfulResponse(tocResponse);
-      const tocData = helper.parseJsonContent(tocResponse);
-        const sections = tocData.sections;
+      const toc = helper.parseTableOfContentsText(tocResponse);
+        const sections = toc;
       expect(sections.length).toBeGreaterThan(0);
 
       // Step 3: Read a specific section
@@ -112,8 +112,8 @@ describe('Tool Integration E2E Tests', () => {
       });
 
       helper.expectSuccessfulResponse(tocResponse);
-      const tocData = helper.parseJsonContent(tocResponse);
-        const sections = tocData.sections;
+      const toc = helper.parseTableOfContentsText(tocResponse);
+        const sections = toc;
       expect(sections.length).toBeGreaterThan(0);
 
       // Step 2: Search for authentication-related content
@@ -196,11 +196,11 @@ describe('Tool Integration E2E Tests', () => {
       });
 
       helper.expectSuccessfulResponse(tocResponse);
-      const tocData = helper.parseJsonContent(tocResponse);
-        const sections = tocData.sections;
+      const toc = helper.parseTableOfContentsText(tocResponse);
+        const sections = toc;
 
       // Should only include sections up to depth 3 (default)
-      const hasLevel4OrDeeper = sections.some((s: any) => s.level > 3);
+      const hasLevel4OrDeeper = sections.some((s: any) => helper.getSectionLevel(s.id) > 3);
       expect(hasLevel4OrDeeper).toBe(false);
 
       // Search should still work normally

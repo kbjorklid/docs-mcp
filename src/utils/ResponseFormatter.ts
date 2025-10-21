@@ -90,3 +90,20 @@ export function createErrorResponse(message: string): ToolResponse {
     ],
   };
 }
+
+/**
+ * Create a successful response with raw text (no JSON stringification)
+ * Used for XML-like formatted responses and other plaintext output
+ * @param text - The raw text to return
+ * @returns Formatted tool response
+ */
+export function createSuccessResponseRawText(text: string): ToolResponse {
+  return {
+    content: [
+      {
+        type: 'text',
+        text,
+      },
+    ],
+  };
+}

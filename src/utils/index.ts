@@ -2,7 +2,7 @@
  * Utility functions and helpers
  */
 
-export { createSuccessResponse, createErrorResponse, type ToolResponse } from './ResponseFormatter';
+export { createSuccessResponse, createErrorResponse, createSuccessResponseRawText, type ToolResponse } from './ResponseFormatter';
 export { validateAndResolveFile, type FileValidationResult } from './FileValidator';
 export {
   isNonEmptyString,
@@ -29,3 +29,4 @@ export {
   INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS,
 } from './InstructionsHelper';
 export { isTitleRedundant } from './TitleComparator';
+export { formatTableOfContentsAsXml } from './TableOfContentsFormatter';

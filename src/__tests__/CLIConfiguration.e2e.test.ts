@@ -142,8 +142,7 @@ describe('CLI Configuration E2E Tests', () => {
       });
 
       helper.expectSuccessfulResponse(tocResponse);
-      const tocData = helper.parseJsonContent(tocResponse);
-      const sections = tocData.sections;
+      const sections = helper.parseTableOfContentsText(tocResponse);
       expect(sections.length).toBeGreaterThan(0);
     });
   });

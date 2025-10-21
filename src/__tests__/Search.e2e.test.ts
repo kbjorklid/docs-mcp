@@ -730,17 +730,17 @@ describe('Search E2E Tests', () => {
       const matches = searchResult.results[0].matches;
 
       // Find the "Key Features" section (level 1) - all its children are matched
-      const keyFeaturesSection = matches.find((s: any) => s.level === 1);
+      const keyFeaturesSection = matches.find((s: any) => helper.getSectionLevel(s.id) === 1);
       expect(keyFeaturesSection).toBeDefined();
       expect(keyFeaturesSection.title).toBe('Key Features');
       // When all direct children (Feature One, Feature Two, Feature Three) are matched,
       // subsection_count should be undefined (not redundant)
-      expect(keyFeaturesSection.subsection_count).toBeUndefined();
+      expect(keyFeaturesSection.hiddenSubsections).toBeUndefined();
 
       // Find "Feature One" section - leaf section, should not have subsection_count
       const featureOneSection = matches.find((s: any) => s.title === 'Feature One');
       expect(featureOneSection).toBeDefined();
-      expect(featureOneSection.subsection_count).toBeUndefined();
+      expect(featureOneSection.hiddenSubsections).toBeUndefined();
     });
 
     it('should omit subsection_count for leaf sections in search results', async () => {
@@ -764,20 +764,20 @@ describe('Search E2E Tests', () => {
       const matches = searchResult.results[0].matches;
 
       // Leaf sections (Example 1, Example 2, Example 3) should not have subsection_count
-      const leafSections = matches.filter((s: any) => s.level === 3);
+      const leafSections = matches.filter((s: any) => helper.getSectionLevel(s.id) === 3);
       leafSections.forEach((section: any) => {
-        expect(section.subsection_count).toBeUndefined();
+        expect(section.hiddenSubsections).toBeUndefined();
       });
 
       // Parent sections: when all children are matched, subsection_count should be undefined
-      const parentSections = matches.filter((s: any) => s.level === 1 || s.level === 2);
+      const parentSections = matches.filter((s: any) => helper.getSectionLevel(s.id) === 1 || helper.getSectionLevel(s.id) === 2);
       parentSections.forEach((section: any) => {
         if (section.level === 1) {
           // Main Examples section has all 2 children (Basic Examples, Advanced Examples) matched
-          expect(section.subsection_count).toBeUndefined();
+          expect(section.hiddenSubsections).toBeUndefined();
         } else if (section.title === 'Basic Examples' || section.title === 'Advanced Examples') {
           // These sections have all their children matched (Examples 1&2, and Example 3 respectively)
-          expect(section.subsection_count).toBeUndefined();
+          expect(section.hiddenSubsections).toBeUndefined();
         }
       });
     });

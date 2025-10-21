@@ -43,7 +43,7 @@ describe('section_table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
         expect(Array.isArray(sections)).toBe(true);
 
         // Section "1" has direct children: "1.1", "1.2", "1.3"
@@ -51,7 +51,7 @@ describe('section_table_of_contents E2E Tests', () => {
         sections.forEach((section: any) => {
           // All returned sections should be direct children of "1"
           expect(section.id).toMatch(/^1\.\d+$/);
-          expect(section.level).toBe(2);
+          expect(helper.getSectionLevel(section.id)).toBe(2);
         });
       } finally {
         await helper.stopServer();
@@ -69,7 +69,7 @@ describe('section_table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
         expect(Array.isArray(sections)).toBe(true);
 
         // Should return children from both sections
@@ -94,7 +94,7 @@ describe('section_table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
         expect(Array.isArray(sections)).toBe(true);
         expect(sections.length).toBe(0); // No children
       } finally {
@@ -113,12 +113,12 @@ describe('section_table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // All returned sections should be at level 2 (direct children of level 1)
         // No level 3+ sections should be included
         sections.forEach((section: any) => {
-          expect(section.level).toBe(2);
+          expect(helper.getSectionLevel(section.id)).toBe(2);
         });
       } finally {
         await helper.stopServer();
@@ -136,16 +136,15 @@ describe('section_table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         expect(sections.length).toBeGreaterThan(0);
         sections.forEach((section: any) => {
           expect(section.id).toBeDefined();
+          expect(typeof section.id).toBe('string');
           expect(section.title).toBeDefined();
-          expect(section.level).toBeDefined();
-          expect(section.character_count).toBeDefined();
-          expect(typeof section.character_count).toBe('number');
-          // subsection_count is optional and only shown if not all children visible
+          expect(typeof section.title).toBe('string');
+          // hiddenSubsections is optional and only shown if there are hidden children
         });
       } finally {
         await helper.stopServer();
@@ -280,7 +279,7 @@ describe('section_table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, request);
         helper.expectSuccessfulResponse(response);
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
         // Should be limited by max_headers, but Phase 1 may add extra to maintain 3 minimum
         expect(sections.length).toBeGreaterThan(0);
         // Without max_headers, would return 3 sections (1.1, 1.2, 1.3)
@@ -308,7 +307,7 @@ describe('section_table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, request);
         helper.expectSuccessfulResponse(response);
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
         expect(sections.length).toBeLessThanOrEqual(3);
       } finally {
         serverProcess.kill();
@@ -333,7 +332,7 @@ describe('section_table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, request);
         helper.expectSuccessfulResponse(response);
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
         // Should respect CLI value, which is more restrictive than env
         expect(sections.length).toBeGreaterThan(0);
       } finally {
@@ -359,7 +358,7 @@ describe('section_table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, request);
         helper.expectSuccessfulResponse(response);
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
         // max_toc_depth should NOT be applied, so we should get all direct children
         // regardless of their depth in the document
         expect(sections.length).toBeGreaterThan(0);
@@ -384,7 +383,7 @@ describe('section_table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, request);
         helper.expectSuccessfulResponse(response);
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
         // Should still return children, even though max_toc_depth=1 would normally hide them
         expect(Array.isArray(sections)).toBe(true);
       } finally {
@@ -410,14 +409,14 @@ describe('section_table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, request);
         helper.expectSuccessfulResponse(response);
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
         // At least one section should have subsection_count if it has hidden children
-        const sectionsWithCount = sections.filter((s: any) => s.subsection_count !== undefined);
+        const sectionsWithCount = sections.filter((s: any) => s.hiddenSubsections !== undefined);
         // This may or may not have subsection_count depending on the document structure
         // But if it does, the value should be a positive number
         sectionsWithCount.forEach((s: any) => {
-          expect(typeof s.subsection_count).toBe('number');
-          expect(s.subsection_count).toBeGreaterThan(0);
+          expect(typeof s.hiddenSubsections).toBe('number');
+          expect(s.hiddenSubsections).toBeGreaterThan(0);
         });
       } finally {
         serverProcess.kill();
@@ -435,7 +434,7 @@ describe('section_table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // No children means no subsection_count
         expect(sections.length).toBe(0);
@@ -457,7 +456,7 @@ describe('section_table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should return children of both "1" and "1.1"
         // but no duplicates
@@ -482,25 +481,25 @@ describe('section_table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(tocResponse);
-        const tocSections = helper.parseJsonSections(tocResponse);
+        const tocSections = helper.parseTableOfContentsText(tocResponse);
 
         // Find a level-1 section
-        const level1Section = tocSections.find((s: any) => s.level === 1);
+        const level1Section = tocSections.find((s: any) => helper.getSectionLevel(s.id) === 1);
         expect(level1Section).toBeDefined();
 
         // Now use section_table_of_contents to get its children
         const response = await helper.callTool('section_table_of_contents', {
           fileId: 'f1',
-          section_ids: [level1Section.id]
+          section_ids: [level1Section!.id]
         });
 
         helper.expectSuccessfulResponse(response);
-        const subTocData = helper.parseJsonContent(response);
-        const children = subTocData.sections;
+        const children = helper.parseTableOfContentsText(response);
 
         // All children should be direct descendants of the parent
+        const parentLevel = helper.getSectionLevel(level1Section!.id);
         children.forEach((child: any) => {
-          expect(child.level).toBe(level1Section.level + 1);
+          expect(helper.getSectionLevel(child.id)).toBe(parentLevel + 1);
         });
       } finally {
         await helper.stopServer();
@@ -520,7 +519,7 @@ describe('section_table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
         expect(Array.isArray(sections)).toBe(true);
       } finally {
         await helper.stopServer();
@@ -538,7 +537,7 @@ describe('section_table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Sections should be in document order (same as returned from parsing)
         for (let i = 1; i < sections.length; i++) {
@@ -569,20 +568,20 @@ describe('section_table_of_contents E2E Tests', () => {
         helper.expectSuccessfulResponse(response);
 
         const content = response.result.content[0];
-        const fullResponse = JSON.parse(content.text);
+        const fullResponse = helper.parseTableOfContentsText(response);
 
         // The response should have a sections property and possibly instructions
-        expect(fullResponse.sections).toBeDefined();
-        expect(Array.isArray(fullResponse.sections)).toBe(true);
+        expect(fullResponse).toBeDefined();
+        expect(Array.isArray(fullResponse)).toBe(true);
 
         // Check if any sections have subsection_count (indicating hidden children)
-        const hasHiddenSubsections = fullResponse.sections.some((s: any) => s.subsection_count !== undefined);
+        const hasHiddenSubsections = fullResponse.some((s: any) => s.hiddenSubsections !== undefined);
 
         if (hasHiddenSubsections) {
           // Should have instructions property when subsections are hidden
-          expect(fullResponse.instructions).toBeDefined();
-          expect(typeof fullResponse.instructions).toBe('string');
-          expect(fullResponse.instructions.length).toBeGreaterThan(0);
+          expect(helper.parseInstructionsText(response)).toBeDefined();
+          expect(typeof helper.parseInstructionsText(response)).toBe('string');
+          expect(helper.parseInstructionsText(response).length).toBeGreaterThan(0);
         }
       } finally {
         serverProcess.kill();
@@ -601,17 +600,19 @@ describe('section_table_of_contents E2E Tests', () => {
 
         helper.expectSuccessfulResponse(response);
         const content = response.result.content[0];
-        const fullResponse = JSON.parse(content.text);
+        const fullResponse = helper.parseTableOfContentsText(response);
 
         // Should have sections property
-        expect(fullResponse.sections).toBeDefined();
-        expect(Array.isArray(fullResponse.sections)).toBe(true);
+        expect(fullResponse).toBeDefined();
+        expect(Array.isArray(fullResponse)).toBe(true);
 
         // Leaf section has no children, so no subsection_count
-        expect(fullResponse.sections.length).toBe(0);
+        expect(fullResponse.length).toBe(0);
 
-        // Should NOT have instructions property because no sections have hidden subsections
-        expect(fullResponse.instructions).toBeUndefined();
+        // Should have instructions property (always present with new format)
+        const instructions = helper.parseInstructionsText(response);
+        expect(instructions).toBeDefined();
+        expect(instructions).toContain('section ID');
       } finally {
         await helper.stopServer();
       }
@@ -634,18 +635,18 @@ describe('section_table_of_contents E2E Tests', () => {
         helper.expectSuccessfulResponse(response);
 
         const content = response.result.content[0];
-        const fullResponse = JSON.parse(content.text);
+        const fullResponse = helper.parseTableOfContentsText(response);
 
         // Check if any sections have subsection_count
-        const hasHiddenSubsections = fullResponse.sections.some((s: any) => s.subsection_count !== undefined);
+        const hasHiddenSubsections = fullResponse.some((s: any) => s.hiddenSubsections !== undefined);
 
         if (hasHiddenSubsections) {
           // Verify the instruction message contains expected content
-          expect(fullResponse.instructions).toContain('section_table_of_contents');
-          expect(fullResponse.instructions).toContain('subsections');
+          expect(helper.parseInstructionsText(response)).toContain('section_table_of_contents');
+          expect(helper.parseInstructionsText(response)).toContain('subsections');
           // The instruction should guide users on how to explore hidden subsections
-          expect(fullResponse.instructions.toLowerCase()).toContain('explore');
-          expect(fullResponse.instructions.toLowerCase()).toContain('not currently shown');
+          expect(helper.parseInstructionsText(response).toLowerCase()).toContain('explore');
+          expect(helper.parseInstructionsText(response).toLowerCase()).toContain('not currently shown');
         }
       } finally {
         serverProcess.kill();
@@ -665,19 +666,24 @@ describe('section_table_of_contents E2E Tests', () => {
 
         helper.expectSuccessfulResponse(response);
         const content = response.result.content[0];
-        const fullResponse = JSON.parse(content.text);
+        const fullResponse = helper.parseTableOfContentsText(response);
 
         // Should have sections property
-        expect(fullResponse.sections).toBeDefined();
-        expect(Array.isArray(fullResponse.sections)).toBe(true);
-        expect(fullResponse.sections.length).toBeGreaterThan(0);
+        expect(fullResponse).toBeDefined();
+        expect(Array.isArray(fullResponse)).toBe(true);
+        expect(fullResponse.length).toBeGreaterThan(0);
 
         // When all children are visible, subsection_count should be undefined for all sections
-        const anyHaveSubsectionCount = fullResponse.sections.some((s: any) => s.subsection_count !== undefined);
+        const anyHaveSubsectionCount = fullResponse.some((s: any) => s.hiddenSubsections !== undefined);
 
-        // If no sections have subsection_count, instructions should be omitted
+        // Instructions are always present with new format, containing section ID guidance
+        const instructions = helper.parseInstructionsText(response);
+        expect(instructions).toBeDefined();
+        expect(instructions).toContain('section ID');
+
+        // If no sections have hiddenSubsections, instructions should not mention section_table_of_contents
         if (!anyHaveSubsectionCount) {
-          expect(fullResponse.instructions).toBeUndefined();
+          expect(instructions).not.toContain('section_table_of_contents');
         }
       } finally {
         await helper.stopServer();

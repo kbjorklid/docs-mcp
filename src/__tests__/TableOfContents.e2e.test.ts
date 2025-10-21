@@ -42,23 +42,23 @@ describe('table_of_contents E2E Tests', () => {
         const content = helper.parseContentArray(response);
         expect(content[0].type).toBe('text');
 
-        // Parse the JSON content - it's the sections array directly
-        const sections = helper.parseJsonSections(response);
+        // Parse the XML-like table of contents format
+        const sections = helper.parseTableOfContentsText(response);
         expect(Array.isArray(sections)).toBe(true);
         expect(sections.length).toBeGreaterThan(0);
 
         // Check top-level header
-        const topLevelHeader = sections.find((s: any) => s.level === 1);
+        const topLevelHeader = sections.find((s: any) => helper.getSectionLevel(s.id) === 1);
         expect(topLevelHeader).toBeDefined();
-        expect(topLevelHeader.title).toBe('Simple Headers');
-        expect(topLevelHeader.id).toBeDefined();
+        expect(topLevelHeader?.title).toBe('Simple Headers');
+        expect(topLevelHeader?.id).toBeDefined();
 
         // Check second-level headers
-        const level2Headers = sections.filter((s: any) => s.level === 2);
+        const level2Headers = sections.filter((s: any) => helper.getSectionLevel(s.id) === 2);
         expect(level2Headers.length).toBe(3); // Introduction, Main Features, Conclusion
 
         // Check third-level headers
-        const level3Headers = sections.filter((s: any) => s.level === 3);
+        const level3Headers = sections.filter((s: any) => helper.getSectionLevel(s.id) === 3);
         expect(level3Headers.length).toBe(4); // Getting Started, Feature One, Feature Two, Final Thoughts
       } finally {
         await helper.stopServer();
@@ -101,10 +101,10 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Check that we have headers at all levels (1-6)
-        const levels = new Set(sections.map((s: any) => s.level));
+        const levels = new Set(sections.map((s: any) => helper.getSectionLevel(s.id)));
         expect(levels.has(1)).toBe(true);
         expect(levels.has(2)).toBe(true);
         expect(levels.has(3)).toBe(true);
@@ -120,7 +120,7 @@ describe('table_of_contents E2E Tests', () => {
         });
 
         // Check hierarchical structure
-        const topLevelSections = sections.filter((s: any) => s.level === 1);
+        const topLevelSections = sections.filter((s: any) => helper.getSectionLevel(s.id) === 1);
         expect(topLevelSections.length).toBe(1); // Complex Nested Structure (all others are under it)
       } finally {
         serverProcess.kill();
@@ -148,14 +148,12 @@ describe('table_of_contents E2E Tests', () => {
 
         expect(response.error).toBeUndefined();
 
-        const content = response.result.content[0];
-        const parsedResponse = JSON.parse(content.text);
-        const sections = parsedResponse.sections;
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should have the main document header (not counting front matter)
         const mainHeader = sections.find((s: any) => s.title === 'Document with Front Matter');
         expect(mainHeader).toBeDefined();
-        expect(mainHeader.level).toBe(1);
+        expect(helper.getSectionLevel(mainHeader!.id)).toBe(1);
 
         // Should have other sections
         expect(sections.length).toBeGreaterThan(1);
@@ -185,9 +183,7 @@ describe('table_of_contents E2E Tests', () => {
 
         expect(response.error).toBeUndefined();
 
-        const content = response.result.content[0];
-        const parsedResponse = JSON.parse(content.text);
-        const sections = parsedResponse.sections;
+        const sections = helper.parseTableOfContentsText(response);
         expect(Array.isArray(sections)).toBe(true);
         expect(sections.length).toBe(0);
       } finally {
@@ -216,12 +212,10 @@ describe('table_of_contents E2E Tests', () => {
 
         expect(response.error).toBeUndefined();
 
-        const content = response.result.content[0];
-        const parsedResponse = JSON.parse(content.text);
-        const sections = parsedResponse.sections;
+        const sections = helper.parseTableOfContentsText(response);
 
         expect(sections.length).toBe(1);
-        expect(sections[0].level).toBe(1);
+        expect(helper.getSectionLevel(sections[0].id)).toBe(1);
         expect(sections[0].title).toBe('Single Header Document');
         expect(sections[0].id).toBeDefined();
       } finally {
@@ -250,9 +244,7 @@ describe('table_of_contents E2E Tests', () => {
 
         expect(response.error).toBeUndefined();
 
-        const content = response.result.content[0];
-        const parsedResponse = JSON.parse(content.text);
-        const sections = parsedResponse.sections;
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should have headers with various special characters
         const specialHeaders = sections.filter((s: any) =>
@@ -366,22 +358,22 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should limit to 20 headers max
         expect(sections.length).toBeLessThanOrEqual(20);
 
         // Verify we have all 3 level-1 headers (should always be included)
-        const level1 = sections.filter((s: any) => s.level === 1);
+        const level1 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 1);
         expect(level1.length).toBe(3);
 
         // Verify we have level-2 headers included (3 + 15 level-2 headers from file = 18 total)
-        const level2 = sections.filter((s: any) => s.level === 2);
+        const level2 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 2);
         expect(level2.length).toBeGreaterThan(0);
         expect(level2.length).toBeLessThanOrEqual(15);
 
         // Should not have level-3 headers (they would exceed limit)
-        const level3 = sections.filter((s: any) => s.level === 3);
+        const level3 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 3);
         expect(level3.length).toBe(0);
       } finally {
         serverProcess.kill();
@@ -425,15 +417,15 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should have all 30 level-1 headers (always included even though it exceeds limit of 10)
-        const level1 = sections.filter((s: any) => s.level === 1);
+        const level1 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 1);
         expect(level1.length).toBe(30);
 
         // All sections should be level-1
         expect(sections.length).toBe(30);
-        expect(sections.every((s: any) => s.level === 1)).toBe(true);
+        expect(sections.every((s: any) => helper.getSectionLevel(s.id) === 1)).toBe(true);
       } finally {
         serverProcess.kill();
       }
@@ -478,7 +470,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should limit to 8 headers
         expect(sections.length).toBeLessThanOrEqual(8);
@@ -523,13 +515,13 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should limit to 5 headers
         expect(sections.length).toBeLessThanOrEqual(5);
 
         // All should be level-1 (to stay under limit of 5)
-        expect(sections.every((s: any) => s.level === 1)).toBe(true);
+        expect(sections.every((s: any) => helper.getSectionLevel(s.id) === 1)).toBe(true);
       } finally {
         serverProcess.kill();
       }
@@ -576,10 +568,10 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should have max_toc_depth applied first (only level 1-2)
-        const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
+        const hasLevel3OrDeeper = sections.some((s: any) => helper.getSectionLevel(s.id) > 2);
         expect(hasLevel3OrDeeper).toBe(false);
 
         // Then max_headers limit should be applied
@@ -625,7 +617,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should apply the default limit of 25
         expect(sections.length).toBeLessThanOrEqual(25);
@@ -673,7 +665,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should use CLI value of 20, not ENV value of 8
         expect(sections.length).toBeLessThanOrEqual(20);
@@ -723,15 +715,15 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Phase 1 should trigger: base algorithm returns 1 header (< 3)
         // So Phase 1 includes all level-2 subheaders, even though it exceeds limit
         expect(sections.length).toBe(51); // 1 L1 + 50 L2
 
         // Verify structure
-        const level1 = sections.filter((s: any) => s.level === 1);
-        const level2 = sections.filter((s: any) => s.level === 2);
+        const level1 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 1);
+        const level2 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 2);
         expect(level1.length).toBe(1);
         expect(level2.length).toBe(50);
       } finally {
@@ -776,15 +768,15 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Phase 1 should trigger: base algorithm returns 2 headers (< 3)
         // So Phase 1 includes all level-2 subheaders
         expect(sections.length).toBe(62); // 2 L1 + 60 L2
 
         // Verify structure
-        const level1 = sections.filter((s: any) => s.level === 1);
-        const level2 = sections.filter((s: any) => s.level === 2);
+        const level1 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 1);
+        const level2 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 2);
         expect(level1.length).toBe(2);
         expect(level2.length).toBe(60);
       } finally {
@@ -829,13 +821,13 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Phase 1 should NOT trigger: document has < 3 headers total (only 2)
         expect(sections.length).toBe(2);
 
         // Verify structure
-        const level1 = sections.filter((s: any) => s.level === 1);
+        const level1 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 1);
         expect(level1.length).toBe(2);
       } finally {
         serverProcess.kill();
@@ -879,14 +871,14 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Phase 1 should NOT trigger: base algorithm returns 23 headers (>= 3)
         expect(sections.length).toBe(23); // 3 L1 + 20 L2
 
         // Verify structure
-        const level1 = sections.filter((s: any) => s.level === 1);
-        const level2 = sections.filter((s: any) => s.level === 2);
+        const level1 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 1);
+        const level2 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 2);
         expect(level1.length).toBe(3);
         expect(level2.length).toBe(20);
       } finally {
@@ -933,7 +925,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Base algorithm returns 18 headers (3 L1 + 15 L2)
         // Phase 2 fills remaining 7 slots with L3 headers from largest sections
@@ -941,7 +933,7 @@ describe('table_of_contents E2E Tests', () => {
         expect(sections.length).toBeLessThanOrEqual(25);
 
         // Verify we have level-3 headers included
-        const level3 = sections.filter((s: any) => s.level === 3);
+        const level3 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 3);
         expect(level3.length).toBeGreaterThan(0);
       } finally {
         serverProcess.kill();
@@ -985,7 +977,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Phase 2 should not add partial groups of children
         // Base algorithm should give 21 headers, Phase 2 might add more but must respect limits
@@ -993,7 +985,7 @@ describe('table_of_contents E2E Tests', () => {
 
         // Verify that if a section's children are included, all of them are
         // (this is a general property we can validate)
-        const level3Sections = sections.filter((s: any) => s.level === 3);
+        const level3Sections = sections.filter((s: any) => helper.getSectionLevel(s.id) === 3);
         if (level3Sections.length > 0) {
           // If we have L3 headers, they should all belong to complete parent groups
           const parentIds = new Set(level3Sections.map((s: any) => s.id.substring(0, s.id.lastIndexOf('/'))));
@@ -1041,7 +1033,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Base algorithm returns 18 headers
         // Phase 2 should prioritize Section C (largest char count) for its children
@@ -1049,7 +1041,7 @@ describe('table_of_contents E2E Tests', () => {
         expect(sections.length).toBeLessThanOrEqual(25);
 
         // Verify we have some level-3 headers
-        const level3 = sections.filter((s: any) => s.level === 3);
+        const level3 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 3);
         expect(level3.length).toBeGreaterThan(0);
       } finally {
         serverProcess.kill();
@@ -1093,7 +1085,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Base algorithm: 24 headers, Phase 2 can add 1 more to reach exactly 25
         expect(sections.length).toBeLessThanOrEqual(25);
@@ -1142,12 +1134,12 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should return all level-1 headers (no deeper levels to include)
         expect(sections.length).toBe(2);
 
-        const level1 = sections.filter((s: any) => s.level === 1);
+        const level1 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 1);
         expect(level1.length).toBe(2);
       } finally {
         serverProcess.kill();
@@ -1191,13 +1183,13 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // All 18 sections fit within limit, Phase 2 has nothing to add
         expect(sections.length).toBe(18); // 3 L1 + 15 L2
 
-        const level1 = sections.filter((s: any) => s.level === 1);
-        const level2 = sections.filter((s: any) => s.level === 2);
+        const level1 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 1);
+        const level2 = sections.filter((s: any) => helper.getSectionLevel(s.id) === 2);
         expect(level1.length).toBe(3);
         expect(level2.length).toBe(15);
       } finally {
@@ -1242,7 +1234,7 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should respect the limit
         expect(sections.length).toBeLessThanOrEqual(25);
@@ -1290,14 +1282,14 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should only have headers up to level 2
-        const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
+        const hasLevel3OrDeeper = sections.some((s: any) => helper.getSectionLevel(s.id) > 2);
         expect(hasLevel3OrDeeper).toBe(false);
 
         // Should still have level 1 and 2 headers
-        const hasLevel1Or2 = sections.some((s: any) => s.level <= 2);
+        const hasLevel1Or2 = sections.some((s: any) => helper.getSectionLevel(s.id) <= 2);
         expect(hasLevel1Or2).toBe(true);
       } finally {
         serverProcess.kill();
@@ -1343,10 +1335,10 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should only have headers up to level 2
-        const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
+        const hasLevel3OrDeeper = sections.some((s: any) => helper.getSectionLevel(s.id) > 2);
         expect(hasLevel3OrDeeper).toBe(false);
       } finally {
         serverProcess.kill();
@@ -1389,16 +1381,16 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should have headers up to level 3 (default)
-        const levels = new Set(sections.map((s: any) => s.level));
+        const levels = new Set(sections.map((s: any) => helper.getSectionLevel(s.id)));
         expect(levels.has(1)).toBe(true);
         expect(levels.has(2)).toBe(true);
         expect(levels.has(3)).toBe(true);
 
         // Should NOT have level 4 or deeper
-        const hasLevel4OrDeeper = sections.some((s: any) => s.level > 3);
+        const hasLevel4OrDeeper = sections.some((s: any) => helper.getSectionLevel(s.id) > 3);
         expect(hasLevel4OrDeeper).toBe(false);
       } finally {
         serverProcess.kill();
@@ -1444,14 +1436,14 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should use CLI value of 4, not ENV value of 2
-        const levels = new Set(sections.map((s: any) => s.level));
+        const levels = new Set(sections.map((s: any) => helper.getSectionLevel(s.id)));
         expect(levels.has(4)).toBe(true);
 
         // Should NOT have level 5 or deeper
-        const hasLevel5OrDeeper = sections.some((s: any) => s.level > 4);
+        const hasLevel5OrDeeper = sections.some((s: any) => helper.getSectionLevel(s.id) > 4);
         expect(hasLevel5OrDeeper).toBe(false);
       } finally {
         serverProcess.kill();
@@ -1470,25 +1462,25 @@ describe('table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Find level-1 section (should have 3 level-2 children: 1.1, 1.2, 1.3)
         // When all children are visible, subsection_count should be undefined (not redundant)
-        const level1 = sections.find((s: any) => s.level === 1 && s.id === '1');
+        const level1 = sections.find((s: any) => helper.getSectionLevel(s.id) === 1 && s.id === '1');
         expect(level1).toBeDefined();
-        expect(level1.subsection_count).toBeUndefined();
+        expect(level1?.hiddenSubsections).toBeUndefined();
 
         // Find level-2 section 1.2 (should have 2 level-3 children: 1.2.1, 1.2.2)
         // When all children are visible, subsection_count should be undefined (not redundant)
-        const level2Section = sections.find((s: any) => s.level === 2 && s.id === '1.2');
+        const level2Section = sections.find((s: any) => helper.getSectionLevel(s.id) === 2 && s.id === '1.2');
         expect(level2Section).toBeDefined();
-        expect(level2Section.subsection_count).toBeUndefined();
+        expect(level2Section?.hiddenSubsections).toBeUndefined();
 
         // Find level-1 section 2 (should have 1 level-2 child: 2.1)
         // When all children are visible, subsection_count should be undefined (not redundant)
-        const level1Second = sections.find((s: any) => s.level === 1 && s.id === '2');
+        const level1Second = sections.find((s: any) => helper.getSectionLevel(s.id) === 1 && s.id === '2');
         expect(level1Second).toBeDefined();
-        expect(level1Second.subsection_count).toBeUndefined();
+        expect(level1Second?.hiddenSubsections).toBeUndefined();
       } finally {
         await helper.stopServer();
       }
@@ -1504,15 +1496,15 @@ describe('table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Leaf sections should not have subsection_count
-        const leafSection = sections.find((s: any) => s.level === 3);
+        const leafSection = sections.find((s: any) => helper.getSectionLevel(s.id) === 3);
         expect(leafSection).toBeDefined();
-        expect(leafSection.subsection_count).toBeUndefined();
+        expect(leafSection?.hiddenSubsections).toBeUndefined();
 
         // Parent level 1 should have subsection_count if it has children
-        const parentSection = sections.find((s: any) => s.level === 1);
+        const parentSection = sections.find((s: any) => helper.getSectionLevel(s.id) === 1);
         expect(parentSection).toBeDefined();
       } finally {
         await helper.stopServer();
@@ -1529,19 +1521,19 @@ describe('table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Level-1 section should only count level-2 children (1.1 and 1.2), not level-3 and 4 grandchildren/great-grandchildren
         // When all children are visible, subsection_count should be undefined (not redundant)
-        const level1 = sections.find((s: any) => s.level === 1);
+        const level1 = sections.find((s: any) => helper.getSectionLevel(s.id) === 1);
         expect(level1).toBeDefined();
-        expect(level1.subsection_count).toBeUndefined(); // All 2 direct level-2 children are visible
+        expect(level1?.hiddenSubsections).toBeUndefined(); // All 2 direct level-2 children are visible
 
         // Level-2 section 1/2 should only count level-3 children (just 1.2.1)
         // When all children are visible, subsection_count should be undefined (not redundant)
         const level2 = sections.find((s: any) => s.id === '1.2');
         expect(level2).toBeDefined();
-        expect(level2.subsection_count).toBeUndefined(); // All 1 direct level-3 child is visible
+        expect(level2?.hiddenSubsections).toBeUndefined(); // All 1 direct level-3 child is visible
       } finally {
         await helper.stopServer();
       }
@@ -1583,21 +1575,21 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // With max_toc_depth = 2, level-3 sections should be filtered out
-        const hasLevel3OrDeeper = sections.some((s: any) => s.level > 2);
+        const hasLevel3OrDeeper = sections.some((s: any) => helper.getSectionLevel(s.id) > 2);
         expect(hasLevel3OrDeeper).toBe(false);
 
         // Level-2 sections with hidden children should show subsection_count
         const section11 = sections.find((s: any) => s.id === '1.1');
         expect(section11).toBeDefined();
-        expect(section11.subsection_count).toBe(1); // Has 1 hidden level-3 child
+        expect(section11?.hiddenSubsections).toBe(1); // Has 1 hidden level-3 child
 
         // Level-2 sections without children should not show subsection_count
         const section21 = sections.find((s: any) => s.id === '2.1');
         expect(section21).toBeDefined();
-        expect(section21.subsection_count).toBeUndefined(); // No children at all
+        expect(section21?.hiddenSubsections).toBeUndefined(); // No children at all
       } finally {
         serverProcess.kill();
       }
@@ -1640,36 +1632,36 @@ describe('table_of_contents E2E Tests', () => {
         const response = await helper.sendRequestToServer(serverProcess, toolRequest);
         expect(response.error).toBeUndefined();
 
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Should only have 5 level-1 sections
         expect(sections.length).toBe(5);
-        expect(sections.every((s: any) => s.level === 1)).toBe(true);
+        expect(sections.every((s: any) => helper.getSectionLevel(s.id) === 1)).toBe(true);
 
         // Section One: no children at all
         const section1 = sections.find((s: any) => s.id === '1');
         expect(section1).toBeDefined();
-        expect(section1.subsection_count).toBeUndefined(); // No children
+        expect(section1?.hiddenSubsections).toBeUndefined(); // No children
 
         // Section Two: has 2 hidden children
         const section2 = sections.find((s: any) => s.id === '2');
         expect(section2).toBeDefined();
-        expect(section2.subsection_count).toBe(2); // Has 2 hidden level-2 children
+        expect(section2?.hiddenSubsections).toBe(2); // Has 2 hidden level-2 children
 
         // Section Three: has 1 hidden child (and that child has its own child, but we only count direct children)
         const section3 = sections.find((s: any) => s.id === '3');
         expect(section3).toBeDefined();
-        expect(section3.subsection_count).toBe(1); // Has 1 hidden level-2 child
+        expect(section3?.hiddenSubsections).toBe(1); // Has 1 hidden level-2 child
 
         // Section Four: no children at all
         const section4 = sections.find((s: any) => s.id === '4');
         expect(section4).toBeDefined();
-        expect(section4.subsection_count).toBeUndefined(); // No children
+        expect(section4?.hiddenSubsections).toBeUndefined(); // No children
 
         // Section Five: has 1 hidden child
         const section5 = sections.find((s: any) => s.id === '5');
         expect(section5).toBeDefined();
-        expect(section5.subsection_count).toBe(1); // Has 1 hidden level-2 child
+        expect(section5?.hiddenSubsections).toBe(1); // Has 1 hidden level-2 child
       } finally {
         serverProcess.kill();
       }
@@ -1687,15 +1679,18 @@ describe('table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const content = response.result.content[0];
-        const parsedResponse = JSON.parse(content.text);
+        const text = response.result.content[0].text;
 
-        // Should have sections property
-        expect(parsedResponse.sections).toBeDefined();
-        expect(Array.isArray(parsedResponse.sections)).toBe(true);
+        // Should have TableOfContents section
+        const tocMatch = text.match(/<TableOfContents>([\s\S]*?)<\/TableOfContents>/);
+        expect(tocMatch).toBeDefined();
+        const sections = helper.parseTableOfContentsText(response);
+        expect(Array.isArray(sections)).toBe(true);
 
-        // Should NOT have instructions property because all sections are visible
-        expect(parsedResponse.instructions).toBeUndefined();
+        // Should have Instructions section (always present)
+        const instructions = helper.parseInstructionsText(response);
+        expect(instructions).toBeDefined();
+        expect(instructions.length).toBeGreaterThan(0);
       } finally {
         await helper.stopServer();
       }
@@ -1733,10 +1728,10 @@ describe('table_of_contents E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Find deeply nested sections (level 5+)
-        const deepSections = sections.filter((s: any) => s.level >= 5);
+        const deepSections = sections.filter((s: any) => helper.getSectionLevel(s.id) >= 5);
         expect(deepSections.length).toBeGreaterThan(0);
 
         // Verify section IDs follow the pattern: 1.2.3.4.5 (or deeper)
@@ -1762,7 +1757,7 @@ describe('table_of_contents E2E Tests', () => {
       try {
         const response = await helper.callTool('table_of_contents', { fileId: 'f1' });
         helper.expectSuccessfulResponse(response);
-        const sections = helper.parseJsonSections(response);
+        const sections = helper.parseTableOfContentsText(response);
 
         // Verify all section IDs follow the numeric pattern
         sections.forEach((section: any) => {
@@ -1771,7 +1766,7 @@ describe('table_of_contents E2E Tests', () => {
 
           // Verify the section ID parts are sequential and valid
           const parts = section.id.split('.');
-          expect(parts.length).toBe(section.level);
+          expect(parts.length).toBe(helper.getSectionLevel(section.id));
 
           // Each part should be a positive integer
           parts.forEach((part: string) => {

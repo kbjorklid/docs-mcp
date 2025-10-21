@@ -1,7 +1,7 @@
 import { Section, Configuration, TableOfContentsResponse, FileId, parseFileId } from '../types';
 import { MarkdownParser } from '../MarkdownParser';
 import { FileDiscoveryService } from '../services';
-import { createSuccessResponse, createErrorResponse, parseToolError, getErrorMessage, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS } from '../utils';
+import { createSuccessResponseRawText, createErrorResponse, parseToolError, getErrorMessage, hasHiddenSubsections, INSTRUCTIONS_FOR_HIDDEN_SUBSECTIONS, formatTableOfContentsAsXml } from '../utils';
 import { ERROR_MESSAGES, MINIMUM_VIABLE_HEADER_COUNT, DEFAULT_MAX_TOC_DEPTH } from '../constants';
 
 export class TableOfContents {
@@ -51,7 +51,8 @@ export class TableOfContents {
 
     try {
       const result = await this.getTableOfContents(fileId);
-      return createSuccessResponse(result);
+      const formattedResult = formatTableOfContentsAsXml(result);
+      return createSuccessResponseRawText(formattedResult);
     } catch (error) {
       const parsedError = parseToolError(error);
       return createErrorResponse(getErrorMessage(parsedError));

@@ -296,6 +296,67 @@ export class E2ETestHelper {
     return parsed;
   }
 
+  // Parse XML-like table of contents format
+  parseTableOfContentsText(response: JSONRPCResponse): Array<{ id: string; title: string; hiddenSubsections?: number }> {
+    const text = this.parseTextContent(response);
+
+    // Extract content between <TableOfContents> tags
+    const tocMatch = text.match(/<TableOfContents>([\s\S]*?)<\/TableOfContents>/);
+    if (!tocMatch) {
+      throw new Error('Could not find <TableOfContents> section in response');
+    }
+
+    const tocContent = tocMatch[1];
+    const lines = tocContent.trim().split('\n');
+
+    return lines
+      .map(line => this.parseTocLine(line))
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  }
+
+  // Parse a single TOC line: "id title {hiddenSubsections: n}"
+  private parseTocLine(line: string): { id: string; title: string; hiddenSubsections?: number } | null {
+    // Skip empty lines
+    if (!line.trim()) {
+      return null;
+    }
+
+    const hiddenMatch = line.match(/\{hiddenSubsections:\s*(\d+)\}/);
+    const hiddenSubsections = hiddenMatch ? parseInt(hiddenMatch[1], 10) : undefined;
+
+    // Remove the hidden subsections part to parse id and title
+    let cleanLine = line.replace(/\s*\{hiddenSubsections:\s*\d+\}$/, '');
+
+    // Match "id title" format
+    const match = cleanLine.match(/^([\d.]+)\s+(.+)$/);
+    if (!match) {
+      throw new Error(`Could not parse TOC line: "${line}"`);
+    }
+
+    const id = match[1];
+    const title = match[2];
+
+    return { id, title, ...(hiddenSubsections !== undefined && { hiddenSubsections }) };
+  }
+
+  // Get the level of a section from its ID (number of dots + 1)
+  getSectionLevel(sectionId: string): number {
+    return (sectionId.match(/\./g) || []).length + 1;
+  }
+
+  // Parse instructions from XML-like format
+  parseInstructionsText(response: JSONRPCResponse): string {
+    const text = this.parseTextContent(response);
+
+    // Extract content between <Instructions> tags
+    const instrMatch = text.match(/<Instructions>([\s\S]*?)<\/Instructions>/);
+    if (!instrMatch) {
+      throw new Error('Could not find <Instructions> section in response');
+    }
+
+    return instrMatch[1].trim();
+  }
+
   // Error response parsing
   parseErrorContent(response: JSONRPCResponse): any {
     this.expectNoError(response);

@@ -56,12 +56,11 @@ describe('Configuration Integration E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(tocResponse);
-        const tocData = helper.parseJsonContent(tocResponse);
-        const sections = tocData.sections;
+        const sections = helper.parseTableOfContentsText(tocResponse);
         expect(Array.isArray(sections)).toBe(true);
 
         // Verify default max toc depth is respected - should only have level 1-3 headers
-        const sectionLevels = sections.map((section: any) => section.level);
+        const sectionLevels = sections.map((section: any) => helper.getSectionLevel(section.id));
         expect(sectionLevels.every((level: number) => level <= 3)).toBe(true);
 
         // Step 3: Read specific sections
@@ -109,8 +108,7 @@ describe('Configuration Integration E2E Tests', () => {
         });
 
         helper.expectSuccessfulResponse(tocResponse);
-        const tocData = helper.parseJsonContent(tocResponse);
-        const sections = tocData.sections;
+        const sections = helper.parseTableOfContentsText(tocResponse);
         expect(Array.isArray(sections)).toBe(true);
         expect(sections.length).toBeGreaterThan(0);
 
@@ -186,8 +184,7 @@ describe('Configuration Integration E2E Tests', () => {
             expect(files.length).toBeGreaterThan(0);
             expect(files.some((file: any) => file.filename === 'user-guide.md')).toBe(true);
           } else if (toolName === 'table_of_contents') {
-            const tocData = helper.parseJsonContent(toolResponse);
-        const sections = tocData.sections;
+            const sections = helper.parseTableOfContentsText(toolResponse);
             expect(Array.isArray(sections)).toBe(true);
             expect(sections.length).toBeGreaterThan(0);
           } else if (toolName === 'search') {
@@ -200,8 +197,7 @@ describe('Configuration Integration E2E Tests', () => {
             const tocResponse = await helper.callTool('table_of_contents', {
               fileId: 'f1'
             });
-            const tocData = helper.parseJsonContent(tocResponse);
-        const sections = tocData.sections;
+            const sections = helper.parseTableOfContentsText(tocResponse);
             if (sections.length > 0) {
               const readResponse = await helper.callTool('read_sections', {
                 fileId: 'f1',
