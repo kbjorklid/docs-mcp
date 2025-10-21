@@ -83,25 +83,49 @@ Provides a structured table of contents for a markdown file, showing section hie
 
 **Response Format:**
 
-The tool returns a response object with the following structure:
-```json
-{
-  "sections": [
-    {
-      "id": "1",
-      "title": "Section Title",
-      "level": 1,
-      "character_count": 1234,
-      "subsection_count": 3
-    }
-  ],
-  "instructions": "To explore deeper subsections (under a specific subsection that are not currently shown (the \"subsection_count\" is > 0), use the section_table_of_contents tool with the section IDs of interest.)"
-}
+The tool returns XML-like text content wrapped in structured tags. The response contains both the table of contents and usage instructions.
+
+**Example Response:**
+```xml
+<TableOfContents>
+1 Getting Started
+1.1 Installation
+1.2 Configuration
+1.3 Basic Usage
+2 Advanced Topics
+2.1 Customization
+2.2 Performance
+2.2.1 Caching
+2.2.2 Optimization
+3 API Reference
+3.1 Endpoints
+3.2 Authentication
+</TableOfContents>
+<Instructions>
+The number before each section title is the section ID (e.g., "1.1.1"). Use these section IDs with the read_sections tool to read specific sections. When you see sections marked with {hiddenSubsections: N}, it indicates that N child sections are not shown due to filtering limits.
+</Instructions>
 ```
 
-Section IDs use a dot-separated format (e.g., "1.2.3") for nested sections. The first number represents the first-level header, the second number represents the second-level header under that first level, and so on.
+**Response Structure:**
+- **TableOfContents**: Contains the formatted list of sections with their IDs and titles
+- **Instructions**: Usage instructions explaining how to use section IDs and interpret hidden subsections
 
-The `--max-toc-depth` and `--max-headers` command line parameters control what is shown in the table of contents.
+**Section Format:**
+- Each line shows: `ID Title {hiddenSubsections: N}` (optional)
+- **Section ID**: Dot-separated format (e.g., "1.2.3") representing hierarchy level
+- **Title**: The actual section header text
+- **hiddenSubsections**: Only appears when child sections are hidden due to `--max-toc-depth` or `--max-headers` limits
+
+**Section Level Calculation:**
+Section level is determined by the section ID format: `(number of dots in ID) + 1`
+- "1" = Level 1 (main section)
+- "1.1" = Level 2 (subsection)
+- "1.2.3" = Level 3 (subsubsection)
+
+**Filtering Parameters:**
+The `--max-toc-depth` and `--max-headers` command line parameters control what is shown:
+- `--max-toc-depth`: Limits header levels shown (default: 3, shows #, ##, ###)
+- `--max-headers`: Limits total number of headers returned (default: 25)
 
 
 ### section_table_of_contents
