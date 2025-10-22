@@ -30,10 +30,9 @@ export class SectionTableOfContents {
       name: 'section_table_of_contents',
       description:
         'Provides a structured table of contents for the subsections within specified parent sections. ' +
-        'Unlike table_of_contents which starts from the file root, this tool returns only the direct children ' +
-        'of the specified section IDs. Use the table_of_contents tool to see available sections and their IDs. ' +
-        'The --max-headers option is respected for the results. ' +
-        'Note: The --max-toc-depth option is NOT applied to this tool (all subsection levels are returned).',
+        'Unlike table_of_contents which starts from the file root, this tool returns nested subsections ' +
+        'up to the configured max-toc-depth starting from the specified section IDs. Use the table_of_contents ' +
+        'tool to see available sections and their IDs. The --max-headers and --max-toc-depth options are both respected.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -122,14 +121,13 @@ export class SectionTableOfContents {
       throw createSectionNotFoundError(fileMapping.filename, missingSections);
     }
 
-    // Get direct children of all requested sections
-    let subsections = this.getDirectChildren(sections, sectionIds);
+    // Get nested children of all requested sections respecting maxTocDepth
+    let subsections = this.getNestedChildrenUpToDepth(sections, sectionIds);
 
     // Remove duplicates that may occur from overlapping parent hierarchies
     subsections = this.deduplicateSections(subsections);
 
     // Apply max headers limit from configuration if set
-    // NOTE: maxTocDepth is NOT applied (per requirements)
     if (this.config.maxHeaders !== undefined) {
       subsections = this.applyMaxHeadersLimit(subsections, this.config.maxHeaders);
     }
@@ -155,30 +153,89 @@ export class SectionTableOfContents {
   }
 
   /**
-   * Get direct children of specified parent sections.
-   * Each parent may have multiple direct children, and multiple parents may be queried simultaneously.
+   * Get nested children of specified parent sections up to maxTocDepth.
+   * Each parent may have multiple nested children, and multiple parents may be queried simultaneously.
+   * Respects maxTocDepth configuration to limit how deep the nested hierarchy goes.
    * Maintains order of sections as they appear in the document.
    *
    * @param allSections - All sections from the document
    * @param parentSectionIds - IDs of parent sections to retrieve children for
-   * @returns Array of direct children from all parent sections, deduplicated
+   * @returns Array of nested children from all parent sections, deduplicated
    */
-  private getDirectChildren(allSections: Section[], parentSectionIds: SectionId[]): Section[] {
+  private getNestedChildrenUpToDepth(allSections: Section[], parentSectionIds: SectionId[]): Section[] {
     const result: Section[] = [];
     const seenIds = new Set<string>();
 
+    // Calculate the maximum depth we should include
+    const maxTocDepth = this.config.maxTocDepth || 3; // Default to 3 if not set
+    const maxAllowedLevel = this.calculateMaxAllowedLevel(parentSectionIds, maxTocDepth);
+
     for (const parentId of parentSectionIds) {
-      for (const section of allSections) {
-        // Check if this section is a direct child of the current parent
-        const childParentId = MarkdownParser.getParentSectionId(section.id);
-        if (childParentId === parentId && !seenIds.has(section.id)) {
-          result.push(section);
-          seenIds.add(section.id);
-        }
-      }
+      const parentSection = allSections.find(s => s.id === parentId);
+      if (!parentSection) continue;
+
+      // Get all nested children up to the allowed depth
+      this.collectNestedChildren(allSections, parentSection, parentSection.level, maxAllowedLevel, result, seenIds);
     }
 
     return result;
+  }
+
+  /**
+   * Calculate the maximum allowed level based on parent levels and maxTocDepth
+   *
+   * @param parentSectionIds - IDs of parent sections
+   * @param maxTocDepth - Maximum depth to include
+   * @returns Maximum level number that should be included
+   */
+  private calculateMaxAllowedLevel(parentSectionIds: SectionId[], maxTocDepth: number): number {
+    // Find the minimum level among all parent sections
+    const minParentLevel = Math.min(...parentSectionIds.map(id => {
+      // Extract level from ID (e.g., "1.2.3" -> level 3)
+      const parts = id.split('.');
+      return parts.length;
+    }));
+
+    // Calculate max allowed level: parent level + maxTocDepth
+    return minParentLevel + maxTocDepth;
+  }
+
+  /**
+   * Recursively collect nested children up to the allowed level
+   *
+   * @param allSections - All sections from the document
+   * @param parentSection - Current parent section
+   * @param currentLevel - Level of the current parent
+   * @param maxAllowedLevel - Maximum level allowed
+   * @param result - Array to collect results in
+   * @param seenIds - Set to track already included sections
+   */
+  private collectNestedChildren(
+    allSections: Section[],
+    parentSection: Section,
+    currentLevel: number,
+    maxAllowedLevel: number,
+    result: Section[],
+    seenIds: Set<string>
+  ): void {
+    // If we've reached the maximum allowed depth, stop collecting
+    if (currentLevel >= maxAllowedLevel) {
+      return;
+    }
+
+    // Find direct children of this parent
+    for (const section of allSections) {
+      const childParentId = MarkdownParser.getParentSectionId(section.id);
+
+      // Check if this section is a direct child of the current parent and hasn't been added yet
+      if (childParentId === parentSection.id && !seenIds.has(section.id)) {
+        result.push(section);
+        seenIds.add(section.id);
+
+        // Recursively collect children of this child (up to max allowed depth)
+        this.collectNestedChildren(allSections, section, section.level, maxAllowedLevel, result, seenIds);
+      }
+    }
   }
 
   /**

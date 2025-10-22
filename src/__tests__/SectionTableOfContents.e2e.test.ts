@@ -32,16 +32,20 @@ describe('section_table_of_contents E2E Tests', () => {
   });
 
   describe('section_table_of_contents tool functionality', () => {
-    it('should return direct children of a single section', async () => {
+    it('should return direct children of a single section when max_toc_depth=1', async () => {
       const helper = new E2ETestHelper('SectionTableOfContents', 'should-return-direct-children-of-single-section');
-      await helper.startServer();
+      const docsPath = helper.getTestDocsPath();
+
+      // Test with max_toc_depth=1 to get only direct children
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-toc-depth', '1']);
 
       try {
-        const response = await helper.callTool('section_table_of_contents', {
+        const request = helper.createToolCallRequest('section_table_of_contents', {
           fileId: 'f1',
           section_ids: ['1']
         });
 
+        const response = await helper.sendRequestToServer(serverProcess, request);
         helper.expectSuccessfulResponse(response);
         const sections = helper.parseTableOfContentsText(response);
         expect(Array.isArray(sections)).toBe(true);
@@ -54,7 +58,7 @@ describe('section_table_of_contents E2E Tests', () => {
           expect(helper.getSectionLevel(section.id)).toBe(2);
         });
       } finally {
-        await helper.stopServer();
+        serverProcess.kill();
       }
     });
 
@@ -102,26 +106,30 @@ describe('section_table_of_contents E2E Tests', () => {
       }
     });
 
-    it('should not include grandchildren, only direct children', async () => {
+    it('should not include grandchildren when max_toc_depth=1', async () => {
       const helper = new E2ETestHelper('SectionTableOfContents', 'should-not-include-grandchildren');
-      await helper.startServer();
+      const docsPath = helper.getTestDocsPath();
+
+      // Test with max_toc_depth=1 to ensure no grandchildren are included
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-toc-depth', '1']);
 
       try {
-        const response = await helper.callTool('section_table_of_contents', {
+        const request = helper.createToolCallRequest('section_table_of_contents', {
           fileId: 'f1',
           section_ids: ['1']
         });
 
+        const response = await helper.sendRequestToServer(serverProcess, request);
         helper.expectSuccessfulResponse(response);
         const sections = helper.parseTableOfContentsText(response);
 
         // All returned sections should be at level 2 (direct children of level 1)
-        // No level 3+ sections should be included
+        // No level 3+ sections should be included when max_toc_depth=1
         sections.forEach((section: any) => {
           expect(helper.getSectionLevel(section.id)).toBe(2);
         });
       } finally {
-        await helper.stopServer();
+        serverProcess.kill();
       }
     });
 
@@ -341,13 +349,13 @@ describe('section_table_of_contents E2E Tests', () => {
     });
   });
 
-  describe('max_toc_depth configuration (should NOT be applied)', () => {
-    it('should NOT respect max_toc_depth when returning subsections', async () => {
-      const helper = new E2ETestHelper('SectionTableOfContents', 'should-not-respect-max-toc-depth');
+  describe('max_toc_depth configuration', () => {
+    it('should respect max_toc_depth when returning subsections', async () => {
+      const helper = new E2ETestHelper('SectionTableOfContents', 'should-respect-max-toc-depth');
       const docsPath = helper.getTestDocsPath();
 
-      // Set max_toc_depth to 2, but we should still get all depth levels
-      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-toc-depth', '2']);
+      // Set max_toc_depth to 1, should only return direct children
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-toc-depth', '1']);
 
       try {
         const request = helper.createToolCallRequest('section_table_of_contents', {
@@ -359,33 +367,45 @@ describe('section_table_of_contents E2E Tests', () => {
         helper.expectSuccessfulResponse(response);
 
         const sections = helper.parseTableOfContentsText(response);
-        // max_toc_depth should NOT be applied, so we should get all direct children
-        // regardless of their depth in the document
+        // With max_toc_depth=1, should only return direct children (level 2 sections)
         expect(sections.length).toBeGreaterThan(0);
+
+        // All sections should be at level 2 (direct children)
+        sections.forEach((section: any) => {
+          expect(helper.getSectionLevel(section.id)).toBe(2);
+        });
       } finally {
         serverProcess.kill();
       }
     });
 
-    it('should return deep subsections even when max_toc_depth is set to shallow value', async () => {
+    it('should return deep subsections when max_toc_depth allows deeper nesting', async () => {
       const helper = new E2ETestHelper('SectionTableOfContents', 'should-return-deep-subsections');
       const docsPath = helper.getTestDocsPath();
 
-      // Set max_toc_depth to 1, but should still return deeper children
-      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-toc-depth', '1']);
+      // Set max_toc_depth to 3, should return deeper children
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-toc-depth', '3']);
 
       try {
         const request = helper.createToolCallRequest('section_table_of_contents', {
           fileId: 'f1',
-          section_ids: ['1.1'] // Get children of a level-2 section
+          section_ids: ['1'] // Get children of level-1 section
         });
 
         const response = await helper.sendRequestToServer(serverProcess, request);
         helper.expectSuccessfulResponse(response);
 
         const sections = helper.parseTableOfContentsText(response);
-        // Should still return children, even though max_toc_depth=1 would normally hide them
+        // Should return direct children (level 2) and their children (level 3)
         expect(Array.isArray(sections)).toBe(true);
+        expect(sections.length).toBeGreaterThan(0);
+
+        // Check for different levels
+        const level2Sections = sections.filter((s: any) => helper.getSectionLevel(s.id) === 2);
+        const level3Sections = sections.filter((s: any) => helper.getSectionLevel(s.id) === 3);
+
+        expect(level2Sections.length).toBeGreaterThan(0);
+        expect(level3Sections.length).toBeGreaterThan(0);
       } finally {
         serverProcess.kill();
       }
@@ -470,15 +490,18 @@ describe('section_table_of_contents E2E Tests', () => {
   });
 
   describe('integration with table_of_contents tool', () => {
-    it('should work with section IDs from table_of_contents tool', async () => {
+    it('should work with section IDs from table_of_contents tool and return nested subsections', async () => {
       const helper = new E2ETestHelper('SectionTableOfContents', 'should-work-with-toc-section-ids');
-      await helper.startServer();
+      const docsPath = helper.getTestDocsPath();
+
+      // Test with default max_toc_depth=3 to get nested subsections
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath]);
 
       try {
         // First get the table of contents
-        const tocResponse = await helper.callTool('table_of_contents', {
+        const tocResponse = await helper.sendRequestToServer(serverProcess, helper.createToolCallRequest('table_of_contents', {
           fileId: 'f1'
-        });
+        }));
 
         helper.expectSuccessfulResponse(tocResponse);
         const tocSections = helper.parseTableOfContentsText(tocResponse);
@@ -487,22 +510,108 @@ describe('section_table_of_contents E2E Tests', () => {
         const level1Section = tocSections.find((s: any) => helper.getSectionLevel(s.id) === 1);
         expect(level1Section).toBeDefined();
 
-        // Now use section_table_of_contents to get its children
-        const response = await helper.callTool('section_table_of_contents', {
+        // Now use section_table_of_contents to get its nested children
+        const response = await helper.sendRequestToServer(serverProcess, helper.createToolCallRequest('section_table_of_contents', {
           fileId: 'f1',
           section_ids: [level1Section!.id]
-        });
+        }));
 
         helper.expectSuccessfulResponse(response);
         const children = helper.parseTableOfContentsText(response);
 
-        // All children should be direct descendants of the parent
+        // With max_toc_depth=3, children can be multiple levels deeper than parent
         const parentLevel = helper.getSectionLevel(level1Section!.id);
-        children.forEach((child: any) => {
-          expect(helper.getSectionLevel(child.id)).toBe(parentLevel + 1);
+        expect(parentLevel).toBe(1); // Level-1 section
+
+        // Children should be at levels 2 and 3 (nested up to depth 3 from parent level 1)
+        const level2Children = children.filter((child: any) => helper.getSectionLevel(child.id) === 2);
+        const level3Children = children.filter((child: any) => helper.getSectionLevel(child.id) === 3);
+
+        // Should have at least some children
+        expect(children.length).toBeGreaterThan(0);
+
+        // Should have both direct children and nested children
+        expect(level2Children.length).toBeGreaterThan(0);
+        expect(level3Children.length).toBeGreaterThan(0);
+      } finally {
+        serverProcess.kill();
+      }
+    });
+
+    it('should respect max_toc_depth and return nested subsections based on depth from requested section', async () => {
+      const helper = new E2ETestHelper('SectionTableOfContents', 'should-respect-max-toc-depth-with-nested-subsections');
+      const docsPath = helper.getTestDocsPath();
+
+      // Set max_toc_depth to 2 starting from the requested section
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-toc-depth', '2']);
+
+      try {
+        // Request children of Section One (1), should return 1.1 and 1.2, and their children (depth = 2 from 1)
+        const response = await helper.sendRequestToServer(serverProcess, helper.createToolCallRequest('section_table_of_contents', {
+          fileId: 'f1',
+          section_ids: ['1']
+        }));
+
+        helper.expectSuccessfulResponse(response);
+        const sections = helper.parseTableOfContentsText(response);
+
+        // Should include direct children (1.1, 1.2) AND their children (1.1.1, 1.1.2, 1.2.1, etc.)
+        // Because max_toc_depth = 2 means 2 levels deep from section '1'
+        expect(sections.length).toBeGreaterThan(0);
+
+        // Check that we have sections at different levels
+        const level2Sections = sections.filter((s: any) => helper.getSectionLevel(s.id) === 2);
+        const level3Sections = sections.filter((s: any) => helper.getSectionLevel(s.id) === 3);
+
+        // Should have both direct children (level 2) and their children (level 3)
+        expect(level2Sections.length).toBeGreaterThan(0);
+        expect(level3Sections.length).toBeGreaterThan(0);
+
+        // Verify IDs are correct
+        level2Sections.forEach((s: any) => {
+          expect(s.id).toMatch(/^1\.[12]$/);
+        });
+
+        level3Sections.forEach((s: any) => {
+          expect(s.id).toMatch(/^1\.[12]\.[12]$/);
         });
       } finally {
-        await helper.stopServer();
+        serverProcess.kill();
+      }
+    });
+
+    it('should limit max_toc_depth correctly when starting from deeper sections', async () => {
+      const helper = new E2ETestHelper('SectionTableOfContents', 'should-limit-max-toc-depth-from-deeper-sections');
+      const docsPath = helper.getTestDocsPath();
+
+      // Set max_toc_depth to 1 starting from the requested section
+      const serverProcess = await helper.spawnServerWithArgs(['--docs-path', docsPath, '--max-toc-depth', '1']);
+
+      try {
+        // Request children of Section One Point One (1.1), should only return 1.1.1 and 1.1.2 (depth = 1 from 1.1)
+        const response = await helper.sendRequestToServer(serverProcess, helper.createToolCallRequest('section_table_of_contents', {
+          fileId: 'f1',
+          section_ids: ['1.1']
+        }));
+
+        helper.expectSuccessfulResponse(response);
+        const sections = helper.parseTableOfContentsText(response);
+
+        // Should include direct children (1.1.1, 1.1.2) but NOT their children (1.1.1.1, etc.)
+        // Because max_toc_depth = 1 means only 1 level deep from section '1.1'
+        expect(Array.isArray(sections)).toBe(true);
+
+        // Should only have level 3 sections (direct children of 1.1)
+        sections.forEach((section: any) => {
+          expect(helper.getSectionLevel(section.id)).toBe(3);
+          expect(section.id).toMatch(/^1\.1\.[12]$/);
+        });
+
+        // Should NOT have level 4 sections (children of 1.1.1, 1.1.2)
+        const level4Sections = sections.filter((s: any) => helper.getSectionLevel(s.id) === 4);
+        expect(level4Sections.length).toBe(0);
+      } finally {
+        serverProcess.kill();
       }
     });
   });
