@@ -30,3 +30,4 @@ export {
 } from './InstructionsHelper';
 export { isTitleRedundant } from './TitleComparator';
 export { formatTableOfContentsAsXml } from './TableOfContentsFormatter';
+export { SharedHeaderLimiting } from './shared';
