@@ -1,6 +1,6 @@
 {
   "name": "local-dev-docs-reader-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP Server for intelligently and token-consciously reading .md files on local filesystem.",
   "main": "dist/index.js",
   "bin": {
